@@ -2,10 +2,6 @@
 #include "../Inc/defines.h"
 #include <stdio.h>
 
-
-// Internal constants
-const int16_t pwm_res = 72000000 / 2 / PWM_FREQ; // = 2250
-
 // Global variables for voltage and current
 float batteryVoltage = BAT_CELLS * 3.6;
 float currentDC = 0.42;		// to see in serial log that pin is not defined
@@ -129,8 +125,7 @@ void SetEnable(FlagStatus setEnable)
 //----------------------------------------------------------------------------
 void SetPWM(int16_t setPwm)
 {
-	//	bldc_inputFilterPwm = CLAMP(setPwm, -1000, 1000);	// thanks to WizzardDr, bldc.c: pwm_res = 72000000 / 2 / PWM_FREQ; == 2250 and not 2000
-	bldc_inputFilterPwm = CLAMP(1.125*setPwm, -1125, 1125);
+	bldc_inputFilterPwm = CLAMP(1.125 * setPwm, -BLDC_TIMER_MEAN_VALUE, BLDC_TIMER_MEAN_VALUE); // thanks to WizzardDr, bldc.c: pwm_res = 72000000 / 2 / PWM_FREQ; == 2250 and not 2000
 }
 
 
@@ -203,10 +198,7 @@ void CalculateBLDC(void)
 	hall_b = digitalRead(HALL_B);
 	hall_c = digitalRead(HALL_C);
 	hall = hall_a * 1 + hall_b * 2 + hall_c * 4;
-	
-	//hall_a = gpio_input_bit_get(HALL_A_PORT, HALL_A_PIN);
-	//hall_b = gpio_input_bit_get(HALL_B_PORT, HALL_B_PIN);
-	//hall_c = gpio_input_bit_get(HALL_C_PORT, HALL_C_PIN);
+
 
 	#ifdef TEST_HALL2LED
 		#ifdef LED_ORANGE
@@ -238,26 +230,15 @@ void CalculateBLDC(void)
 	// Calculate low-pass filter for pwm value
 	filter_reg = filter_reg - (filter_reg >> FILTER_SHIFT) + bldc_inputFilterPwm;
 	bldc_outputFilterPwm = filter_reg >> FILTER_SHIFT;
-	
-	
-  // Update PWM channels based on position y(ellow), b(lue), g(reen)
-  blockPWM(bldc_outputFilterPwm, pos, &y, &b, &g);
 
-	#ifdef BLDC_WEAKENING
-		int weaku, weakv, weakw;
-		if (bldc_outputFilterPwm > 0)
-			blockPWM(bldc_outputFilterPwm, (pos+5) % 6, &weaku, &weakv, &weakw);
-		else 
-			blockPWM(-bldc_outputFilterPwm, (pos+1) % 6, &weaku, &weakv, &weakw);
-		g += weaku;	b += weakv;	y += weakw;
-	#endif
-	
+	// Update PWM channels based on position y(ellow), b(lue), g(reen)
+	blockPWM(bldc_outputFilterPwm, pos, &y, &b, &g);
+
 	// Set PWM output (pwm_res/2 is the mean value, setvalue has to be between 10 and pwm_res-10)
-	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_G, CLAMP(g + pwm_res / 2, 10, pwm_res-10));
-	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_B, CLAMP(b + pwm_res / 2, 10, pwm_res-10));
-	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, CLAMP(y + pwm_res / 2, 10, pwm_res-10));
-	
-	
+	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_G, CLAMP(g + BLDC_TIMER_MEAN_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
+	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_B, CLAMP(b + BLDC_TIMER_MEAN_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
+	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, CLAMP(y + BLDC_TIMER_MEAN_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
+
 	// robo23
 	iOdom = iOdom - up_or_down(lastPos, pos); // int32 will overflow at +-2.147.483.648
 	
