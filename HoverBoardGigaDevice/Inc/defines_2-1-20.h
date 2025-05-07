@@ -1,8 +1,9 @@
 #ifndef DEFINES_2_1_20_H
 #define DEFINES_2_1_20_H
 
-#define LED_RED PB4
 #define LED_GREEN PB3
+#define LED_ORANGE PA15
+#define LED_RED PB4
 #define UPPER_LED PB2
 #define LOWER_LED PB5
 
