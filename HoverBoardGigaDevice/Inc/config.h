@@ -66,15 +66,10 @@
 // ################################################################################
 
 
-#define PWM_FREQ         		16000     // PWM frequency in Hz
-#define DEAD_TIME        		60        // PWM deadtime (60 = 1�s, measured by oscilloscope)
-
+#define BLDC_TIMER_PERIOD       (72000000u / 2u / PWM_FREQ) // = 2250
 #define DC_CUR_LIMIT     		15        // Motor DC current limit in amps
-
-static const uint32_t BLDC_TIMER_PERIOD = (72000000u / 2u / PWM_FREQ); // = 2250
-static const int32_t BLDC_TIMER_MEAN_VALUE = BLDC_TIMER_PERIOD / 2;   // = 1125
-#define BLDC_TIMER_MIN_VALUE 10
-static const uint32_t BLDC_TIMER_MAX_VALUE = BLDC_TIMER_PERIOD - 10; // = 2240
+#define DEAD_TIME        		60        // PWM deadtime (60 = 1�s, measured by oscilloscope)
+#define PWM_FREQ         		16000     // PWM frequency in Hz
 
 // ################################################################################
 
