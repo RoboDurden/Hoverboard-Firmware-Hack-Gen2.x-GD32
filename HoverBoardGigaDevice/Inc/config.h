@@ -66,13 +66,10 @@
 // ################################################################################
 
 
-#define PWM_FREQ         		16000     // PWM frequency in Hz
-#define DEAD_TIME        		60        // PWM deadtime (60 = 1�s, measured by oscilloscope)
-
+#define BLDC_TIMER_PERIOD       (72000000u / 2u / PWM_FREQ) // = 2250
 #define DC_CUR_LIMIT     		15        // Motor DC current limit in amps
-
-
-//#define BLDC_WEAKENING		// some kind of field weaking added by HarleyBob for his gen2.2 firmware ?
+#define DEAD_TIME        		60        // PWM deadtime (60 = 1�s, measured by oscilloscope)
+#define PWM_FREQ         		16000     // PWM frequency in Hz
 
 // ################################################################################
 

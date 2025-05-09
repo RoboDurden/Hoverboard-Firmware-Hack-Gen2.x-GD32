@@ -258,11 +258,12 @@ void PWM_init(void)
 	timer_deinit(TIMER_BLDC);
 	
 	// Set up the basic parameter struct for the timer
-	timerBldc_paramter_struct.counterdirection 	= TIMER_COUNTER_UP;
-	timerBldc_paramter_struct.prescaler 				= 0;
-	timerBldc_paramter_struct.alignedmode 			= TIMER_COUNTER_CENTER_DOWN;
-	timerBldc_paramter_struct.period						= 72000000 / 2 / PWM_FREQ;
-	timerBldc_paramter_struct.clockdivision 		= TIMER_CKDIV_DIV1;
+	timerBldc_paramter_struct.counterdirection = TIMER_COUNTER_UP;
+	timerBldc_paramter_struct.prescaler = 0;
+	timerBldc_paramter_struct.alignedmode = TIMER_COUNTER_CENTER_DOWN;
+	timerBldc_paramter_struct.period = BLDC_TIMER_PERIOD;
+	timerBldc_paramter_struct.clockdivision = TIMER_CKDIV_DIV1;
+
 	timerBldc_paramter_struct.repetitioncounter = 0;
 	timer_auto_reload_shadow_disable(TIMER_BLDC);
 	
