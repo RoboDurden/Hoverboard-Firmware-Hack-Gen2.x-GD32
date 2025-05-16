@@ -5,6 +5,7 @@
 #include "../Inc/setup.h"
 #include "../Inc/config.h"
 #include "../Inc/remote.h"
+#include "../Inc/mathdefines.h"
 
 
 #if defined(REMOTE_AUTODETECT)
@@ -130,15 +131,6 @@
 #ifndef ADC_BATTERY_VOLT
 	#define ADC_BATTERY_VOLT      0.024169921875  	// V_Batt to V_BattMeasure = factor 30: ( (ADC-Data/4095) *3,3V *30 )
 #endif
-
-
-// Useful math function defines
-#define ABS(a) (((a) < 0.0) ? -(a) : (a))
-#define CLAMP(x, low, high) (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
-#ifndef MAX
-	#define MAX(x, high) (((x) > (high)) ? (high) : (x))
-#endif	
-#define MAP(x, xMin, xMax, yMin, yMax) ((x - xMin) * (yMax - yMin) / (xMax - xMin) + yMin)
 
 // ################################################################################
 

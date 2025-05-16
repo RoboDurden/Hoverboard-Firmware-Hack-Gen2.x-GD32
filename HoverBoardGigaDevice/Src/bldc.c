@@ -30,21 +30,17 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+
+#include <stdio.h>
+
 #include "../Inc/defines.h"
+#include "../Inc/commutation.h"
 #include <stdio.h>
 
 // Internal constants
-static const uint8_t HALL_A_MASK = 0x4;
-static const uint8_t HALL_B_MASK = 0x2;
-static const uint8_t HALL_C_MASK = 0x1;
 
 static const int16_t BLDC_TIMER_MID_VALUE = BLDC_TIMER_PERIOD / 2;   // = 1125
-static const int16_t BLDC_TIMER_MIN_VALUE = 10;
-static const uint16_t BLDC_TIMER_MAX_VALUE = BLDC_TIMER_PERIOD - 10; // = 2240
-static const uint16_t PHASE_ADVANCE_AT_MAX_PWM = 6;
-static const int16_t sine_q15[61] = {
-       0, 572, 1144, 1715, 2286, 2856, 3425, 3993, 4560, 5126, 5690, 6252, 6813, 7371, 7927, 8481, 9032, 9580, 10126, 10668, 11207, 11743, 12275, 12803, 13328, 13848, 14365, 14876, 15384, 15886, 16384, 16877, 17364, 17847, 18324, 18795, 19261, 19720, 20174, 20622, 21063, 21498, 21926, 22348, 22763, 23170, 23571, 23965, 24351, 24730, 25102, 25466, 25822, 26170, 26510, 26842, 27166, 27482, 27789, 28088, 28378
-};
+
 
 // Global variables for voltage and current
 float batteryVoltage = BAT_CELLS * 3.6;
@@ -62,7 +58,9 @@ FlagStatus bldc_enable = RESET;
 adc_buf_t adc_buffer;
 
 // Internal calculation variables
-uint8_t hall;
+uint8_t hall_a;
+uint8_t hall_b;
+uint8_t hall_c;
 uint8_t pos;
 uint8_t lastPos;
 int16_t bldc_outputFilterPwm = 0;
@@ -91,98 +89,6 @@ int16_t up_or_down(int16_t vorher, int16_t nachher)
   return up_down[modulo(vorher-nachher, 6)];
 }
 
-
-__INLINE uint8_t getHall()
-{
-    // Read hall sensors
-    uint8_t hall_a = digitalRead(HALL_A);
-    uint8_t hall_b = digitalRead(HALL_B);
-    uint8_t hall_c = digitalRead(HALL_C);
-    return hall_a * HALL_A_MASK + hall_b * HALL_B_MASK + hall_c * HALL_C_MASK;
-}
-
-// Uses Jantzen Lee convention https://www.youtube.com/watch?v=XCzfHDnt6G4
-__INLINE uint8_t getPosition(uint8_t hall)
-{
-	switch (hall)
-	{
-		case 0b100:
-			return 0;
-		case 0b101:
-			return 1;
-		case 0b001:
-			return 2;
-		case 0b011:
-			return 3;
-		case 0b010:
-			return 4;
-		case 0b110:
-			return 5;
-		default:
-			return 0; // Not sure what a good convention for invalid state is.  Maybe the MCU should panic?
-					  // If we're field weakning, crashes can cause back EMF that blows stuff up. // https://www.youtube.com/watch?v=5eQyoVMz1dY
-	}
-}
-
-__INLINE void svmPWM(int sector, int t0, int t1, int t2,
-            uint32_t *phaseA, uint32_t *phaseB, uint32_t *phaseC)
-{
-    // exact integer half of the zero vector time
-    uint32_t h = (uint32_t)t0 >> 1;
-
-    switch (sector)
-    {
-    case 0:
-        *phaseA = h + (uint32_t)t2;
-        *phaseB = h;
-        *phaseC = h + (uint32_t)t1 + (uint32_t)t2;
-        break;
-    case 1:
-        *phaseA = h + (uint32_t)t1 + (uint32_t)t2;
-        *phaseB = h;
-        *phaseC = h + (uint32_t)t1;
-        break;
-    case 2:
-        *phaseA = h + (uint32_t)t1 + (uint32_t)t2;
-        *phaseB = h + (uint32_t)t2;
-        *phaseC = h;
-        break;
-    case 3:
-        *phaseA = h + (uint32_t)t1;
-        *phaseB = h + (uint32_t)t1 + (uint32_t)t2;
-        *phaseC = h;
-        break;
-    case 4:
-        *phaseA = h;
-        *phaseB = h + (uint32_t)t1 + (uint32_t)t2;
-        *phaseC = h + (uint32_t)t2;
-        break;
-    case 5:
-        *phaseA = h;
-        *phaseB = h + (uint32_t)t2;
-        *phaseC = h + (uint32_t)t1 + (uint32_t)t2;
-        break;
-    default:
-        // fault condition: all off
-        *phaseA = 0;
-        *phaseB = 0;
-        *phaseC = 0;
-        break;
-    }
-}
-
-
-__INLINE int32_t calculateT(int16_t angle) {
-	// This needs some work
-	int16_t sine = sine_q15[angle];
-	int32_t tmp = bldc_outputFilterPwm;
-	int32_t tmp2 = tmp * sine;
-	int32_t tmp3 = tmp2 >> 15;
-	int32_t tmp4 = tmp3 * BLDC_TIMER_MAX_VALUE;
-	int32_t tmp5 = tmp4 / 1000;
-	return tmp5;
-}
-
 //----------------------------------------------------------------------------
 // Set motor enable
 //----------------------------------------------------------------------------
@@ -196,8 +102,12 @@ void SetEnable(FlagStatus setEnable)
 //----------------------------------------------------------------------------
 void SetPWM(int16_t setPwm)
 {
-	bldc_inputFilterPwm = CLAMP(setPwm, -1000, 1000);
+	//bldc_inputFilterPwm = CLAMP(1.125 * setPwm, -BLDC_TIMER_MID_VALUE, BLDC_TIMER_MID_VALUE); // thanks to WizzardDr, bldc.c: pwm_res = 72000000 / 2 / PWM_FREQ; == 2250 and not 2000
+	
+	bldc_inputFilterPwm =  BLDC_TIMER_MID_VALUE*(setPwm/1000.0);	// thanks to WizzardDr, bldc.c: pwm_res = 72000000 / 2 / PWM_FREQ; == 2250 and not 2000
+	bldc_inputFilterPwm =  CLAMP(bldc_inputFilterPwm ,-BLDC_TIMER_MID_VALUE, BLDC_TIMER_MID_VALUE); 	
 }
+
 
 
 extern uint32_t steerCounter;								// Steer counter for setting update rate
@@ -206,10 +116,6 @@ extern uint32_t steerCounter;								// Steer counter for setting update rate
 // Calculation-Routine for BLDC => calculates with 16kHz
 void CalculateBLDC(void)
 {
-	uint32_t pulseA;
-	uint32_t pulseB;
-	uint32_t pulseC;
-	
 	#ifdef CURRENT_DC
 		// Calibrate ADC offsets for the first 1000 cycles
 		if (offsetcount < 1000)
@@ -265,53 +171,51 @@ void CalculateBLDC(void)
 	//if (timedOut == SET)	DEBUG_LedSet((steerCounter%2) < 1,0)		
 	
 	// Read hall sensors
+	hall_a = digitalRead(HALL_A);
+	hall_b = digitalRead(HALL_B);
+	hall_c = digitalRead(HALL_C);
 
-    hall = getHall();
 
 	#ifdef TEST_HALL2LED
 		#ifdef LED_ORANGE
-			digitalWrite(LED_ORANGE, hall & HALL_B_MASK);
+			digitalWrite(LED_ORANGE,hall_b);
 		#elif defined(UPPER_LED)
-			digitalWrite(UPPER_LED, hall & HALL_B_MASK);
+			digitalWrite(UPPER_LED,hall_b);
 		#elif defined(LOWER_LED)
-			digitalWrite(LOWER_LED, hall & HALL_B_MASK);
+			digitalWrite(LOWER_LED,hall_b);
 		#else
-			if (hall & HALL_B_MASK)
+			if (hall_b)
 			{
 				digitalWrite(LED_GREEN,(steerCounter%2) < 1);
 				digitalWrite(LED_RED,(steerCounter%2) < 1);
 			}
 		#endif
-		digitalWrite(LED_GREEN, hall & HALL_A_MASK);
-		digitalWrite(LED_RED, hall & HALL_C_MASK);
+		digitalWrite(LED_GREEN,hall_a);
+		digitalWrite(LED_RED,hall_c);
 	#endif
 
 	// Determine current position based on hall sensors
 	#ifdef REMOTE_AUTODETECT
-		pos = AutodetectBldc(hall_to_pos[hall],buzzerTimer);
+		pos = AutodetectBldc(get_sector(hall_a, hall_b, hall_c), buzzerTimer);
 		AutodetectScan(buzzerTimer);
 	#else
-		pos = getPosition(hall);
+		pos = get_sector(hall_a, hall_b, hall_c);
 	#endif
 	
-		
+
 	// Calculate low-pass filter for pwm value
 	filter_reg = filter_reg - (filter_reg >> FILTER_SHIFT) + bldc_inputFilterPwm;
 	bldc_outputFilterPwm = filter_reg >> FILTER_SHIFT;
 
-	int angle = 30 + bldc_outputFilterPwm * PHASE_ADVANCE_AT_MAX_PWM / 1000;
-	// This is based on Jantzen Lee's equations https://youtu.be/oHEVdXucSJs?t=510
-	// ChatGPT thinks that I need to divide by a sine term.
-	int32_t t1 = calculateT(60 - angle);
-	int32_t t2 = calculateT(angle);
-	int32_t t0 = BLDC_TIMER_MAX_VALUE - t1 - t2;
-
-	svmPWM(pos, t0, t1, t2, &pulseA, &pulseB, &pulseC);
+	uint32_t pulseA, pulseB, pulseC;
+	get_pwm(bldc_outputFilterPwm, pos, &pulseA, &pulseB, &pulseC);
+	// Update PWM channels based on position y(ellow), b(lue), g(reen)
 
 	// Set PWM output (pwm_res/2 is the mean value, setvalue has to be between 10 and pwm_res-10)
-	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_B, CLAMP(pulseA, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
-	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, CLAMP(pulseB, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
-	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_G, CLAMP(pulseC, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
+	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_B, pulseA);
+	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, pulseB);
+	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_G, pulseC);
+
 	// robo23
 	iOdom = iOdom - up_or_down(lastPos, pos); // int32 will overflow at +-2.147.483.648
 	
