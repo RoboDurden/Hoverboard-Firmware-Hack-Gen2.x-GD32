@@ -111,5 +111,18 @@
 // ###### ARMCHAIR ######
 #define FILTER_SHIFT 12 						// Low-pass filter for pwm, rank k=12
 
+#define BLOCK_COMMUTATION 0
+#define SVM_COMMUTATION 1
+
+// We need the #ifndef for the tests
+#ifndef COMMUTATION_MODE
+	#define COMMUTATION_MODE BLOCK_COMMUTATION
+#endif
+
+#if COMMUTATION_MODE == SVM_COMMUTATION
+	#ifndef PHASE_ADVANCE_AT_MAX_PWM_DEGREES // Also set from tests
+		#define PHASE_ADVANCE_AT_MAX_PWM_DEGREES 6
+	#endif
+#endif 
 
 #endif

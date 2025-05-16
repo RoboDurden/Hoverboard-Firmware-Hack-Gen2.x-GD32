@@ -1,11 +1,46 @@
+/*
+* This file is part of the hoverboard-firmware-hack-V2 project. The 
+* firmware is used to hack the generation 2 board of the hoverboard.
+* These new hoverboards have no mainboard anymore. They consist of 
+* two Sensorboards which have their own BLDC-Bridge per Motor and an
+* ARM Cortex-M3 processor GD32F130C8.
+*
+* Copyright (C) 2018 Florian Staeblein
+* Copyright (C) 2018 Jakob Broemauer
+* Copyright (C) 2018 Kai Liebich
+* Copyright (C) 2018 Christoph Lehnert
+* Copyright (C) 2024 Robo Durden
+* Copyright (C) 2025 Hoverboard Havoc
+*
+* The program is based on the hoverboard project by Niklas Fauth. The 
+* structure was tried to be as similar as possible, so that everyone 
+* could find a better way through the code.
+*
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+
+#include <stdio.h>
 
 #include "../Inc/defines.h"
+#include "../Inc/commutation.h"
 #include <stdio.h>
 
 // Internal constants
+
 static const int16_t BLDC_TIMER_MID_VALUE = BLDC_TIMER_PERIOD / 2;   // = 1125
-static const int16_t BLDC_TIMER_MIN_VALUE = 10;
-static const uint16_t BLDC_TIMER_MAX_VALUE = BLDC_TIMER_PERIOD - 10; // = 2240
+
 
 // Global variables for voltage and current
 float batteryVoltage = BAT_CELLS * 3.6;
@@ -26,7 +61,6 @@ adc_buf_t adc_buffer;
 uint8_t hall_a;
 uint8_t hall_b;
 uint8_t hall_c;
-uint8_t hall;
 uint8_t pos;
 uint8_t lastPos;
 int16_t bldc_outputFilterPwm = 0;
@@ -55,68 +89,6 @@ int16_t up_or_down(int16_t vorher, int16_t nachher)
   return up_down[modulo(vorher-nachher, 6)];
 }
 
-// Commutation table
-const uint8_t hall_to_pos[8] =
-{
-	// annotation: for example SA=0 means hall sensor pulls SA down to Ground
-  0, // hall position [-] - No function (access from 1-6) 
-  3, // hall position [1] (SA=1, SB=0, SC=0) -> PWM-position 3
-  5, // hall position [2] (SA=0, SB=1, SC=0) -> PWM-position 5
-  4, // hall position [3] (SA=1, SB=1, SC=0) -> PWM-position 4
-  1, // hall position [4] (SA=0, SB=0, SC=1) -> PWM-position 1
-  2, // hall position [5] (SA=1, SB=0, SC=1) -> PWM-position 2
-  6, // hall position [6] (SA=0, SB=1, SC=1) -> PWM-position 6
-  0, // hall position [-] - No function (access from 1-6) 
-};
-
-//----------------------------------------------------------------------------
-// Block PWM calculation based on position
-//----------------------------------------------------------------------------
-#ifndef PLATFORMIO
-__INLINE 
-#endif
-void blockPWM(int pwm, int pwmPos, int *y, int *b, int *g)		// robo 2024/09/04: remove __INLINE for PlatformIO
-{
-  switch(pwmPos)
-	{
-    case 1:
-      *y = 0;
-      *b = pwm;
-      *g = -pwm;
-      break;
-    case 2:
-      *y = -pwm;
-      *b = pwm;
-      *g = 0;
-      break;
-    case 3:
-      *y = -pwm;
-      *b = 0;
-      *g = pwm;
-      break;
-    case 4:
-      *y = 0;
-      *b = -pwm
-		;
-      *g = pwm;
-      break;
-    case 5:
-      *y = pwm;
-      *b = -pwm;
-      *g = 0;
-      break;
-    case 6:
-      *y = pwm;
-      *b = 0;
-      *g = -pwm;
-      break;
-    default:
-      *y = 0;
-      *b = 0;
-      *g = 0;
-  }
-}
-
 //----------------------------------------------------------------------------
 // Set motor enable
 //----------------------------------------------------------------------------
@@ -137,16 +109,13 @@ void SetPWM(int16_t setPwm)
 }
 
 
+
 extern uint32_t steerCounter;								// Steer counter for setting update rate
+
 
 // Calculation-Routine for BLDC => calculates with 16kHz
 void CalculateBLDC(void)
 {
-	int y = 0;     // yellow = phase A
-	int b = 0;     // blue   = phase B
-	int g = 0;     // green  = phase C
-
-	
 	#ifdef CURRENT_DC
 		// Calibrate ADC offsets for the first 1000 cycles
 		if (offsetcount < 1000)
@@ -205,7 +174,6 @@ void CalculateBLDC(void)
 	hall_a = digitalRead(HALL_A);
 	hall_b = digitalRead(HALL_B);
 	hall_c = digitalRead(HALL_C);
-	hall = hall_a * 1 + hall_b * 2 + hall_c * 4;
 
 
 	#ifdef TEST_HALL2LED
@@ -228,24 +196,25 @@ void CalculateBLDC(void)
 
 	// Determine current position based on hall sensors
 	#ifdef REMOTE_AUTODETECT
-		pos = AutodetectBldc(hall_to_pos[hall],buzzerTimer);
+		pos = AutodetectBldc(get_sector(hall_a, hall_b, hall_c), buzzerTimer);
 		AutodetectScan(buzzerTimer);
 	#else
-		pos = hall_to_pos[hall];
+		pos = get_sector(hall_a, hall_b, hall_c);
 	#endif
 	
-		
+
 	// Calculate low-pass filter for pwm value
 	filter_reg = filter_reg - (filter_reg >> FILTER_SHIFT) + bldc_inputFilterPwm;
 	bldc_outputFilterPwm = filter_reg >> FILTER_SHIFT;
 
+	uint32_t pulseA, pulseB, pulseC;
+	get_pwm(bldc_outputFilterPwm, pos, &pulseA, &pulseB, &pulseC);
 	// Update PWM channels based on position y(ellow), b(lue), g(reen)
-	blockPWM(bldc_outputFilterPwm, pos, &y, &b, &g);
 
 	// Set PWM output (pwm_res/2 is the mean value, setvalue has to be between 10 and pwm_res-10)
-	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_G, CLAMP(g + BLDC_TIMER_MID_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
-	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_B, CLAMP(b + BLDC_TIMER_MID_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
-	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, CLAMP(y + BLDC_TIMER_MID_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
+	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_B, pulseA);
+	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, pulseB);
+	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_G, pulseC);
 
 	// robo23
 	iOdom = iOdom - up_or_down(lastPos, pos); // int32 will overflow at +-2.147.483.648
@@ -262,6 +231,6 @@ void CalculateBLDC(void)
 	}
 	else if (speedCounter >= 4000)	realSpeed = 0;
 	
-	// Safe last position
+	// Save last position
 	lastPos = pos;
 }
