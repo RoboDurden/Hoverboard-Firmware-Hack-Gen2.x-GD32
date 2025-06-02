@@ -70,17 +70,30 @@
   #define DEBUG_LedSet(bSet,iCol)
 #endif
 
-#ifdef USART0_TX
-	#ifndef USART1_TX	// only one uart available, this must be REMOTE_USART
-		#undef MASTERSLAVE_USART
-		#undef REMOTE_USART
-		#define REMOTE_USART 0
+#ifdef REMOTE_ADC
+	#ifndef USART1_TX
+		#error "REMOTE_ADC only works with USART1 PA2/PA3"
 	#endif
-#else
-	#ifdef USART1_TX	// only one uart available, this must be REMOTE_USART
+	#undef MASTERSLAVE_USART
+	#undef REMOTE_USART
+	#if defined(USART0_TX) && defined(MASTER)	// only uart left
+		#define MASTERSLAVE_USART 0
+	#endif
+#endif
+
+
+#ifdef USART1_TX
+	#ifndef USART0_TX	// only one uart available, this must be REMOTE_USART
 		#undef MASTERSLAVE_USART
 		#undef REMOTE_USART
 		#define REMOTE_USART 1
+	#endif
+#else
+
+	#ifdef USART0_TX	// only one uart available, this must be REMOTE_USART
+		#undef MASTERSLAVE_USART
+		#undef REMOTE_USART
+		#define REMOTE_USART 0
 	#else	// no uart at all
 		#if (defined(REMOTE_UART) || defined(REMOTE_UARTBUS) || defined(REMOTE_CRSF))
 			#error "no uart in dfeins_2-x-y.h, please choose REMOTE_DUMMY or REMOTE_ADC"
@@ -88,8 +101,6 @@
 	#endif
 #endif
 
-#if !defined(USART0_TX) && !defined(USART1_TX)
-#endif
 
 #if defined(MASTER) || defined(SLAVE)
 	#define MASTER_OR_SLAVE
@@ -140,33 +151,6 @@
 #endif
 
 
-/*
-#ifdef USART0_REMOTE	
-	#if defined(MASTER_OR_SINGLE) && defined(REMOTE_BAUD)
-		#define USART0_BAUD REMOTE_BAUD		// defined in remoteUart.h or remoteCrsf.h or remoteUartBus.h
-		#define USART_REMOTE USART0
-	#endif
-#elif defined(USART0_MASTERSLAVE)
-	#ifdef MASTER_OR_SLAVE
-		#define USART0_BAUD 115200
-		#define USART_MASTERSLAVE USART0
-	#endif
-#endif
-
-#ifdef USART1_REMOTE	
-	#if defined(MASTER_OR_SINGLE) && defined(REMOTE_BAUD)
-		#define USART1_BAUD REMOTE_BAUD		// defined in remoteUart.h or remoteCrsf.h or remoteUartBus.h
-		//#undef USART1_REMOTE
-		#define USART_REMOTE USART1
-		
-	#endif
-#elif defined(USART1_MASTERSLAVE)
-	#ifdef MASTER_OR_SLAVE
-		#define USART1_BAUD 115200
-		#define USART_MASTERSLAVE USART1
-	#endif
-#endif
-*/
 	
 // ADC value conversion defines
 #ifndef MOTOR_AMP_CONV_DC_AMP
@@ -197,6 +181,11 @@ typedef struct
 {
   uint16_t v_batt;
 	uint16_t current_dc;
+	#ifdef REMOTE_ADC
+		uint16_t speed;
+		uint16_t steer;
+	#endif
+	
 } adc_buf_t;
 
 //#pragma pack(1)

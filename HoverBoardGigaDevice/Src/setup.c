@@ -361,11 +361,15 @@ void ADC_init(void)
 	// Initialize DMA channel 0 for ADC
 	dma_deinit(DMA_CH0);
 	
+	uint16_t iCountAdc = sizeof(adc_buffer)/2;	// array of uint16_t
+	iCountAdc = 3;
+	
 	dma_init_struct_adc.direction = DMA_PERIPHERAL_TO_MEMORY;
 	dma_init_struct_adc.memory_addr = (uint32_t)&adc_buffer;
 	dma_init_struct_adc.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
 	dma_init_struct_adc.memory_width = DMA_MEMORY_WIDTH_16BIT;
-	dma_init_struct_adc.number = 2;
+	dma_init_struct_adc.number = iCountAdc;
+	
 	dma_init_struct_adc.periph_addr = (uint32_t)&TARGET_ADC_RDATA;
 	dma_init_struct_adc.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
 	dma_init_struct_adc.periph_width = DMA_PERIPHERAL_WIDTH_16BIT;
@@ -380,7 +384,7 @@ void ADC_init(void)
 	dma_interrupt_enable(DMA_CH0, DMA_CHXCTL_FTFIE);
 	
 	// At least clear number of remaining data to be transferred by the DMA 
-	dma_transfer_number_config(DMA_CH0, 2);
+	dma_transfer_number_config(DMA_CH0, iCountAdc);		// 2
 	
 	// Enable DMA channel 0
 	dma_channel_enable(DMA_CH0);
@@ -391,12 +395,16 @@ void ADC_init(void)
 		adc_regular_channel_config(0, PIN_TO_CHANNEL(TODO_PIN), ADC_SAMPLETIME_13POINT5);
 			// for some reason, the adc channel 1 used for VBat (3.3V) has to be set to TODO_PIN = PF4
 	#else
-		adc_channel_length_config(ADC_REGULAR_CHANNEL, 2);
+		adc_channel_length_config(ADC_REGULAR_CHANNEL, iCountAdc);	// 2
 		#ifdef VBATT
 			adc_regular_channel_config(0, PIN_TO_CHANNEL(VBATT), ADC_SAMPLETIME_13POINT5);
 		#endif
 		#ifdef CURRENT_DC
 			adc_regular_channel_config(1, PIN_TO_CHANNEL(CURRENT_DC), ADC_SAMPLETIME_13POINT5);
+		#endif
+		#ifdef REMOTE_ADC
+			adc_regular_channel_config(2, PIN_TO_CHANNEL(PA2), ADC_SAMPLETIME_13POINT5);
+			//adc_regular_channel_config(3, PIN_TO_CHANNEL(PA3), ADC_SAMPLETIME_13POINT5);
 		#endif
 	#endif
 	

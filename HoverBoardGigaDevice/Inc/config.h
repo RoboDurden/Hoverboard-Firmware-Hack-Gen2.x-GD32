@@ -36,6 +36,7 @@
 		#define REMOTE_UART
 		//#define REMOTE_UARTBUS	// ESP32 as master and multiple boards as multiple slaves ESP.tx-Hovers.rx and ESP.rx-Hovers.tx
 		//#define REMOTE_CRSF		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/26
+		//#define REMOTE_ADC
 		
 		
 		#ifdef REMOTE_UARTBUS
@@ -69,7 +70,7 @@
 	#endif
 	
 	#define BAT_CELLS         	10        // battery number of cells. Normal Hoverboard battery: 10s
-	//#define DEBUG_LED		// uncomment to activate DEBUG_LedSet(bSet,iColor) macro. iCol: 0=green, 1=organge, 2=red
+	#define DEBUG_LED		// uncomment to activate DEBUG_LedSet(bSet,iColor) macro. iCol: 0=green, 1=organge, 2=red
 	
 #endif
 

@@ -370,7 +370,7 @@ int main (void)
 		Delay(10); //debounce to prevent immediate ShutOff (100 is to much with a switch instead of a push button)
 	#endif
 
-	//DEBUG_LedSet(RESET,1)
+	DEBUG_LedSet(RESET,1)
 	#ifdef UPPER_LED
 		digitalWrite(UPPER_LED,RESET);
 	#endif
@@ -430,7 +430,9 @@ int main (void)
 				else
 					wStateSlave |= STATE_Disable;
 
-				SendSlave(-pwmSlave);
+				#ifdef MASTER
+					SendSlave(-pwmSlave);
+				#endif
 
 			#endif
 

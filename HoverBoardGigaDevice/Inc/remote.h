@@ -15,6 +15,8 @@
 		#include "../Inc/remoteDummy.h"
 	#elif defined(REMOTE_AUTODETECT)
 		#include "../Inc/remoteAutodetect.h"
+	#elif defined(REMOTE_ADC)
+		#include "../Inc/remoteAdc.h"
 	#endif
 
 #endif

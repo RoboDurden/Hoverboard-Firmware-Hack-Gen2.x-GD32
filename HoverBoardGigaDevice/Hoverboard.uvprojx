@@ -440,6 +440,11 @@
               <FilePath>.\Src\commsMasterSlave.c</FilePath>
             </File>
             <File>
+              <FileName>RemoteAdc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\RemoteAdc.c</FilePath>
+            </File>
+            <File>
               <FileName>RemoteAutodetect.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\RemoteAutodetect.c</FilePath>
@@ -505,6 +510,16 @@
               <FilePath>.\Inc\remoteUartBus.h</FilePath>
             </File>
             <File>
+              <FileName>RemoteAdc.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\RemoteAdc.h</FilePath>
+            </File>
+            <File>
+              <FileName>remoteAutodetect.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\remoteAutodetect.h</FilePath>
+            </File>
+            <File>
               <FileName>comms.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\comms.h</FilePath>
@@ -513,11 +528,6 @@
               <FileName>commsMasterSlave.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\commsMasterSlave.h</FilePath>
-            </File>
-            <File>
-              <FileName>remoteAutodetect.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Inc\remoteAutodetect.h</FilePath>
             </File>
             <File>
               <FileName>defines.h</FileName>
@@ -1088,6 +1098,11 @@
               <FilePath>.\Src\commsMasterSlave.c</FilePath>
             </File>
             <File>
+              <FileName>RemoteAdc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\RemoteAdc.c</FilePath>
+            </File>
+            <File>
               <FileName>RemoteAutodetect.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\RemoteAutodetect.c</FilePath>
@@ -1153,6 +1168,16 @@
               <FilePath>.\Inc\remoteUartBus.h</FilePath>
             </File>
             <File>
+              <FileName>RemoteAdc.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\RemoteAdc.h</FilePath>
+            </File>
+            <File>
+              <FileName>remoteAutodetect.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\remoteAutodetect.h</FilePath>
+            </File>
+            <File>
               <FileName>comms.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\comms.h</FilePath>
@@ -1161,11 +1186,6 @@
               <FileName>commsMasterSlave.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\commsMasterSlave.h</FilePath>
-            </File>
-            <File>
-              <FileName>remoteAutodetect.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Inc\remoteAutodetect.h</FilePath>
             </File>
             <File>
               <FileName>defines.h</FileName>
@@ -1736,6 +1756,11 @@
               <FilePath>.\Src\commsMasterSlave.c</FilePath>
             </File>
             <File>
+              <FileName>RemoteAdc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\RemoteAdc.c</FilePath>
+            </File>
+            <File>
               <FileName>RemoteAutodetect.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\RemoteAutodetect.c</FilePath>
@@ -1801,6 +1826,16 @@
               <FilePath>.\Inc\remoteUartBus.h</FilePath>
             </File>
             <File>
+              <FileName>RemoteAdc.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\RemoteAdc.h</FilePath>
+            </File>
+            <File>
+              <FileName>remoteAutodetect.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\remoteAutodetect.h</FilePath>
+            </File>
+            <File>
               <FileName>comms.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\comms.h</FilePath>
@@ -1809,11 +1844,6 @@
               <FileName>commsMasterSlave.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\commsMasterSlave.h</FilePath>
-            </File>
-            <File>
-              <FileName>remoteAutodetect.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Inc\remoteAutodetect.h</FilePath>
             </File>
             <File>
               <FileName>defines.h</FileName>
@@ -2384,6 +2414,11 @@
               <FilePath>.\Src\commsMasterSlave.c</FilePath>
             </File>
             <File>
+              <FileName>RemoteAdc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\RemoteAdc.c</FilePath>
+            </File>
+            <File>
               <FileName>RemoteAutodetect.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\RemoteAutodetect.c</FilePath>
@@ -2449,6 +2484,16 @@
               <FilePath>.\Inc\remoteUartBus.h</FilePath>
             </File>
             <File>
+              <FileName>RemoteAdc.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\RemoteAdc.h</FilePath>
+            </File>
+            <File>
+              <FileName>remoteAutodetect.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\remoteAutodetect.h</FilePath>
+            </File>
+            <File>
               <FileName>comms.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\comms.h</FilePath>
@@ -2457,11 +2502,6 @@
               <FileName>commsMasterSlave.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\commsMasterSlave.h</FilePath>
-            </File>
-            <File>
-              <FileName>remoteAutodetect.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Inc\remoteAutodetect.h</FilePath>
             </File>
             <File>
               <FileName>defines.h</FileName>

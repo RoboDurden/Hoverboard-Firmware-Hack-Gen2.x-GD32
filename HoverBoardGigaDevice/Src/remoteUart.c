@@ -132,7 +132,7 @@ extern uint32_t steerCounter;								// Steer counter for setting update rate
 void RemoteCallback(void)
 {
 	uint8_t cRead = USART_REMOTE_BUFFER[0];
-					DEBUG_LedSet(SET,0)
+	//DEBUG_LedSet(SET,0)
 	//DEBUG_LedSet((steerCounter%20) < 10,0)	// 	
 	if (cRead == '/')	// Start character is captured, start record
 	{
@@ -154,7 +154,7 @@ void RemoteCallback(void)
 			{
 				iTimeLastRx = millis();
 				//DEBUG_LedSet(SET,0) // 		(steerCounter%2) < 1
-					DEBUG_LedSet(SET,0)
+				//DEBUG_LedSet(SET,0)
 				speed = pData->iSpeed;
 				steer = pData->iSteer;
 				wState = pData->wStateMaster;
