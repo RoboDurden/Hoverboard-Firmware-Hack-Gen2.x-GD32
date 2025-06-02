@@ -1,0 +1,38 @@
+name: Generate and Commit eBook PDF via Asciidoctor
+
+on:
+  push:
+    branches-ignore:
+      - 'main'
+      - 'master'
+    paths:
+      - '**.adoc'  # Trigger on changes to .adoc files
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  generate-pdf:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.0'
+
+      - name: Install asciidoctor-pdf
+        run: |
+          gem install asciidoctor-pdf
+
+      - name: Generate PDF
+        run: |
+          asciidoctor-pdf -o docs/asciidoc/ebook-trittico-vincente-rpi-esp32-emqxedge.pdf docs/asciidoc/index.adoc
+
+      - name: Commit eBook PDF
+        run: |
+          git config --local user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git config --local user.name github-actions[bot]
+          git add docs/asciidoc/ebook-trittico-vincente-rpi-esp32-emqxedge.pdf
+          git commit -m "Update eBook PDF" || echo "No changes to commit"
+          git push

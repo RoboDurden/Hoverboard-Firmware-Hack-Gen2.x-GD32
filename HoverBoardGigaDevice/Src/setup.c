@@ -232,7 +232,7 @@ void GPIO_init(void)
 			// Init button
 			#ifdef BUTTON_PU
 				pinModePull(BUTTON_PU,GPIO_MODE_INPUT,GPIO_PUPD_PULLUP);
-			#else
+			#elif defined(BUTTON)
 				pinMode(BUTTON,	GPIO_MODE_INPUT);
 			#endif
 			
@@ -496,7 +496,7 @@ void USART1_Init(uint32_t iBaud)
 #ifdef HAS_USART1
 	
 	// Init USART1
-	#if defined(USART1_REMOTE) && defined(REMOTE_UARTBUS)	// no pullup resistors with multiple boards on the UartBus - Esp32/Arduino (Serial.begin) have to setup pullups
+	#if REMOTE_USART==1 && defined(REMOTE_UARTBUS)	// no pullup resistors with multiple boards on the UartBus - Esp32/Arduino (Serial.begin) have to setup pullups
 		#define USART1_PUPD	GPIO_PUPD_NONE
 	#else
 		#define USART1_PUPD	GPIO_PUPD_PULLUP
@@ -570,7 +570,7 @@ void USART0_Init(uint32_t iBaud)
 #ifdef HAS_USART0
 	
 	// Init USART0
-	#if defined(USART0_REMOTE) && defined(REMOTE_UARTBUS)	// no pullup resistors with multiple boards on the UartBus - Esp32/Arduino (Serial.begin) have to setup pullups
+	#if REMOTE_USART==0 && defined(REMOTE_UARTBUS)	// no pullup resistors with multiple boards on the UartBus - Esp32/Arduino (Serial.begin) have to setup pullups
 		#define USART0_PUPD	GPIO_PUPD_NONE
 	#else
 		#define USART0_PUPD	GPIO_PUPD_PULLUP

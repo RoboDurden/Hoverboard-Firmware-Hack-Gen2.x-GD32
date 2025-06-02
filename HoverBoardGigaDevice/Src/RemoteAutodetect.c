@@ -200,13 +200,7 @@ void AutoDetectHallOrderInit(uint8_t iTestSet);
 // Update USART steer input
 void RemoteCallback(void)
 {
-	#ifdef USART0_REMOTE
-		uint8_t cRead = usart0_rx_buf[0];
-	#endif
-	#ifdef USART1_REMOTE
-		uint8_t cRead = usart1_rx_buf[0];
-	#endif
-	
+	uint8_t cRead = USART_REMOTE_BUFFER[0];
 	if (iBufferData>0)
 	{
 		aBufferData[iBufferData++] = cRead;

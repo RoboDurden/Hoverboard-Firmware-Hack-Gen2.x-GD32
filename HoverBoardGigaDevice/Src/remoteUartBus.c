@@ -105,13 +105,7 @@ void AnswerMaster(void)
 
 	oData.checksum = 	CalcCRC((uint8_t*) &oData, sizeof(oData) - 2);	// (first bytes except crc)
 
-	#ifdef USART0_REMOTE
-		SendBuffer(USART0, (uint8_t*) &oData, sizeof(oData));
-	#endif
-	#ifdef USART1_REMOTE
-		SendBuffer(USART1, (uint8_t*) &oData, sizeof(oData));
-	#endif
-
+	SendBuffer(USART_REMOTE, (uint8_t*) &oData, sizeof(oData));
 }
 
 extern uint32_t steerCounter;								// Steer counter for setting update rate
@@ -123,12 +117,7 @@ uint8_t iRxDataSize;
 // static int16_t iReceivePos = -1;		// if >= 0 incoming bytes are recorded until message size reached
 void RemoteCallback(void)
 {
-	#ifdef USART0_REMOTE
-		uint8_t cRead = usart0_rx_buf[0];
-	#endif
-	#ifdef USART1_REMOTE
-		uint8_t cRead = usart1_rx_buf[0];
-	#endif
+	uint8_t cRead = USART_REMOTE_BUFFER[0];
 	//DEBUG_LedSet((steerCounter%20) < 10,0)	// 	
 	
 	if (iReceivePos < 0)		// data reading not yet begun
@@ -209,12 +198,7 @@ void RemoteCallback(void)
 // Update USART steer input
 void RemoteUpdateNew(void)	// get rid of this stupid struct __attribute__((packed, aligned(1))) "bug" by not using uint8_t in struct
 {
-	#ifdef USART0_REMOTE
-		uint8_t cRead = usart0_rx_buf[0];
-	#endif
-	#ifdef USART1_REMOTE
-		uint8_t cRead = usart1_rx_buf[0];
-	#endif
+	uint8_t cRead = USART_REMOTE_BUFFER[0];
 	aReceiveBuffer[iReceivePos] = cRead;
 	//uint8_t cRead = aReceiveBuffer[iReceivePos] = usartSteer_COM_rx_buf[0];
 	switch (iReceivePos)

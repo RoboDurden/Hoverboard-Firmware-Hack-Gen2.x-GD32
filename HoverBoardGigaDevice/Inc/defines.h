@@ -9,6 +9,13 @@
 
 #if defined(REMOTE_AUTODETECT)
 	#include "defines_2-ad.h"		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/??
+	
+	#define SINGLE
+	#define MASTER_OR_SINGLE
+	#define BAT_CELLS         	6        // battery number of cells. Normal Hoverboard battery: 10s
+	#define SPEED_COEFFICIENT   -1
+	#define STEER_COEFFICIENT   1
+	
 #else
 	#define STRINGIZE_AUX(a) #a
 	#define STRINGIZE(a) STRINGIZE_AUX(a)
@@ -17,16 +24,22 @@
 	#include INCLUE_FILE(TARGET , LAYOUT)	// "defines_2-target-version.h"
 #endif
 
+
+
 #ifdef BUTTON
 	#define BUTTON_PUSHED 1
 #else
 	#ifdef BUTTON_PU
 		#define BUTTON_PUSHED 1		// very strangely, even so the button needs a pullup, digitalRead gives 1 when button pushed
 		#define BUTTON BUTTON_PU
-	#else
-		#undef CHECK_BUTTON 
 	#endif
 #endif
+
+#ifdef DISABLE_BUTTON
+	#undef BUTTON
+	#undef SELF_HOLD
+#endif
+
 
 #ifndef TIMER_BLDC	// these defines should be equal for all Gen2 boards as they only have on bldc capable TIMER = TIMER0
 	#define TIMER_BLDC 		TIMER0
@@ -57,17 +70,77 @@
   #define DEBUG_LedSet(bSet,iCol)
 #endif
 
-
-#if defined(MASTER_OR_SLAVE) && (!defined(USART0_MASTERSLAVE)) && (!defined(USART1_MASTERSLAVE))
-	#error "MASTER or SLAVE set in config.h but no USART0_MASTERSLAVE or USART1_MASTERSLAVE uncommeted in your defines_2-?.h"
-#endif
-
-#if defined(REMOTE_UART) || defined(REMOTE_UARTBUS) || defined(REMOTE_CRSF)
-	#if !defined(USART0_REMOTE) && !defined(USART1_REMOTE)
-		#error "a usart remote selected in config.h but neither USART0_REMOTE nor USART1_REMOTE in your defines_2-?.h
+#ifdef USART0_TX
+	#ifndef USART1_TX	// only one uart available, this must be REMOTE_USART
+		#undef MASTERSLAVE_USART
+		#undef REMOTE_USART
+		#define REMOTE_USART 0
+	#endif
+#else
+	#ifdef USART1_TX	// only one uart available, this must be REMOTE_USART
+		#undef MASTERSLAVE_USART
+		#undef REMOTE_USART
+		#define REMOTE_USART 1
+	#else	// no uart at all
+		#if (defined(REMOTE_UART) || defined(REMOTE_UARTBUS) || defined(REMOTE_CRSF))
+			#error "no uart in dfeins_2-x-y.h, please choose REMOTE_DUMMY or REMOTE_ADC"
+		#endif
 	#endif
 #endif
 
+#if !defined(USART0_TX) && !defined(USART1_TX)
+#endif
+
+#if defined(MASTER) || defined(SLAVE)
+	#define MASTER_OR_SLAVE
+#endif
+
+
+//#if defined(MASTER_OR_SLAVE) && (!defined(USART0_MASTERSLAVE)) && (!defined(USART1_MASTERSLAVE))
+#if defined(MASTER_OR_SLAVE) && (!defined(MASTERSLAVE_USART))
+	#error "MASTER or SLAVE set in config.h but no but no uart available. Please choose SINGLE (and REMOTE_UARTBUS)"
+#endif
+
+#if (defined(REMOTE_UART) || defined(REMOTE_UARTBUS) || defined(REMOTE_CRSF)) && !defined(REMOTE_USART)
+	#error "a usart remote selected in config.h but neither USART0_REMOTE nor USART1_REMOTE in your defines_2-?.h"
+#endif
+
+#if defined(MASTERSLAVE_USART) && defined(REMOTE_USART) 
+	#if MASTERSLAVE_USART == REMOTE_USART
+		#error "MASTERSLAVE_USART must be different from REMOTE_USART"
+	#endif
+#endif
+
+#ifdef REMOTE_USART
+	#if REMOTE_USART == 0
+		#define HAS_USART0
+		#define USART0_BAUD REMOTE_BAUD		// defined in remoteUart.h or remoteCrsf.h or remoteUartBus.h
+		#define USART_REMOTE USART0
+		#define USART_REMOTE_BUFFER usart0_rx_buf		// defined in setup.c
+	#else
+		#define HAS_USART1
+		#define USART1_BAUD REMOTE_BAUD		// defined in remoteUart.h or remoteCrsf.h or remoteUartBus.h
+		#define USART_REMOTE USART1
+		#define USART_REMOTE_BUFFER usart1_rx_buf		// defined in setup.c
+	#endif
+#endif
+
+#ifdef MASTERSLAVE_USART
+	#if MASTERSLAVE_USART == 0
+		#define HAS_USART0
+		#define USART0_BAUD 115200
+		#define USART_MASTERSLAVE USART0
+		#define USART_MASTERSLAVE_BUFFER usart0_rx_buf		// defined in setup.c
+	#else
+		#define HAS_USART1
+		#define USART1_BAUD 115200
+		#define USART_MASTERSLAVE USART1
+		#define USART_MASTERSLAVE_BUFFER usart1_rx_buf		// defined in setup.c
+	#endif
+#endif
+
+
+/*
 #ifdef USART0_REMOTE	
 	#if defined(MASTER_OR_SINGLE) && defined(REMOTE_BAUD)
 		#define USART0_BAUD REMOTE_BAUD		// defined in remoteUart.h or remoteCrsf.h or remoteUartBus.h
@@ -93,34 +166,6 @@
 		#define USART_MASTERSLAVE USART1
 	#endif
 #endif
-
-
-/*
-#ifdef HAS_USART0
-	#ifdef REMOTE_BAUD
-		#define USART0_REMOTE
-		#define USART0_BAUD REMOTE_BAUD
-	#else
-		#if defined(MASTER) || defined(SLAVE)
-			#define USART0_MASTERSLAVE
-			#define USART_MASTERSLAVE USART0
-			#define USART0_BAUD 115200
-		#endif
-	#endif
-#endif
-
-#ifdef HAS_USART1
-	#if defined(REMOTE_BAUD) && (!defined(USART0_REMOTE))
-		#define USART1_REMOTE
-		#define USART1_BAUD REMOTE_BAUD
-	#else
-		#if (!defined(USART_MASTERSLAVE)) && (	defined(MASTER) || defined(SLAVE)	)
-			#define USART1_MASTERSLAVE
-			#define USART_MASTERSLAVE USART1
-			#define USART1_BAUD 115200
-		#endif
-	#endif
-#endif
 */
 	
 // ADC value conversion defines
@@ -130,6 +175,11 @@
 #ifndef ADC_BATTERY_VOLT
 	#define ADC_BATTERY_VOLT      0.024169921875  	// V_Batt to V_BattMeasure = factor 30: ( (ADC-Data/4095) *3,3V *30 )
 #endif
+
+#define BAT_LOW_LVL1     BAT_CELLS * CELL_LOW_LVL1	
+#define BAT_LOW_LVL2     BAT_CELLS * CELL_LOW_LVL2
+#define BAT_LOW_DEAD     BAT_CELLS * CELL_LOW_DEAD
+
 
 
 // Useful math function defines

@@ -170,9 +170,9 @@ uint16_t iUartCounter = 0;
 		if (dma_interrupt_flag_get(DMA_CH2, DMA_INT_FLAG_FTF))
 		{
 			//DEBUG_LedSet(	(iUartCounter++%10) < 5	,0)
-			#if defined(USART0_REMOTE) && defined(MASTER_OR_SINGLE)
+			#if (REMOTE_USART==0) && defined(MASTER_OR_SINGLE)
 					RemoteCallback();
-			#elif defined(USART0_MASTERSLAVE) && defined(MASTER_OR_SLAVE)
+			#elif (MASTERSLAVE_USART==0) && defined(MASTER_OR_SLAVE)
 					UpdateUSARTMasterSlaveInput();
 					// Update USART bluetooth input mechanism
 					//UpdateUSARTBluetoothInput();
@@ -193,9 +193,9 @@ uint16_t iUartCounter = 0;
 		// USART master slave RX
 		if (dma_interrupt_flag_get(DMA_CH4, DMA_INT_FLAG_FTF))
 		{
-			#if defined(USART1_REMOTE) && defined(MASTER_OR_SINGLE)
+			#if (REMOTE_USART==1) && defined(MASTER_OR_SINGLE)
 					RemoteCallback();
-			#elif defined(USART1_MASTERSLAVE) && defined(MASTER_OR_SLAVE)
+			#elif (MASTERSLAVE_USART==1) && defined(MASTER_OR_SLAVE)
 					UpdateUSARTMasterSlaveInput();
 					// Update USART bluetooth input mechanism
 					//UpdateUSARTBluetoothInput();

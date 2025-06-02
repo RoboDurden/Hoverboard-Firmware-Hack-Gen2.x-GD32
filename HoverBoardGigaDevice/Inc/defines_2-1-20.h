@@ -28,13 +28,8 @@
 #define BLDC_YL PB13		
 #define TIMER_BLDC_PULLUP	GPIO_PUPD_NONE	// robo: not sure if some boards indeed nned GPIO_PUPD_PULLUP like 2.2 or 2.3
 
-#define HAS_USART1	// tx=PA2,rx=PA3	uncomment to connect via 19200 baud serial
 // GD32F130 USART1 GD32F130 TX/RX: (PA14/PA15)AF1 , (PA2,PA3)AF1	, (PA8/PB0)AlternateFunction4
-#ifdef HAS_USART1
-	#define USART1_TX		PA2
-	#define USART1_RX		PA3
-	
-	#define USART1_MASTERSLAVE		// uncomment if this usart is used for master-slave communication
-#endif
+#define USART1_TX		PA2
+#define USART1_RX		PA3
 
 #endif

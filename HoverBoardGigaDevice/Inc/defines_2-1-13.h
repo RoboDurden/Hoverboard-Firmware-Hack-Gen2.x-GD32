@@ -19,7 +19,6 @@
 	A0 A1 A2 A3 A4 A5 A6 A7 B0 B1 	
 */
 
-#define TODO_PIN PF4	// PF4 is only accessible on the largest GD32F130Rx LQFP64 pinouts mcu
 
 // LED defines
 #define LED_GREEN PA15	// robo, from andyshmandy pin tracing image
@@ -31,7 +30,7 @@
 
 
 // Mosfet output, little onboard led
-#define MOSFET_OUT	TODO_PIN	// robo might be the blue led inside the hover motors
+//#define MOSFET_OUT	TODO_PIN	// robo might be the blue led inside the hover motors
 
 // Brushless Control DC (BLDC) defines
 #define BLDC_GH PA10		// green	, Tommyboi2001 all bldc pins same as 2.0
@@ -52,25 +51,13 @@
 #define HALL_C	PB11
 
 // GD32F130 USART0 TX/RX:	(PA9/PA10)AF1	, (PB6/PB7)AF0 , 	(PA2/PA3)AF1 , (PA14/PA15)AF1 GD32F130x4 only!
-#define HAS_USART0	// uncomment if this layout has a usart0
-#ifdef HAS_USART0
-	#define USART0_TX	PB6		// robo, from andyshmandy pin tracing image
-	#define USART0_RX	PB7
-	
-	//#define USART0_MASTERSLAVE		// uncomment if this usart is used for master-slave communication
-	#define USART0_REMOTE						// uncomment if this usart is used for optional remote control
-#endif
+#define USART0_TX	PB6		// robo, from andyshmandy pin tracing image
+#define USART0_RX	PB7
 
 
 // GD32F130 USART1 GD32F130 TX/RX: (PA14/PA15)AF1 , (PA2,PA3)AF1	, (PA8/PB0)AlternateFunction4
-#define HAS_USART1	// uncomment if this layout has a usart1
-#ifdef HAS_USART1
-	#define USART1_TX		PA2		// robo, from andyshmandy pin tracing image
-	#define USART1_RX		PA3
-	
-	#define USART1_MASTERSLAVE		// uncomment if this usart is used for master-slave communication
-	//#define USART1_REMOTE				// uncomment if this usart is used for optional remote control
-#endif
+#define USART1_TX		PA2		// robo, from andyshmandy pin tracing image
+#define USART1_RX		PA3
 
 
 
@@ -98,11 +85,9 @@
 
 #ifdef MASTER
 	// Charge state defines
-	#define CHARGE_STATE	TODO_PIN
+	//#define CHARGE_STATE	TODO_PIN
 #endif
 
-// Debug pin defines -  no longer has any function in code !
-#define DEBUG_PIN TODO_PIN
 
 // photo diodes / light barriers on the backside
 #define PHOTO_L_PIN		PA11

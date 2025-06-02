@@ -1,3 +1,5 @@
+// big thanks to Vicky-lp01 for adding this file with a pull request.
+
 #ifdef MASTER_OR_SINGLE		// layout 2.2 and 2.7 have buzzer on the slave board.
 	#define HAS_BUZZER
 #endif
@@ -19,7 +21,6 @@
 	A0 A1 A2 A3 A4 A5 A6 A7 B0 B1 	
 */
 
-#define TODO_PIN PF4	// PF4 is only accessible on the largest GD32F130Rx LQFP64 pinouts mcu
 
 
 // LED defines //If you use this, check the colors, mine is not working on the master
@@ -53,26 +54,11 @@
 #define HALL_C PA1
 #define HALL_B PB11
 
+#define USART0_TX	PB6
+#define USART0_RX	PB7
 
-// GD32F130 USART0 TX/RX: (PB6/PB7)AF0
-#define HAS_USART0	// uncomment if this layout has a usart0
-#ifdef HAS_USART0
-	#define USART0_TX	PB6
-	#define USART0_RX	PB7
-	
-	//#define USART0_MASTERSLAVE		// uncomment if this usart is used for master-slave communication
-	#define USART0_REMOTE						// uncomment if this usart is used for optional remote control
-#endif
-
-
-#define HAS_USART1	// uncomment if this layout has a usart1
-#ifdef HAS_USART1
-	#define USART1_TX		PA2
-	#define USART1_RX		PA3
-	
-	#define USART1_MASTERSLAVE		// uncomment if this usart is used for master-slave communication
-	//#define USART1_REMOTE				// uncomment if this usart is used for optional remote control
-#endif
+#define USART1_TX	PA2
+#define USART1_RX	PA3
 
 
 // ADC defines 

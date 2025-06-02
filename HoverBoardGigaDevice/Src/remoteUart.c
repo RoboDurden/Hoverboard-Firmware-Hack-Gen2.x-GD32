@@ -118,14 +118,7 @@ void RemoteUpdate(void)
 	// oDataSlave.wState;
 
 	oData.checksum = 	CalcCRC((uint8_t*) &oData, sizeof(oData) - 2);	// (first bytes except crc)
-
-	#ifdef USART0_REMOTE
-		SendBuffer(USART0, (uint8_t*) &oData, sizeof(oData));
-	#endif
-	#ifdef USART1_REMOTE
-		SendBuffer(USART1, (uint8_t*) &oData, sizeof(oData));
-	#endif
-
+	SendBuffer(USART_REMOTE, (uint8_t*) &oData, sizeof(oData));
 
 
 	//oDataSlave.wState = 11;
@@ -138,12 +131,8 @@ extern uint32_t steerCounter;								// Steer counter for setting update rate
 // static int16_t iReceivePos = -1;		// if >= 0 incoming bytes are recorded until message size reached
 void RemoteCallback(void)
 {
-	#ifdef USART0_REMOTE
-		uint8_t cRead = usart0_rx_buf[0];
-	#endif
-	#ifdef USART1_REMOTE
-		uint8_t cRead = usart1_rx_buf[0];
-	#endif
+	uint8_t cRead = USART_REMOTE_BUFFER[0];
+					DEBUG_LedSet(SET,0)
 	//DEBUG_LedSet((steerCounter%20) < 10,0)	// 	
 	if (cRead == '/')	// Start character is captured, start record
 	{

@@ -363,14 +363,14 @@ int main (void)
 	// Startup-Sound
 	BUZZER_MelodyDown()
 
-	#ifdef CHECK_BUTTON
+	#ifdef BUTTON
 		// Wait until button is released
 		while (BUTTON_PUSHED == digitalRead(BUTTON)){fwdgt_counter_reload();} // Reload watchdog while button is pressed
 		//while (gpio_input_bit_get(BUTTON_PORT, BUTTON_PIN)){fwdgt_counter_reload();} // Reload watchdog while button is pressed
 		Delay(10); //debounce to prevent immediate ShutOff (100 is to much with a switch instead of a push button)
 	#endif
 
-	DEBUG_LedSet(RESET,1)
+	//DEBUG_LedSet(RESET,1)
 	#ifdef UPPER_LED
 		digitalWrite(UPPER_LED,RESET);
 	#endif
@@ -382,7 +382,7 @@ int main (void)
 		iTimeNextLoop = millis() + DELAY_IN_MAIN_LOOP;
 		
 		steerCounter++;		// something like DELAY_IN_MAIN_LOOP = 5 ms
-		DEBUG_LedSet(	(steerCounter%200) < 10	,1)
+		//DEBUG_LedSet(	(steerCounter%200) < 10	,1)
 		#ifdef MOSFET_OUT
 			digitalWrite(MOSFET_OUT,	(steerCounter%200) < 100	);	// onboard led blinking :-)
 		#endif
@@ -393,7 +393,7 @@ int main (void)
 			if ((steerCounter % 2) == 0)	// something like DELAY_IN_MAIN_LOOP = 10 ms
 			{
 				RemoteUpdate();
-				DEBUG_LedSet(RESET,0)
+				//DEBUG_LedSet(RESET,0)
 			}
 			
 			// Calculate expo rate for less steering with higher speeds
@@ -471,7 +471,7 @@ int main (void)
 				ShutOff();
 			}
 
-			#ifdef CHECK_BUTTON
+			#ifdef BUTTON
 				// Shut device off when button is pressed
 				if (BUTTON_PUSHED == digitalRead(BUTTON))
 				//if (gpio_input_bit_get(BUTTON_PORT, BUTTON_PIN))

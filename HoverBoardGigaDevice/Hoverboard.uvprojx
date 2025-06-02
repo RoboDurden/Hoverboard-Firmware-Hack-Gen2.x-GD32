@@ -410,6 +410,11 @@
               <FilePath>.\Src\led.c</FilePath>
             </File>
             <File>
+              <FileName>comms.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\comms.c</FilePath>
+            </File>
+            <File>
               <FileName>remoteUart.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\remoteUart.c</FilePath>
@@ -498,6 +503,11 @@
               <FileName>remoteUartBus.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\remoteUartBus.h</FilePath>
+            </File>
+            <File>
+              <FileName>comms.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\comms.h</FilePath>
             </File>
             <File>
               <FileName>commsMasterSlave.h</FileName>
@@ -608,6 +618,11 @@
               <FileName>defines_2-1-20.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines_2-1-20.h</FilePath>
+            </File>
+            <File>
+              <FileName>defines_2-1-22.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\defines_2-1-22.h</FilePath>
             </File>
             <File>
               <FileName>defines_2-2-1.h</FileName>
@@ -1043,6 +1058,11 @@
               <FilePath>.\Src\led.c</FilePath>
             </File>
             <File>
+              <FileName>comms.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\comms.c</FilePath>
+            </File>
+            <File>
               <FileName>remoteUart.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\remoteUart.c</FilePath>
@@ -1131,6 +1151,11 @@
               <FileName>remoteUartBus.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\remoteUartBus.h</FilePath>
+            </File>
+            <File>
+              <FileName>comms.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\comms.h</FilePath>
             </File>
             <File>
               <FileName>commsMasterSlave.h</FileName>
@@ -1241,6 +1266,11 @@
               <FileName>defines_2-1-20.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines_2-1-20.h</FilePath>
+            </File>
+            <File>
+              <FileName>defines_2-1-22.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\defines_2-1-22.h</FilePath>
             </File>
             <File>
               <FileName>defines_2-2-1.h</FileName>
@@ -1676,6 +1706,11 @@
               <FilePath>.\Src\led.c</FilePath>
             </File>
             <File>
+              <FileName>comms.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\comms.c</FilePath>
+            </File>
+            <File>
               <FileName>remoteUart.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\remoteUart.c</FilePath>
@@ -1764,6 +1799,11 @@
               <FileName>remoteUartBus.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\remoteUartBus.h</FilePath>
+            </File>
+            <File>
+              <FileName>comms.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\comms.h</FilePath>
             </File>
             <File>
               <FileName>commsMasterSlave.h</FileName>
@@ -1874,6 +1914,11 @@
               <FileName>defines_2-1-20.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines_2-1-20.h</FilePath>
+            </File>
+            <File>
+              <FileName>defines_2-1-22.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\defines_2-1-22.h</FilePath>
             </File>
             <File>
               <FileName>defines_2-2-1.h</FileName>
@@ -2309,6 +2354,11 @@
               <FilePath>.\Src\led.c</FilePath>
             </File>
             <File>
+              <FileName>comms.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\comms.c</FilePath>
+            </File>
+            <File>
               <FileName>remoteUart.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\remoteUart.c</FilePath>
@@ -2397,6 +2447,11 @@
               <FileName>remoteUartBus.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\remoteUartBus.h</FilePath>
+            </File>
+            <File>
+              <FileName>comms.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\comms.h</FilePath>
             </File>
             <File>
               <FileName>commsMasterSlave.h</FileName>
@@ -2507,6 +2562,11 @@
               <FileName>defines_2-1-20.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines_2-1-20.h</FilePath>
+            </File>
+            <File>
+              <FileName>defines_2-1-22.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\defines_2-1-22.h</FilePath>
             </File>
             <File>
               <FileName>defines_2-2-1.h</FileName>
@@ -2648,6 +2708,12 @@
           <targetInfo name="GD32F103"/>
         </targetInfos>
       </component>
+      <component Cclass="Device" Cgroup="GD32F10x_StdPeripherals" Csub="FMC" Cvendor="GigaDevice" Cversion="2.0.2" condition="GD32F10x STDPERIPHERALS RCU">
+        <package name="GD32F10x_DFP" schemaVersion="1.2" url="https://gd32mcu.com/data/documents/pack/" vendor="GigaDevice" version="2.0.3"/>
+        <targetInfos>
+          <targetInfo name="GD32F103"/>
+        </targetInfos>
+      </component>
       <component Cclass="Device" Cgroup="GD32F10x_StdPeripherals" Csub="FWDGT" Cvendor="GigaDevice" Cversion="2.0.2" condition="GD32F10x STDPERIPHERALS RCU">
         <package name="GD32F10x_DFP" schemaVersion="1.2" url="https://gd32mcu.com/data/documents/pack/" vendor="GigaDevice" version="2.0.3"/>
         <targetInfos>
@@ -2715,6 +2781,12 @@
         </targetInfos>
       </component>
       <component Cclass="Device" Cgroup="GD32F1x0_StdPeripherals" Csub="DMA" Cvendor="GigaDevice" Cversion="3.2.0" condition="GD32F1x0 STDPERIPHERALS RCU">
+        <package name="GD32F1x0_DFP" schemaVersion="1.1" url="https://gd32mcu.com/data/documents/pack/" vendor="GigaDevice" version="3.2.1"/>
+        <targetInfos>
+          <targetInfo name="GD32F130"/>
+        </targetInfos>
+      </component>
+      <component Cclass="Device" Cgroup="GD32F1x0_StdPeripherals" Csub="FMC" Cvendor="GigaDevice" Cversion="3.2.0" condition="GD32F1x0 STDPERIPHERALS RCU">
         <package name="GD32F1x0_DFP" schemaVersion="1.1" url="https://gd32mcu.com/data/documents/pack/" vendor="GigaDevice" version="3.2.1"/>
         <targetInfos>
           <targetInfo name="GD32F130"/>
@@ -3044,6 +3116,14 @@
           <targetInfo name="GD32F103"/>
         </targetInfos>
       </file>
+      <file attr="config" category="source" name="Device\Firmware\Peripherals\src\gd32f10x_fmc.c" version="2.0.2">
+        <instance index="0">RTE\Device\GD32F103C8\gd32f10x_fmc.c</instance>
+        <component Cclass="Device" Cgroup="GD32F10x_StdPeripherals" Csub="FMC" Cvendor="GigaDevice" Cversion="2.0.2" condition="GD32F10x STDPERIPHERALS RCU"/>
+        <package name="GD32F10x_DFP" schemaVersion="1.2" url="https://gd32mcu.com/data/documents/pack/" vendor="GigaDevice" version="2.0.3"/>
+        <targetInfos>
+          <targetInfo name="GD32F103"/>
+        </targetInfos>
+      </file>
       <file attr="config" category="source" name="Device\Firmware\Peripherals\src\gd32f10x_fwdgt.c" version="2.0.2">
         <instance index="0">RTE\Device\GD32F103C8\gd32f10x_fwdgt.c</instance>
         <component Cclass="Device" Cgroup="GD32F10x_StdPeripherals" Csub="FWDGT" Cvendor="GigaDevice" Cversion="2.0.2" condition="GD32F10x STDPERIPHERALS RCU"/>
@@ -3353,6 +3433,14 @@
         <component Cclass="Device" Cgroup="GD32F1x0_EVAL" Cvendor="GigaDevice" Cversion="3.1.0" condition="GD32F1x0 STDPERIPHERALS EVAL"/>
         <package name="GD32F1x0_DFP" schemaVersion="1.1" url="http://gd32mcu.21ic.com/data/documents/yingyongruanjian/" vendor="GigaDevice" version="3.1.0"/>
         <targetInfos/>
+      </file>
+      <file attr="config" category="source" name="Device\Firmware\Peripherals\src\gd32f1x0_fmc.c" version="3.2.0">
+        <instance index="0">RTE\Device\GD32F130C8\gd32f1x0_fmc.c</instance>
+        <component Cclass="Device" Cgroup="GD32F1x0_StdPeripherals" Csub="FMC" Cvendor="GigaDevice" Cversion="3.2.0" condition="GD32F1x0 STDPERIPHERALS RCU"/>
+        <package name="GD32F1x0_DFP" schemaVersion="1.1" url="https://gd32mcu.com/data/documents/pack/" vendor="GigaDevice" version="3.2.1"/>
+        <targetInfos>
+          <targetInfo name="GD32F130"/>
+        </targetInfos>
       </file>
       <file attr="config" category="source" name="Device\Firmware\Peripherals\src\gd32f1x0_fwdgt.c" version="3.2.0">
         <instance index="0">RTE\Device\GD32F130C8\gd32f1x0_fwdgt.c</instance>

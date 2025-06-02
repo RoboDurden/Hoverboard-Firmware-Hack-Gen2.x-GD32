@@ -29,7 +29,6 @@ int16_t channels[CRSF_MAX_CHANNEL];
 uint8_t failsafe_status;
 uint8_t frameLength;
 uint8_t bufferIndex;
-uint8_t inData;
 
 
 void crsfInit(){
@@ -121,29 +120,23 @@ uint8_t crsf_crc8(const uint8_t *ptr, uint8_t len) {
 
 void RemoteCallback(void)	// Get Crsf Packet
 {
+	uint8_t cRead = USART_REMOTE_BUFFER[0];
+	
 	uint8_t crc;
-	#ifdef USART0_REMOTE
-		uint8_t inData = usart0_rx_buf[0];
-	#endif
-	#ifdef USART1_REMOTE
-		uint8_t inData = usart1_rx_buf[0];
-	#endif
-	
-	
 	if (bufferIndex==0){
-		if(inData == CRSF_ADDRESS_FLIGHT_CONTROLLER){
-			inBuffer[bufferIndex++] = inData;
+		if(cRead == CRSF_ADDRESS_FLIGHT_CONTROLLER){
+			inBuffer[bufferIndex++] = cRead;
 		}else{  //I'm not sure this else in needed
 			bufferIndex=0;
 		}
 	}else if(bufferIndex==1){
-		frameLength = inData;
-		inBuffer[bufferIndex++] = inData;
+		frameLength = cRead;
+		inBuffer[bufferIndex++] = cRead;
 	}else if(bufferIndex >1 && bufferIndex < frameLength + 1){
-			inBuffer[bufferIndex++] = inData;
+			inBuffer[bufferIndex++] = cRead;
 	}else if(bufferIndex == frameLength + 1){
 		//calculate received packet crc
-		inBuffer[bufferIndex++] = inData;
+		inBuffer[bufferIndex++] = cRead;
 		//uint8_t inCrc=inBuffer[CRSF_FRAME_LENGTH-1];
 		uint8_t crc=crsf_crc8(&inBuffer[2],inBuffer[1]-1);
 		inBuffer[24]=crc;

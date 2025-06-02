@@ -6,11 +6,6 @@
 #endif
 
 // add autodetect #defines below and rename to defines_2-xy.h
-// then add another
-//	#elif LAYOUT == xy
-//		#include "defines_2-xy.h"		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/40
-// to defines.h and set #define LAYOUT xy in config.h in your chosen GD32E230/MM32SPIN05/GD32F103/GD32F130 target section
-
 
 
 // Brushless Control DC (BLDC) defines
@@ -28,23 +23,12 @@
 
 
 // GD32F130 USART0 TX/RX:	(PA9/PA10)AF1	, (PB6/PB7)AF0 , 	(PA2/PA3)AF1 , (PA14/PA15)AF1 GD32F130x4 only!
-#ifdef HAS_USART0
-	#define USART0_TX	PB6
-	#define USART0_RX	PB7
-	
-	//#define USART0_MASTERSLAVE		// uncomment if this usart is used for master-slave communication
-	#define USART0_REMOTE						// uncomment if this usart is used for optional remote control
-#endif
-
+#define USART0_TX	PB6
+#define USART0_RX	PB7
 
 // GD32F130 USART1 GD32F130 TX/RX: (PA14/PA15)AF1 , (PA2,PA3)AF1	, (PA8/PB0)AlternateFunction4
-#ifdef HAS_USART1
-	#define USART1_TX		PA2
-	#define USART1_RX		PA3
-	
-	//#define USART1_MASTERSLAVE		// uncomment if this usart is used for master-slave communication
-	#define USART1_REMOTE				// uncomment if this usart is used for optional remote control
-#endif
+#define USART1_TX		PA2
+#define USART1_RX		PA3
 
 
 #endif
