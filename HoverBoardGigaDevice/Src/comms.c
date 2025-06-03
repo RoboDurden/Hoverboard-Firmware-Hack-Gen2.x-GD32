@@ -31,8 +31,6 @@
 #include "../Inc/target.h"
 
 
-# define TRUE												0x01
-# define FALSE												0x00
 	
 //----------------------------------------------------------------------------
 // Send buffer via USART
@@ -76,86 +74,5 @@ uint16_t CalcCRC(uint8_t *ptr, int count)
 }
 
 
-/* Clears a page of microprocessor memory */
-void flashErase(uint32_t address) {
-	fmc_unlock();
-	fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_WPERR);
-	fmc_page_erase(address);
-	fmc_lock();
-}
-
-/* Reads 4 bytes from microprocessor memory */
-uint32_t flashRead(uint32_t address) {
-	return *(uint32_t*)address;
-}
-
-/* Writes 4 bytes to microprocessor memory */
-uint8_t flashWrite(uint32_t address, uint32_t data) {
-	uint8_t fflash = FALSE;
-	fmc_unlock();
-	fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_WPERR); 
-	if (fmc_word_program(address, data) == FMC_READY) fflash = TRUE; 
-	fmc_lock(); 
-	return fflash;
-}
-
-/* Write a memory buffer to the microprocessor memory */
-void flashWriteBuffer(uint32_t address, uint32_t pbuffer, uint8_t len) { 
-	int16_t icount = 0; 
-	while (1) { 
-		if (flashWrite(address+icount, *(uint32_t*)(pbuffer + icount)) == TRUE) { 
-		if (icount > len) break; 
-		icount = icount + 4; 
-		}
-	}
-}
-
-/* Read into the microprocessor memory buffer */
-void flashReadBuffer(uint32_t address, uint32_t pbuffer, uint8_t len) {
-	int16_t icount = 0;
-	while (1) {
-		*(uint32_t*)(pbuffer + icount) = *(uint32_t*)(address+icount);
-		if (icount > len) break;
-		icount = icount + 4;
-	}
-}
 
 
-/*
-copied from https://github.com/GreenBytes95/KickScooter
-
-    #pragma pack(push, 1)
-	typedef struct {
-		uint8_t     phase;
-...
-        uint8_t     bitByte;
-        uint32_t    bitData;
-	} config_t;
-    #pragma pack(pop)
-
-// Number of Flash Memory
-# define FLASH_MAX 0xFA00
-// Start Address of Flash Memory
-# define FLASH_ADRESS 0x08000000
-
-void confRead(void) {
-    if (flashRead((FLASH_ADRESS + FLASH_MAX) - (sizeof(config) + 4)) == 0xFFFFFFFF) {
-        confDefine();
-        confWrite();
-    }
-    flashReadBuffer((FLASH_ADRESS + FLASH_MAX) - (sizeof(config) + 4), (uint32_t)&config, sizeof(config) - 4);
-}
-
-void confWrite(void) {
-    flashErase((FLASH_ADRESS + FLASH_MAX) - (sizeof(config) + 4));
-    flashWriteBuffer((FLASH_ADRESS + FLASH_MAX) - (sizeof(config) + 4), (uint32_t)&config, sizeof(config) - 4);
-}
-
-void confErase(void) {
-    flashErase((FLASH_ADRESS + FLASH_MAX) - (sizeof(config) + 4));
-}
-
-
-
-
-*/

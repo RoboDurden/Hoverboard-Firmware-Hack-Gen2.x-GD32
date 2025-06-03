@@ -15,16 +15,10 @@
 #include "string.h"
 #include <math.h>     
 //#include "arm_math.h" 
+
 #ifdef BUZZER
 	extern uint8_t buzzerFreq;    						// global variable for the buzzer pitch. can be 1, 2, 3, 4, 5, 6, 7...
 	extern uint8_t buzzerPattern; 						// global variable for the buzzer pattern. can be 1, 2, 3, 4, 5, 6, 7...
-  #define BuzzerSet(iFrequency, iPattern) {buzzerFreq = iFrequency;buzzerPattern = iPattern;}
-  #define BUZZER_MelodyDown(){int8_t iFreq=8;for (iFreq; iFreq>= 0; iFreq--){ buzzerFreq = iFreq; Delay(100); } buzzerFreq = 0;}
-  #define BUZZER_MelodyUp(){int8_t iFreq=0; for (iFreq; iFreq<= 8; iFreq++){ buzzerFreq = iFreq; Delay(100); } buzzerFreq = 0;}
-#else
-  #define BuzzerSet(iFrequency, iPattern)
-  #define BUZZER_MelodyDown()
-  #define BUZZER_MelodyUp()
 #endif
 
 
@@ -32,6 +26,8 @@
 uint32_t steerCounter = 0;								// Steer counter for setting update rate
 int32_t speed = 0; 												// global variable for speed.    -1000 to 1000
 int16_t speedLimit = 1000;
+int16_t iConfigMode = 0;
+
 
 #define STATE_LedGreen 1	
 #define STATE_LedOrange 2	
@@ -273,6 +269,7 @@ uint32_t iTimeNextLoop = 0;
 //----------------------------------------------------------------------------
 int main (void)
 {
+	ConfigRead();		// reads oConfig defined in defines.h from flash
 	
 	#ifdef REMOTE_AUTODETECT
 		AutodetectInit();
@@ -365,8 +362,17 @@ int main (void)
 
 	#ifdef BUTTON
 		// Wait until button is released
-		while (BUTTON_PUSHED == digitalRead(BUTTON)){fwdgt_counter_reload();} // Reload watchdog while button is pressed
-		//while (gpio_input_bit_get(BUTTON_PORT, BUTTON_PIN)){fwdgt_counter_reload();} // Reload watchdog while button is pressed
+		uint32_t iTimePushed = millis();
+		while (BUTTON_PUSHED == digitalRead(BUTTON))
+		{
+			fwdgt_counter_reload();	// Reload watchdog while button is pressed
+			if (millis()-iTimePushed > 2000)
+			{
+				iConfigMode = 1;
+				BUZZER_MelodyDown();
+				//BuzzerSet(5,8)	// (iFrequency, iPattern)
+			}
+		} 
 		Delay(10); //debounce to prevent immediate ShutOff (100 is to much with a switch instead of a push button)
 	#endif
 

@@ -100,4 +100,10 @@ void USART_MasterSlave_init(void);
 //----------------------------------------------------------------------------
 void USART_Steer_COM_init(void);
 
+
+void ConfigReset(void);
+void ConfigWrite(void);
+void ConfigRead(void);
+void confErase(void);
+
 #endif

@@ -45,30 +45,4 @@ void SendBuffer(uint32_t usart_periph, uint8_t buffer[], uint8_t length);
 uint16_t CalcCRC(uint8_t *ptr, int count);
 
 
-// Description....: Clearing a page of microprocessor memory
-// uint32_t address = Address of the page in Flash memory
-void flashErase(uint32_t address);
-
-// Description....: Reads 4 bytes from the microprocessor memory
-// uint32_t address = Cell address;
-uint32_t flashRead(uint32_t address);
-
-// Description....: Writes 4 bytes to the microprocessor memory
-// uint32_t address = Cell address;
-// uint32_t data = Value to write (4 bytes)
-uint8_t flashWrite(uint32_t address, uint32_t data);
-
-// Description....: Writing memory buffer to microprocessor memory
-// uint32_t address = Cell address;
-// uint32_t pbuffer = Start address of buffer memory
-// uint8_t len ??= Number of buffer bytes
-void flashWriteBuffer(uint32_t address, uint32_t pbuffer, uint8_t len);
-
-// Description....: Reading to microprocessor memory buffer
-// uint32_t address = Cell address;
-// uint32_t pbuffer = Start address of buffer memory
-// uint8_t len ??= Number of buffer bytes
-void flashReadBuffer(uint32_t address, uint32_t pbuffer, uint8_t len);
-
-
 #endif

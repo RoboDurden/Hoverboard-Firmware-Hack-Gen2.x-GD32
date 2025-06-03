@@ -165,6 +165,18 @@
 #define BAT_LOW_DEAD     BAT_CELLS * CELL_LOW_DEAD
 
 
+#ifdef BUZZER
+	extern uint8_t buzzerFreq;    						// global variable for the buzzer pitch. can be 1, 2, 3, 4, 5, 6, 7...
+	extern uint8_t buzzerPattern; 						// global variable for the buzzer pattern. can be 1, 2, 3, 4, 5, 6, 7...
+  #define BuzzerSet(iFrequency, iPattern) {buzzerFreq = iFrequency;buzzerPattern = iPattern;}
+  #define BUZZER_MelodyDown(){int8_t iFreq=8;for (iFreq; iFreq>= 0; iFreq--){ buzzerFreq = iFreq; Delay(100); } buzzerFreq = 0;}
+  #define BUZZER_MelodyUp(){int8_t iFreq=0; for (iFreq; iFreq<= 8; iFreq++){ buzzerFreq = iFreq; Delay(100); } buzzerFreq = 0;}
+#else
+  #define BuzzerSet(iFrequency, iPattern)
+  #define BUZZER_MelodyDown()
+  #define BUZZER_MelodyUp()
+#endif
+
 
 // Useful math function defines
 #define ABS(a) (((a) < 0.0) ? -(a) : (a))
@@ -196,6 +208,22 @@ typedef struct
 	float realSpeed; 									// global variable for real Speed
 	int32_t iOdom;	
 } DataSlave;
+
+
+
+#pragma pack(push, 1)
+typedef struct
+{
+  uint32_t iVersion;
+  uint16_t wState;
+  uint16_t iSpeedNeutral;		// = 2048 REMOTE_ADC
+  uint16_t iSteerNeutral;		// = 2048 REMOTE_ADC
+  uint16_t iSpeedMax;				// = 4096 REMOTE_ADC
+  uint16_t iSpeedMin;				// = 0		REMOTE_ADC
+  uint16_t iSteerMax;				// = 4096	REMOTE_ADC
+  uint16_t iSteerMin;				// = 0		REMOTE_ADC
+} ConfigData;
+#pragma pack(pop)
 
 
 

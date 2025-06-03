@@ -367,7 +367,7 @@ void ADC_init(void)
 	dma_deinit(DMA_CH0);
 	
 	uint16_t iCountAdc = sizeof(adc_buffer)/2;	// array of uint16_t
-	iCountAdc = 4;
+	//iCountAdc = 4;
 	
 	dma_init_struct_adc.direction = DMA_PERIPHERAL_TO_MEMORY;
 	dma_init_struct_adc.memory_addr = (uint32_t)&adc_buffer;
@@ -441,68 +441,6 @@ void ADC_init(void)
 	adc_special_function_config(ADC_SCAN_MODE, ENABLE);
 }
 
-/*
-//----------------------------------------------------------------------------
-// Initializes the usart master slave
-//----------------------------------------------------------------------------
-void USART_MasterSlave_init(void)
-{
-	#ifdef USART_MASTERSLAVE
-		
-		// Enable ADC and DMA clock
-		rcu_periph_clock_enable(USART_MASTERSLAVE_RCU);	// RCU_USART1
-		rcu_periph_clock_enable(RCU_DMA);
-		
-		// Init USART for 115200 baud, 8N1
-		usart_baudrate_set(USART_MASTERSLAVE, 115200);
-		usart_parity_config(USART_MASTERSLAVE, USART_PM_NONE);
-		usart_word_length_set(USART_MASTERSLAVE, USART_WL_8BIT);
-		usart_stop_bit_set(USART_MASTERSLAVE, USART_STB_1BIT);
-		usart_oversample_config(USART_MASTERSLAVE, USART_OVSMOD_16);
-		
-		// Enable both transmitter and receiver
-		usart_transmit_config(USART_MASTERSLAVE, USART_TRANSMIT_ENABLE);
-		usart_receive_config(USART_MASTERSLAVE, USART_RECEIVE_ENABLE);
-		
-		//syscfg_dma_remap_enable(SYSCFG_DMA_REMAP_USART0RX|SYSCFG_DMA_REMAP_USART0TX);
-	
-		// Enable USART
-		usart_enable(USART_MASTERSLAVE);
-		
-		// Interrupt channel 3/4 enable
-		TARGET_nvic_irq_enable(DMA_Channel3_4_IRQn, 2, 0);
-		
-		// Initialize DMA channel 4 for USART_SLAVE RX
-		dma_deinit(DMA_CH4);
-		dma_init_struct_usart.direction = DMA_PERIPHERAL_TO_MEMORY;
-		dma_init_struct_usart.memory_addr = (uint32_t)usartMasterSlave_rx_buf;
-		dma_init_struct_usart.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
-		dma_init_struct_usart.memory_width = DMA_MEMORY_WIDTH_8BIT;
-		dma_init_struct_usart.number = USART_MASTERSLAVE_RX_BUFFERSIZE;
-		dma_init_struct_usart.periph_addr = USART_MASTERSLAVE_DATA_RX_ADDRESS;
-		dma_init_struct_usart.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
-		dma_init_struct_usart.periph_width = DMA_PERIPHERAL_WIDTH_8BIT;
-		dma_init_struct_usart.priority = DMA_PRIORITY_ULTRA_HIGH;
-		dma_init(DMA_CH4, &dma_init_struct_usart);
-		
-		// Configure DMA mode
-		dma_circulation_enable(DMA_CH4);
-		dma_memory_to_memory_disable(DMA_CH4);
-
-		// USART DMA enable for transmission and receive
-		usart_dma_receive_config(USART_MASTERSLAVE, USART_DENR_ENABLE);
-		
-		// Enable DMA transfer complete interrupt
-		dma_interrupt_enable(DMA_CH4, DMA_CHXCTL_FTFIE);
-		
-		// At least clear number of remaining data to be transferred by the DMA 
-		dma_transfer_number_config(DMA_CH4, 1);
-		
-		// Enable dma receive channel
-		dma_channel_enable(DMA_CH4);
-	#endif
-}
-*/
 
 void USART1_Init(uint32_t iBaud)
 {
@@ -652,65 +590,95 @@ void USART0_Init(uint32_t iBaud)
 #endif
 }
 
-/*
-//----------------------------------------------------------------------------
-// Initializes the usart steer/bluetooth
-//----------------------------------------------------------------------------
-void USART_Steer_COM_init(void)
-{
-#ifdef USART_STEER_COM_BAUD
-	
-		// Enable ADC and DMA clock
-	rcu_periph_clock_enable(USART_STEER_RCU);
-	rcu_periph_clock_enable(RCU_DMA);
-	
-	// Init USART for 19200 baud, 8N1
-	usart_baudrate_set(USART_STEER_COM, USART_STEER_COM_BAUD);
-	usart_parity_config(USART_STEER_COM, USART_PM_NONE);
-	usart_word_length_set(USART_STEER_COM, USART_WL_8BIT);
-	usart_stop_bit_set(USART_STEER_COM, USART_STB_1BIT);
-	usart_oversample_config(USART_STEER_COM, USART_OVSMOD_16);
-	
-	
-	// Enable both transmitter and receiver
-	usart_transmit_config(USART_STEER_COM, USART_TRANSMIT_ENABLE);
-	//usart_invert_config(USART_STEER_COM, USART_SWAP_ENABLE);	// HarleyBob
-	usart_receive_config(USART_STEER_COM, USART_RECEIVE_ENABLE);
-	
-	// Enable USART
-	usart_enable(USART_STEER_COM);
-	
-	// Interrupt channel 1/2 enable
-	TARGET_nvic_irq_enable(DMA_Channel1_2_IRQn, 2, 0);
-	
-	// Initialize DMA channel 2 for USART_STEER_COM RX
-	dma_deinit(DMA_CH2);
-	dma_init_struct_usart.direction = DMA_PERIPHERAL_TO_MEMORY;
-	dma_init_struct_usart.memory_addr = (uint32_t)usartSteer_COM_rx_buf;
-	dma_init_struct_usart.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
-	dma_init_struct_usart.memory_width = DMA_MEMORY_WIDTH_8BIT;
-	dma_init_struct_usart.number = USART_STEER_COM_RX_BUFFERSIZE;
-	dma_init_struct_usart.periph_addr = USART_STEER_COM_DATA_RX_ADDRESS;
-	dma_init_struct_usart.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
-	dma_init_struct_usart.periph_width = DMA_PERIPHERAL_WIDTH_8BIT;
-	dma_init_struct_usart.priority = DMA_PRIORITY_ULTRA_HIGH;
-	dma_init(DMA_CH2, &dma_init_struct_usart);
-	
-	// Configure DMA mode
-	dma_circulation_enable(DMA_CH2);
-	dma_memory_to_memory_disable(DMA_CH2);
 
-	// USART DMA enable for transmission and receive
-	usart_dma_receive_config(USART_STEER_COM, USART_DENR_ENABLE);
-	
-	// Enable DMA transfer complete interrupt
-	dma_interrupt_enable(DMA_CH2, DMA_CHXCTL_FTFIE);
-	
-	// At least clear number of remaining data to be transferred by the DMA 
-	dma_transfer_number_config(DMA_CH2, 1);
-	
-	// Enable dma receive channel
-	dma_channel_enable(DMA_CH2);
-#endif
+# define TRUE												0x01
+# define FALSE												0x00
+
+/* Clears a page of microprocessor memory */
+void flashErase(uint32_t address) {
+	fmc_unlock();
+	fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_WPERR);
+	fmc_page_erase(address);
+	fmc_lock();
 }
-*/
+
+/* Reads 4 bytes from microprocessor memory */
+uint32_t flashRead(uint32_t address) {
+	return *(uint32_t*)address;
+}
+
+/* Writes 4 bytes to microprocessor memory */
+uint8_t flashWrite(uint32_t address, uint32_t data) {
+	uint8_t fflash = FALSE;
+	fmc_unlock();
+	fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_WPERR); 
+	if (fmc_word_program(address, data) == FMC_READY) fflash = TRUE; 
+	fmc_lock(); 
+	return fflash;
+}
+
+/* Write a memory buffer to the microprocessor memory */
+void flashWriteBuffer(uint32_t address, uint32_t pbuffer, uint8_t len) { 
+	int16_t icount = 0; 
+	while (1) { 
+		if (flashWrite(address+icount, *(uint32_t*)(pbuffer + icount)) == TRUE) { 
+		if (icount > len) break; 
+		icount = icount + 4; 
+		}
+	}
+}
+
+/* Read into the microprocessor memory buffer */
+void flashReadBuffer(uint32_t address, uint32_t pbuffer, uint8_t len) {
+	int16_t icount = 0;
+	while (1) {
+		*(uint32_t*)(pbuffer + icount) = *(uint32_t*)(address+icount);
+		if (icount > len) break;
+		icount = icount + 4;
+	}
+}
+
+/* Number of Flash Memory */
+# define FLASH_MAX 0xFA00
+/* Start Address of Flash Memory */
+# define FLASH_ADRESS 0x08000000
+
+
+#define EEPROM_VERSION 1
+//#define STATE_InverterOn  1
+ConfigData oConfig;	// = {EEPROM_VERSION,0,2048,2048,4096,0,4096,0};
+
+void ConfigReset(void) 
+{
+	oConfig.iVersion = EEPROM_VERSION;
+	oConfig.wState = 0;
+	oConfig.iSpeedNeutral = 2048;
+	oConfig.iSteerNeutral = 2048;
+	oConfig.iSpeedMax = 4096;
+	oConfig.iSpeedMin = 0;
+	oConfig.iSteerMax = 4096;
+	oConfig.iSteerMin = 0;
+}
+
+
+void ConfigWrite(void) 
+{
+	flashErase((FLASH_ADRESS + FLASH_MAX) - (sizeof(oConfig) + 4));
+	flashWriteBuffer((FLASH_ADRESS + FLASH_MAX) - (sizeof(oConfig) + 4), (uint32_t)&oConfig, sizeof(oConfig) - 4);
+}
+
+void ConfigRead(void) 
+{
+	if (flashRead((FLASH_ADRESS + FLASH_MAX) - (sizeof(oConfig) + 4)) == 0xFFFFFFFF) 
+	{
+		ConfigReset();
+		ConfigWrite();
+	}
+	flashReadBuffer((FLASH_ADRESS + FLASH_MAX) - (sizeof(oConfig) + 4), (uint32_t)&oConfig, sizeof(oConfig) - 4);
+}
+
+void confErase(void) 
+{
+	flashErase((FLASH_ADRESS + FLASH_MAX) - (sizeof(oConfig) + 4));
+}
+
