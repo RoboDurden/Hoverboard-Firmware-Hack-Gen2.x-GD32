@@ -162,11 +162,13 @@ void CalculateBLDC(void)
 		if (buzzerTimer % 100 == 0)
 			batteryVoltage = batteryVoltage * 0.999 + ((float)adc_buffer.v_batt * ADC_BATTERY_VOLT) * 0.001;
 	#endif
-		
+
+	/* not really needed, and low pass gets overwritten by DMA anyway
 	#ifdef REMOTE_ADC
 		adc_buffer.speed = adc_buffer.speed * 0.999 + adc_buffer.speed * 0.001;		// low pass
 		adc_buffer.steer = adc_buffer.steer * 0.999 + adc_buffer.steer * 0.001;
 	#endif
+	*/
 		
 	
   buzzerTimer++;	// also used to calculate battery voltage :-/

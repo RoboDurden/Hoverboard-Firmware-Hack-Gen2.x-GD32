@@ -214,7 +214,12 @@ void GPIO_init(void)
 		#ifdef CURRENT_DC
 			pinMode(CURRENT_DC, GPIO_MODE_ANALOG);
 		#endif
-		
+		#ifdef REMOTE_ADC
+			pinMode(PA2, GPIO_MODE_ANALOG);
+			pinMode(PA3, GPIO_MODE_ANALOG);
+		#endif
+
+
 		// Init self hold
 		#ifdef SELF_HOLD
 			pinMode(SELF_HOLD,	GPIO_MODE_OUTPUT);
@@ -362,7 +367,7 @@ void ADC_init(void)
 	dma_deinit(DMA_CH0);
 	
 	uint16_t iCountAdc = sizeof(adc_buffer)/2;	// array of uint16_t
-	iCountAdc = 3;
+	iCountAdc = 4;
 	
 	dma_init_struct_adc.direction = DMA_PERIPHERAL_TO_MEMORY;
 	dma_init_struct_adc.memory_addr = (uint32_t)&adc_buffer;
@@ -404,7 +409,7 @@ void ADC_init(void)
 		#endif
 		#ifdef REMOTE_ADC
 			adc_regular_channel_config(2, PIN_TO_CHANNEL(PA2), ADC_SAMPLETIME_13POINT5);
-			//adc_regular_channel_config(3, PIN_TO_CHANNEL(PA3), ADC_SAMPLETIME_13POINT5);
+			adc_regular_channel_config(3, PIN_TO_CHANNEL(PA3), ADC_SAMPLETIME_13POINT5);
 		#endif
 	#endif
 	
