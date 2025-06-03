@@ -18,14 +18,13 @@ void RemoteUpdate(void)
 	
 		speed = adc_buffer.speed/2 - 1024; 
 		speed = CLAMP(speed , -500, 500);
+
+		steer = adc_buffer.steer/2 - 1024; 
+		steer = CLAMP(-steer , -1000, 1000);
 	
 		//	DEBUG_LedSet(bSet,iColor) macro. iCol: 0=green, 1=organge, 2=red
 		int iLevel = adc_buffer.speed >> 10;	// 12 bit adc value
 		for (int i=0; i<3; i++){	DEBUG_LedSet(i < iLevel,i);	}
-	#else
-		SetEnable(SET);
-		SetPWM(-speed);
-		ResetTimeout();
 	#endif
 	
 	
