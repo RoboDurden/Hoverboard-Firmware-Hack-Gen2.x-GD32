@@ -675,6 +675,11 @@ void ConfigRead(void)
 		ConfigWrite();
 	}
 	flashReadBuffer((FLASH_ADRESS + FLASH_MAX) - (sizeof(oConfig) + 4), (uint32_t)&oConfig, sizeof(oConfig) - 4);
+	if (oConfig.iVersion != EEPROM_VERSION)
+	{
+		ConfigReset();
+		ConfigWrite();
+	}
 }
 
 void confErase(void) 
