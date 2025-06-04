@@ -646,7 +646,7 @@ void flashReadBuffer(uint32_t address, uint32_t pbuffer, uint8_t len) {
 
 #define EEPROM_VERSION 1
 //#define STATE_InverterOn  1
-ConfigData oConfig;	// = {EEPROM_VERSION,0,2048,2048,4096,0,4096,0};
+ConfigData oConfig;
 
 void ConfigReset(void) 
 {

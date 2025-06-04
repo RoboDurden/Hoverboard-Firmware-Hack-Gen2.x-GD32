@@ -176,7 +176,7 @@ void CalculateBLDC(void)
 	// Create square wave for buzzer
   if (buzzerFreq != 0 && (buzzerTimer / 5000) % (buzzerPattern + 1) == 0)
 	{
-    if (buzzerTimer % buzzerFreq == 0)
+    if (buzzerTimer % (buzzerFreq*(PWM_FREQ/2000)) == 0)
 		{
 			buzzerToggle = buzzerToggle == RESET ? SET : RESET; // toggle variable
 			digitalWrite(BUZZER,buzzerToggle);

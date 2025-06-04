@@ -25,18 +25,18 @@
 	#endif
 
 
-	#define MASTER		// uncomment for MASTER firmware.
+	//#define MASTER		// uncomment for MASTER firmware.
 	//#define SLAVE			// uncomment for SLAVE firmware.
-	//#define SINGLE			// uncomment if firmware is for single board and no master-slave dual board setup
+	#define SINGLE			// uncomment if firmware is for single board and no master-slave dual board setup
 
 	#if defined(MASTER) || defined(SINGLE)
 		
 		// choose only one 'remote' to control the motor
-		//#define REMOTE_DUMMY
+		#define REMOTE_DUMMY
 		//#define REMOTE_UART
 		//#define REMOTE_UARTBUS	// ESP32 as master and multiple boards as multiple slaves ESP.tx-Hovers.rx and ESP.rx-Hovers.tx
 		//#define REMOTE_CRSF		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/26
-		#define REMOTE_ADC	// speed is PA2=TX and steer is PA3=RX of the masterslave header. Get 3.3V from the flash header
+		//#define REMOTE_ADC	// speed is PA2=TX and steer is PA3=RX of the masterslave header. Get 3.3V from the flash header
 												// DO NOT use the 5V/15V pin of the masterslave header for the potentiometers !!!!!!!!!
 												// SLAVE board has to be connected to the additional UART header, but 5V/15V coming from the masters masterslave header
 												// for calibration, hold the on/off button until the startup melody restarts.
