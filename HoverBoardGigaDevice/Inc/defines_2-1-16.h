@@ -74,4 +74,7 @@
 	#define BUZZER	PB10
 #endif
 
-#define CHARGE_STATE	PF0
+#ifdef MASTER
+	// Charge state defines
+	#define CHARGE_STATE	PF0
+#endif

@@ -53,7 +53,7 @@
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>1</CreateHexFile>
-          <DebugInformation>0</DebugInformation>
+          <DebugInformation>1</DebugInformation>
           <BrowseInformation>1</BrowseInformation>
           <ListingPath>.\Listings\</ListingPath>
           <HexFormatSelection>1</HexFormatSelection>
@@ -395,6 +395,16 @@
               <FilePath>.\Src\bldc.c</FilePath>
             </File>
             <File>
+              <FileName>bldcBC.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\bldcBC.c</FilePath>
+            </File>
+            <File>
+              <FileName>bldcSINE.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\bldcSINE.c</FilePath>
+            </File>
+            <File>
               <FileName>setup.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\setup.c</FilePath>
@@ -463,6 +473,16 @@
               <FileName>bldc.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\bldc.h</FilePath>
+            </File>
+            <File>
+              <FileName>bldcBC.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\bldcBC.h</FilePath>
+            </File>
+            <File>
+              <FileName>bldcSINE.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\bldcSINE.h</FilePath>
             </File>
             <File>
               <FileName>config.h</FileName>
@@ -1053,6 +1073,16 @@
               <FilePath>.\Src\bldc.c</FilePath>
             </File>
             <File>
+              <FileName>bldcBC.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\bldcBC.c</FilePath>
+            </File>
+            <File>
+              <FileName>bldcSINE.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\bldcSINE.c</FilePath>
+            </File>
+            <File>
               <FileName>setup.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\setup.c</FilePath>
@@ -1121,6 +1151,16 @@
               <FileName>bldc.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\bldc.h</FilePath>
+            </File>
+            <File>
+              <FileName>bldcBC.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\bldcBC.h</FilePath>
+            </File>
+            <File>
+              <FileName>bldcSINE.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\bldcSINE.h</FilePath>
             </File>
             <File>
               <FileName>config.h</FileName>
@@ -1711,6 +1751,16 @@
               <FilePath>.\Src\bldc.c</FilePath>
             </File>
             <File>
+              <FileName>bldcBC.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\bldcBC.c</FilePath>
+            </File>
+            <File>
+              <FileName>bldcSINE.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\bldcSINE.c</FilePath>
+            </File>
+            <File>
               <FileName>setup.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\setup.c</FilePath>
@@ -1779,6 +1829,16 @@
               <FileName>bldc.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\bldc.h</FilePath>
+            </File>
+            <File>
+              <FileName>bldcBC.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\bldcBC.h</FilePath>
+            </File>
+            <File>
+              <FileName>bldcSINE.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\bldcSINE.h</FilePath>
             </File>
             <File>
               <FileName>config.h</FileName>
@@ -2369,6 +2429,16 @@
               <FilePath>.\Src\bldc.c</FilePath>
             </File>
             <File>
+              <FileName>bldcBC.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\bldcBC.c</FilePath>
+            </File>
+            <File>
+              <FileName>bldcSINE.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\bldcSINE.c</FilePath>
+            </File>
+            <File>
               <FileName>setup.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\setup.c</FilePath>
@@ -2437,6 +2507,16 @@
               <FileName>bldc.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\bldc.h</FilePath>
+            </File>
+            <File>
+              <FileName>bldcBC.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\bldcBC.h</FilePath>
+            </File>
+            <File>
+              <FileName>bldcSINE.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\bldcSINE.h</FilePath>
             </File>
             <File>
               <FileName>config.h</FileName>
@@ -2664,6 +2744,12 @@
           <targetInfo name="GD32E230"/>
         </targetInfos>
       </component>
+      <component Cclass="Device" Cgroup="GD32E23x_StdPeripherals" Csub="EXTI" Cvendor="GigaDevice" Cversion="1.0.0" condition="GD32E23x STDPERIPHERALS RCU">
+        <package name="GD32E23x_DFP" schemaVersion="1.3" url="https://gd32mcu.com/data/documents/pack/" vendor="GigaDevice" version="1.0.2"/>
+        <targetInfos>
+          <targetInfo name="GD32E230"/>
+        </targetInfos>
+      </component>
       <component Cclass="Device" Cgroup="GD32E23x_StdPeripherals" Csub="FMC" Cvendor="GigaDevice" Cversion="1.0.0" condition="GD32E23x STDPERIPHERALS RCU">
         <package name="GD32E23x_DFP" schemaVersion="1.3" url="https://gd32mcu.com/data/documents/pack/" vendor="GigaDevice" version="1.0.2"/>
         <targetInfos>
@@ -2821,6 +2907,12 @@
         </targetInfos>
       </component>
       <component Cclass="Device" Cgroup="GD32F1x0_StdPeripherals" Csub="DMA" Cvendor="GigaDevice" Cversion="3.2.0" condition="GD32F1x0 STDPERIPHERALS RCU">
+        <package name="GD32F1x0_DFP" schemaVersion="1.1" url="https://gd32mcu.com/data/documents/pack/" vendor="GigaDevice" version="3.2.1"/>
+        <targetInfos>
+          <targetInfo name="GD32F130"/>
+        </targetInfos>
+      </component>
+      <component Cclass="Device" Cgroup="GD32F1x0_StdPeripherals" Csub="EXTI" Cvendor="GigaDevice" Cversion="3.2.0" condition="GD32F1x0 STDPERIPHERALS RCU">
         <package name="GD32F1x0_DFP" schemaVersion="1.1" url="https://gd32mcu.com/data/documents/pack/" vendor="GigaDevice" version="3.2.1"/>
         <targetInfos>
           <targetInfo name="GD32F130"/>
@@ -3031,6 +3123,14 @@
       <file attr="config" category="source" name="Device\Firmware\Peripherals\src\gd32e23x_dma.c" version="1.0.0">
         <instance index="0">RTE\Device\GD32E230C8\gd32e23x_dma.c</instance>
         <component Cclass="Device" Cgroup="GD32E23x_StdPeripherals" Csub="DMA" Cvendor="GigaDevice" Cversion="1.0.0" condition="GD32E23x STDPERIPHERALS RCU"/>
+        <package name="GD32E23x_DFP" schemaVersion="1.3" url="https://gd32mcu.com/data/documents/pack/" vendor="GigaDevice" version="1.0.2"/>
+        <targetInfos>
+          <targetInfo name="GD32E230"/>
+        </targetInfos>
+      </file>
+      <file attr="config" category="source" name="Device\Firmware\Peripherals\src\gd32e23x_exti.c" version="1.0.0">
+        <instance index="0">RTE\Device\GD32E230C8\gd32e23x_exti.c</instance>
+        <component Cclass="Device" Cgroup="GD32E23x_StdPeripherals" Csub="EXTI" Cvendor="GigaDevice" Cversion="1.0.0" condition="GD32E23x STDPERIPHERALS RCU"/>
         <package name="GD32E23x_DFP" schemaVersion="1.3" url="https://gd32mcu.com/data/documents/pack/" vendor="GigaDevice" version="1.0.2"/>
         <targetInfos>
           <targetInfo name="GD32E230"/>
@@ -3473,6 +3573,14 @@
         <component Cclass="Device" Cgroup="GD32F1x0_EVAL" Cvendor="GigaDevice" Cversion="3.1.0" condition="GD32F1x0 STDPERIPHERALS EVAL"/>
         <package name="GD32F1x0_DFP" schemaVersion="1.1" url="http://gd32mcu.21ic.com/data/documents/yingyongruanjian/" vendor="GigaDevice" version="3.1.0"/>
         <targetInfos/>
+      </file>
+      <file attr="config" category="source" name="Device\Firmware\Peripherals\src\gd32f1x0_exti.c" version="3.2.0">
+        <instance index="0">RTE\Device\GD32F130C8\gd32f1x0_exti.c</instance>
+        <component Cclass="Device" Cgroup="GD32F1x0_StdPeripherals" Csub="EXTI" Cvendor="GigaDevice" Cversion="3.2.0" condition="GD32F1x0 STDPERIPHERALS RCU"/>
+        <package name="GD32F1x0_DFP" schemaVersion="1.1" url="https://gd32mcu.com/data/documents/pack/" vendor="GigaDevice" version="3.2.1"/>
+        <targetInfos>
+          <targetInfo name="GD32F130"/>
+        </targetInfos>
       </file>
       <file attr="config" category="source" name="Device\Firmware\Peripherals\src\gd32f1x0_fmc.c" version="3.2.0">
         <instance index="0">RTE\Device\GD32F130C8\gd32f1x0_fmc.c</instance>

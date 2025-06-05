@@ -1,7 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define REMOTE_AUTODETECT
+//#define REMOTE_AUTODETECT
 				// ONLY test with 1-2A constant current power supply !!!! The charger with 1.5A might also do :-)
 				// will drive the motor without hall input to detect the hall pins..
 
@@ -14,7 +14,7 @@
 	// and then set your layout below
 	// Gen2-target-layout is included in defines.h
 	#ifdef GD32F130		// TARGET = 1
-		#define LAYOUT 11
+		#define LAYOUT 1
 		#define LAYOUT_SUB 1	// Layout 2.1.7 exisits as 2.1.7.0 and 2.1.7.1
 	#elif GD32F103		// TARGET = 2
 		#define LAYOUT 1
@@ -25,9 +25,9 @@
 	#endif
 
 
-	//#define MASTER		// uncomment for MASTER firmware.
+	#define MASTER		// uncomment for MASTER firmware.
 	//#define SLAVE			// uncomment for SLAVE firmware.
-	#define SINGLE			// uncomment if firmware is for single board and no master-slave dual board setup
+	//#define SINGLE			// uncomment if firmware is for single board and no master-slave dual board setup
 
 	#if defined(MASTER) || defined(SINGLE)
 		
@@ -49,7 +49,7 @@
 			#define SLAVE_ID	0		// must be unique for all hoverboards connected to the bus
 		#endif
 		#ifdef REMOTE_DUMMY
-			#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
+			//#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
 		#else
 			//#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
 		#endif
@@ -75,6 +75,9 @@
 																		//	0 is usually PB6/PB7 and the empty header close to the flash-header
 	#endif
 	
+	#define BLDC_BC			// old block commutation bldc control
+	//#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden
+	
 	#define BAT_CELLS         	10        // battery number of cells. Normal Hoverboard battery: 10s
 	#define DEBUG_LED		// uncomment to activate DEBUG_LedSet(bSet,iColor) macro. iCol: 0=green, 1=organge, 2=red
 	
@@ -91,10 +94,10 @@
 #endif
 
 
-#define BLDC_TIMER_PERIOD       (72000000u / 2u / PWM_FREQ) // = 2250
 #define DC_CUR_LIMIT     		15        // Motor DC current limit in amps
 #define DEAD_TIME        		60        // PWM deadtime (60 = 1�s, measured by oscilloscope)
 #define PWM_FREQ         		16000     // PWM frequency in Hz
+
 
 #define FILTER_SHIFT 12 						// Low-pass filter for pwm, rank k=12
 

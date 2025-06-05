@@ -32,7 +32,14 @@
 #define BLDC_H
 
 //#include "gd32f1x0.h"
-#include "../Inc/config.h"
+//#include "../Inc/config.h"
+#include "../Inc/defines.h"
+
+// Internal constants
+#define BLDC_TIMER_MID_VALUE  (int16_t)(BLDC_TIMER_PERIOD / 2)   // = 1125
+#define BLDC_TIMER_MIN_VALUE  (int16_t)10
+#define BLDC_TIMER_MAX_VALUE  (BLDC_TIMER_PERIOD - 10) // = 2240
+
 
 //----------------------------------------------------------------------------
 // Set motor enable
@@ -48,5 +55,19 @@ void SetPWM(int16_t setPwm);
 // Calculation-Routine for BLDC => calculates with 16kHz
 //----------------------------------------------------------------------------
 void CalculateBLDC(void);
+
+// virtual method to be implemented by bldcBC.c and bldcSINE.c
+void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g);
+
+// virtual method call in the beginning of main()
+void InitBldc();
+
+#if defined(BLDC_BC)
+	#include "../Inc/bldcBC.h"
+#elif defined(BLDC_SINE)
+	#include "../Inc/bldcSINE.h"
+#endif
+
+
 
 #endif

@@ -1,11 +1,14 @@
 
-#include "../Inc/defines.h"
+//#include "../Inc/defines.h"
+#include "../Inc/bldc.h"
 #include <stdio.h>
 
+/*
 // Internal constants
 static const int16_t BLDC_TIMER_MID_VALUE = BLDC_TIMER_PERIOD / 2;   // = 1125
 static const int16_t BLDC_TIMER_MIN_VALUE = 10;
 static const uint16_t BLDC_TIMER_MAX_VALUE = BLDC_TIMER_PERIOD - 10; // = 2240
+*/
 
 // Global variables for voltage and current
 float batteryVoltage = BAT_CELLS * 3.6;
@@ -26,7 +29,8 @@ adc_buf_t adc_buffer;
 uint8_t hall_a;
 uint8_t hall_b;
 uint8_t hall_c;
-uint8_t hall;
+volatile uint8_t hall = 0;        // Global hall state
+
 uint8_t pos;
 uint8_t lastPos;
 int16_t bldc_outputFilterPwm = 0;
@@ -68,6 +72,8 @@ const uint8_t hall_to_pos[8] =
   6, // hall position [6] (SA=0, SB=1, SC=1) -> PWM-position 6
   0, // hall position [-] - No function (access from 1-6) 
 };
+
+
 
 //----------------------------------------------------------------------------
 // Block PWM calculation based on position
@@ -196,10 +202,10 @@ void CalculateBLDC(void)
 	#endif
 	
   // Disable PWM when current limit is reached (current chopping), enable is not set or timeout is reached
-	if (currentDC > DC_CUR_LIMIT || bldc_enable == RESET || timedOut == SET)
+	if (currentDC > DC_CUR_LIMIT  || bldc_enable == RESET || timedOut == SET)	//		
 	{
 		timer_automatic_output_disable(TIMER_BLDC);		
-		//DEBUG_LedSet(SET,0)
+		return;	// added by deepseek
   }
 	else
 	{
@@ -209,7 +215,7 @@ void CalculateBLDC(void)
 
 	//if (timedOut == SET)	DEBUG_LedSet((steerCounter%2) < 1,0)		
 	
-	// Read hall sensors
+	// Read hall sensors (needed at startup as no hall interrupt has fired yet
 	hall_a = digitalRead(HALL_A);
 	hall_b = digitalRead(HALL_B);
 	hall_c = digitalRead(HALL_C);
@@ -241,6 +247,14 @@ void CalculateBLDC(void)
 	#else
 		pos = hall_to_pos[hall];
 	#endif
+// Add this check before setting PWM:
+	if (pos == 0) 	// 0b000 and 0b111 should never happen with the three hall sensors
+	{
+			// Invalid position - disable PWM
+			timer_automatic_output_disable(TIMER_BLDC);
+			DEBUG_LedSet(SET,2);	// macro. iCol: 0=green, 1=organge, 2=red
+			return;
+	}
 	
 		
 	// Calculate low-pass filter for pwm value
@@ -248,7 +262,8 @@ void CalculateBLDC(void)
 	bldc_outputFilterPwm = filter_reg >> FILTER_SHIFT;
 
 	// Update PWM channels based on position y(ellow), b(lue), g(reen)
-	blockPWM(bldc_outputFilterPwm, pos, &y, &b, &g);
+	//blockPWM(bldc_outputFilterPwm, pos, &y, &b, &g);
+	bldc_get_pwm(bldc_outputFilterPwm, pos, &y, &b, &g);
 
 	// Set PWM output (pwm_res/2 is the mean value, setvalue has to be between 10 and pwm_res-10)
 	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_G, CLAMP(g + BLDC_TIMER_MID_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));

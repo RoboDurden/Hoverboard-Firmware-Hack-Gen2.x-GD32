@@ -76,7 +76,6 @@ void TIMEOUT_IrqHandler(void)
 {	
 	if (timeoutCounter_ms > TIMEOUT_MS)
 	{
-		
 		// First timeout reset all process values
 		if (timedOut == RESET)	// robo: had been RESET = bug ?
 		{
@@ -88,13 +87,12 @@ void TIMEOUT_IrqHandler(void)
 			SetPWM(0);
 #endif
 		}
-		
-		timedOut = SET;		// robo: had been SET = bug ?
+		timedOut = SET;
 		
 	}
 	else
 	{
-		timedOut = RESET;		// robo: had been RESET = bug ?
+		timedOut = RESET;
 		timeoutCounter_ms++;
 	}
 
@@ -139,11 +137,18 @@ extern uint32_t steerCounter;								// Steer counter for setting update rate
 // Is called, when the ADC scan sequence is finished
 // -> ADC is triggered from timer0-update-interrupt -> every 31,25us
 //----------------------------------------------------------------------------
+volatile uint8_t bCalculateBLDC = 0;
+
 void DMA_Channel0_IRQHandler(void)
 {
 	//DEBUG_LedSet(	(steerCounter%20) < 5	,0)	
 	// Calculate motor PWMs
-	CalculateBLDC();
+	if (!bCalculateBLDC)
+	{	
+		bCalculateBLDC = 1;
+		CalculateBLDC();
+		bCalculateBLDC = 0;
+	}
 
 	/* outdated
 	#ifdef SLAVE

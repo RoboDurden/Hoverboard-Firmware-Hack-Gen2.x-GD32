@@ -79,5 +79,8 @@
 	#define BUZZER PB9
 #endif
 
-#define CHARGE_STATE PC15
+#ifdef MASTER
+	// Charge state defines CORRECT
+	#define CHARGE_STATE PC15
+#endif
 

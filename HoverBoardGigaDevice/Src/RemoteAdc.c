@@ -87,7 +87,9 @@ void RemoteUpdate(void)
 		
 			//	DEBUG_LedSet(bSet,iColor) macro. iCol: 0=green, 1=organge, 2=red
 			int iLevel = adc_buffer.speed >> 10;	// 12 bit adc value
-			for (int i=0; i<3; i++){	DEBUG_LedSet(i < iLevel,i);	}
+			#ifdef DEBUG_LED
+				for (int i=0; i<3; i++){	DEBUG_LedSet(i < iLevel,i);	}
+			#endif
 			return;
 		}
 

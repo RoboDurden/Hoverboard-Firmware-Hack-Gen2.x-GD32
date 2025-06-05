@@ -83,7 +83,10 @@
 	#define BUZZER	PF0		// robo from pin tracing photo
 #endif
 
-//#define CHARGE_STATE	TODO_PIN
+#ifdef MASTER
+	// Charge state defines
+	//#define CHARGE_STATE	TODO_PIN
+#endif
 
 
 // photo diodes / light barriers on the backside

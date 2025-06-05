@@ -158,7 +158,7 @@ void RemoteCallback(void)
 	{
 		if (aReceiveBuffer[2] == SLAVE_ID)
 		{
-			DEBUG_LedSet(SET,0)
+			//DEBUG_LedSet(SET,0)
 			iTimeLastRx = millis();
 			
 			switch (iRxDataType)

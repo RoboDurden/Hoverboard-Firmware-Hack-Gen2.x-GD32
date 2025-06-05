@@ -41,9 +41,6 @@
 #define HALL_B	PC14
 #define HALL_C	PF1
 
-
-
-
 // GD32F130 USART0 TX/RX:	(PA9/PA10)AF1	, (PB6/PB7)AF0 , 	(PA2/PA3)AF1 , (PA14/PA15)AF1 GD32F130x4 only!
 #define USART0_TX	PB6
 #define USART0_RX	PB7
@@ -76,5 +73,6 @@
 	#define BUZZER	PB10
 #endif
 
-#define CHARGE_STATE	PF0
+//uncommented because testing with the charger as the battery #define CHARGE_STATE	PF0
+
 

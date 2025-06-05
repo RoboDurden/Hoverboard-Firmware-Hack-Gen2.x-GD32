@@ -15,6 +15,7 @@
 	#define BAT_CELLS         	6        // battery number of cells. Normal Hoverboard battery: 10s
 	#define SPEED_COEFFICIENT   -1
 	#define STEER_COEFFICIENT   1
+	#define BLDC_BC
 	
 #else
 	#define STRINGIZE_AUX(a) #a
@@ -40,6 +41,14 @@
 	#undef SELF_HOLD
 #endif
 
+#ifdef BLDC_SINE
+	#if PWM_FREQ > 12000
+		#undef PWM_FREQ
+		#define PWM_FREQ	12000		// 16 kHz seems to be to fast for the longer CalculateBLDC code execution and the 3 hall interrupts
+	#endif
+#endif
+
+#define BLDC_TIMER_PERIOD       (72000000u / 2u / PWM_FREQ) // = 2250
 
 #ifndef TIMER_BLDC	// these defines should be equal for all Gen2 boards as they only have on bldc capable TIMER = TIMER0
 	#define TIMER_BLDC 		TIMER0
@@ -81,23 +90,9 @@
 	#endif
 #endif
 
-
-#ifdef USART1_TX
-	#ifndef USART0_TX	// only one uart available, this must be REMOTE_USART
-		#undef MASTERSLAVE_USART
-		#undef REMOTE_USART
-		#define REMOTE_USART 1
-	#endif
-#else
-
-	#ifdef USART0_TX	// only one uart available, this must be REMOTE_USART
-		#undef MASTERSLAVE_USART
-		#undef REMOTE_USART
-		#define REMOTE_USART 0
-	#else	// no uart at all
-		#if (defined(REMOTE_UART) || defined(REMOTE_UARTBUS) || defined(REMOTE_CRSF))
-			#error "no uart in dfeins_2-x-y.h, please choose REMOTE_DUMMY or REMOTE_ADC"
-		#endif
+#if defined(MASTERSLAVE_USART) && defined(REMOTE_USART)
+	#if !defined(USART0_TX) || !defined(USART1_TX)
+		error"you board only has one USART. Choose between MASTERSLAVE_USART and REMOTE_USART"
 	#endif
 #endif
 

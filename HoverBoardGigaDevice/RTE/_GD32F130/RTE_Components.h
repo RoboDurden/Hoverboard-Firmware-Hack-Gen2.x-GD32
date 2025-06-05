@@ -20,6 +20,8 @@
 #define RTE_DEVICE_STDPERIPHERALS_ADC
 /* GigaDevice::Device:GD32F1x0_StdPeripherals:DMA:3.2.0 */
 #define RTE_DEVICE_STDPERIPHERALS_DMA
+/* GigaDevice::Device:GD32F1x0_StdPeripherals:EXTI:3.2.0 */
+#define RTE_DEVICE_STDPERIPHERALS_EXTI
 /* GigaDevice::Device:GD32F1x0_StdPeripherals:FMC:3.2.0 */
 #define RTE_DEVICE_STDPERIPHERALS_FMC
 /* GigaDevice::Device:GD32F1x0_StdPeripherals:FWDGT:3.2.0 */

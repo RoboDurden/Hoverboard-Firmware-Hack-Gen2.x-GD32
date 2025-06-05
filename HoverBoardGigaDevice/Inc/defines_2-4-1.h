@@ -97,7 +97,10 @@ typedef enum {
 	#define BUZZER	PB10
 #endif
 
-#define CHARGE_STATE	PF0
+#ifdef MASTER
+	// Charge state defines
+	#define CHARGE_STATE	PF0
+#endif
 
 // Debug pin defines -  no longer has any function in code !
 //#define DEBUG_PIN PB4

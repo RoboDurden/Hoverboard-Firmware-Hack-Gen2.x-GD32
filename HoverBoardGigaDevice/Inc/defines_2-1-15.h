@@ -66,5 +66,8 @@
 	#define BUZZER	PC14	// Confirmed AndyShmandy 12/19/2023
 #endif
 
-#define CHARGE_STATE	PF0	// todo
+#ifdef MASTER
+	// Charge state defines
+	#define CHARGE_STATE	PF0	// todo
+#endif
 

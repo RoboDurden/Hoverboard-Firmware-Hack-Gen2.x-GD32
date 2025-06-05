@@ -262,6 +262,7 @@ void BeepsBackwards(FlagStatus beepsBackwards);
 	FlagStatus enable = RESET;
 		int16_t pwmSlave = 0;
 
+	
 
 uint32_t iTimeNextLoop = 0;
 //----------------------------------------------------------------------------
@@ -311,12 +312,13 @@ int main (void)
 			digitalWrite(UPPER_LED,SET);
 		#endif
 
-		
 		#ifdef SELF_HOLD
 			// Activate self hold direct after GPIO-init
 			digitalWrite(SELF_HOLD,SET);
 		#endif
 	#endif
+
+	InitBldc();		// virtual function implemented by bldcBC.c and bldcSINE.c
 	
 	#ifdef USART0_BAUD
 			USART0_Init(USART0_BAUD);
@@ -330,6 +332,16 @@ int main (void)
 	
 	// Init PWM
 	PWM_init();
+
+/*
+	// added by deepseek: Apply fixed PWM pattern to lock rotor to known position
+	does heavily freeze the motor :-(
+	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_G, BLDC_TIMER_MID_VALUE);
+	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_B, BLDC_TIMER_MID_VALUE);
+	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, 0);
+	uint32_t iTimeWait = millis() + 500;
+	while (millis()<iTimeWait){	fwdgt_counter_reload();};
+*/
 	
 	// Device has 1,6 seconds to do all the initialization
 	// afterwards watchdog will be fired
@@ -369,8 +381,7 @@ int main (void)
 			if (millis()-iTimePushed > 2000)
 			{
 				iConfigMode = 1;
-				BUZZER_MelodyDown();
-				//BuzzerSet(5,8)	// (iFrequency, iPattern)
+				BuzzerSet(8,2);	// (iFrequency, iPattern)
 			}
 		} 
 		Delay(10); //debounce to prevent immediate ShutOff (100 is to much with a switch instead of a push button)
@@ -522,6 +533,8 @@ int main (void)
 		//#endif
 		//enable = SET;		// robo testing
 		
+		//DEBUG_LedSet(enable,0);	// macro. iCol: 0=green, 1=organge, 2=red
+			
 		// Enable channel output
 		SetEnable(enable);
 

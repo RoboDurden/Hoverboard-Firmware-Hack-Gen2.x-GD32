@@ -156,6 +156,11 @@
 	
 #else
 	#include "gd32f1x0.h"
+	#include "gd32f1x0_gpio.h"
+	#include "gd32f1x0_exti.h"
+	#include "gd32f1x0_rcu.h"
+
+	
 	
 	#define TARGET_nvic_irq_enable(a, b, c){nvic_irq_enable(a, b, c);}
 	#define TARGET_nvic_priority_group_set(a){nvic_priority_group_set(a);}
@@ -224,7 +229,12 @@
 
 #endif	
 	
-
+#define PB1i	17	// 0x10 + 1
+#define PB2i	18	// 0x10 + 2
+#define PB11i	27	// 0x10 + 11
+#define PC14i	62	// 0x30 + 14
+#define PF1i	81		// 0x50 + 1
+	
 	#define PA15	( (uint32_t)GPIOA | 15 )
 	#define PA14	( (uint32_t)GPIOA | 14 )
 	#define PA13	( (uint32_t)GPIOA | 13 )
