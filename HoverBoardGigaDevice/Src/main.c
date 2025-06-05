@@ -507,12 +507,11 @@ int main (void)
 			}
 		#endif	
 
-		#ifdef CHARGE_STATE_PIN
-			// Read charge state
+		#if defined(CHARGE_STATE) && defined(MASTER_OR_SINGLE)
 			chargeStateLowActive = digitalRead(CHARGE_STATE);
-			//chargeStateLowActive = gpio_input_bit_get(CHARGE_STATE_PORT, CHARGE_STATE_PIN);
-			// Enable is depending on charger is connected or not
 			enable = chargeStateLowActive;
+		#else
+			enable = SET;			
 		#endif
 		
 		if (wState & STATE_Disable)	enable = RESET;

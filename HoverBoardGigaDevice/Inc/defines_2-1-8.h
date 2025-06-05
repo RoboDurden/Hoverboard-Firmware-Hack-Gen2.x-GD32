@@ -93,8 +93,5 @@
 	#define BUZZER	PF0
 #endif
 
-#ifdef MASTER
-	// Charge state defines
-	//#define CHARGE_STATE TODO_PIN
-#endif
+//#define CHARGE_STATE TODO_PIN
 

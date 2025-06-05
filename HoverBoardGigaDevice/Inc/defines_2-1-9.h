@@ -86,14 +86,7 @@
 	//#define BUZZER	TODO_PIN
 #endif
 
-#ifdef MASTER
-
-	// Charge state defines
-	// This seems to be a digital input that hast to be high in order to enable the motors. 
-	// main.c:381: chargeStateLowActive = gpio_input_bit_get(CHARGE_STATE_PORT, CHARGE_STATE);
-	// If not found it should be okay to simply comment this line because chargeStateLowActive in initialised as set = true
-	//#define CHARGE_STATE TODO_PIN
-#endif
+//#define CHARGE_STATE TODO_PIN
 
 // photo diodes / light barriers on the backside
 #define PHOTO_L		TODO_PIN

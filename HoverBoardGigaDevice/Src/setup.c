@@ -241,10 +241,8 @@ void GPIO_init(void)
 				pinMode(BUTTON,	GPIO_MODE_INPUT);
 			#endif
 			
-			#ifdef CHARGE_STATE_PIN
-				// Init charge state
+			#if defined(CHARGE_STATE) && defined(MASTER_OR_SINGLE)
 				pinModePull(CHARGE_STATE,GPIO_MODE_INPUT, GPIO_PUPD_PULLUP);
-				//gpio_mode_set(CHARGE_STATE_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, CHARGE_STATE_PIN);
 			#endif
 		#endif
 	#endif // 	#ifndef REMOTE_AUTODETECT
