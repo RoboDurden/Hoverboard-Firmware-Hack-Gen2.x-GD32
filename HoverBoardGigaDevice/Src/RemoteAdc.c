@@ -45,6 +45,8 @@ void 	_NextCase()
 
 void RemoteUpdate(void)
 {
+	ResetTimeout();	// Reset the pwm timout to avoid stopping motors	
+	
 	#ifdef MASTER_OR_SINGLE
 	
 		if (!iConfigMode)
@@ -88,7 +90,7 @@ void RemoteUpdate(void)
 			//	DEBUG_LedSet(bSet,iColor) macro. iCol: 0=green, 1=organge, 2=red
 			int iLevel = adc_buffer.speed >> 10;	// 12 bit adc value
 			#ifdef DEBUG_LED
-				for (int i=0; i<3; i++){	DEBUG_LedSet(i < iLevel,i);	}
+//				for (int i=0; i<3; i++){	DEBUG_LedSet(i < iLevel,i);	}
 			#endif
 			return;
 		}
@@ -162,8 +164,7 @@ void RemoteUpdate(void)
 			break;
 		}
 	#endif
-	
-	
+		
 }
 
 void RemoteCallback(void){};

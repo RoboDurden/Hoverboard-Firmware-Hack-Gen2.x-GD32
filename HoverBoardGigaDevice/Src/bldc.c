@@ -202,9 +202,11 @@ void CalculateBLDC(void)
 	#endif
 	
   // Disable PWM when current limit is reached (current chopping), enable is not set or timeout is reached
-	if (currentDC > DC_CUR_LIMIT  || bldc_enable == RESET || timedOut == SET)	//		
+	if (currentDC > DC_CUR_LIMIT  || bldc_enable == RESET  || timedOut == SET)	//		
 	{
+
 		timer_automatic_output_disable(TIMER_BLDC);		
+		//DEBUG_LedSet(SET,2);	// macro. iCol: 0=green, 1=organge, 2=red
 		return;	// added by deepseek
   }
 	else
@@ -252,7 +254,7 @@ void CalculateBLDC(void)
 	{
 			// Invalid position - disable PWM
 			timer_automatic_output_disable(TIMER_BLDC);
-			DEBUG_LedSet(SET,2);	// macro. iCol: 0=green, 1=organge, 2=red
+			DEBUG_LedSet(SET,1);	// macro. iCol: 0=green, 1=organge, 2=red
 			return;
 	}
 	
@@ -263,6 +265,10 @@ void CalculateBLDC(void)
 
 	// Update PWM channels based on position y(ellow), b(lue), g(reen)
 	//blockPWM(bldc_outputFilterPwm, pos, &y, &b, &g);
+	
+	DEBUG_LedSet(bldc_outputFilterPwm > 300,1);	// macro. iCol: 0=green, 1=organge, 2=red	
+	DEBUG_LedSet(bldc_outputFilterPwm < 300,2);	// macro. iCol: 0=green, 1=organge, 2=red	
+	
 	bldc_get_pwm(bldc_outputFilterPwm, pos, &y, &b, &g);
 
 	// Set PWM output (pwm_res/2 is the mean value, setvalue has to be between 10 and pwm_res-10)

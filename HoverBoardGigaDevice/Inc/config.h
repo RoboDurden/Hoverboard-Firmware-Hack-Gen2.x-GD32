@@ -14,7 +14,7 @@
 	// and then set your layout below
 	// Gen2-target-layout is included in defines.h
 	#ifdef GD32F130		// TARGET = 1
-		#define LAYOUT 1
+		#define LAYOUT 11
 		#define LAYOUT_SUB 1	// Layout 2.1.7 exisits as 2.1.7.0 and 2.1.7.1
 	#elif GD32F103		// TARGET = 2
 		#define LAYOUT 1
@@ -32,11 +32,11 @@
 	#if defined(MASTER) || defined(SINGLE)
 		
 		// choose only one 'remote' to control the motor
-		#define REMOTE_DUMMY
+		//#define REMOTE_DUMMY
 		//#define REMOTE_UART
 		//#define REMOTE_UARTBUS	// ESP32 as master and multiple boards as multiple slaves ESP.tx-Hovers.rx and ESP.rx-Hovers.tx
 		//#define REMOTE_CRSF		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/26
-		//#define REMOTE_ADC	// speed is PA2=TX and steer is PA3=RX of the masterslave header. Get 3.3V from the flash header
+		#define REMOTE_ADC	// speed is PA2=TX and steer is PA3=RX of the masterslave header. Get 3.3V from the flash header
 												// DO NOT use the 5V/15V pin of the masterslave header for the potentiometers !!!!!!!!!
 												// SLAVE board has to be connected to the additional UART header, but 5V/15V coming from the masters masterslave header
 												// for calibration, hold the on/off button until the startup melody restarts.
@@ -75,8 +75,8 @@
 																		//	0 is usually PB6/PB7 and the empty header close to the flash-header
 	#endif
 	
-	#define BLDC_BC			// old block commutation bldc control
-	//#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden
+	//#define BLDC_BC			// old block commutation bldc control
+	#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden
 	
 	#define BAT_CELLS         	10        // battery number of cells. Normal Hoverboard battery: 10s
 	#define DEBUG_LED		// uncomment to activate DEBUG_LedSet(bSet,iColor) macro. iCol: 0=green, 1=organge, 2=red

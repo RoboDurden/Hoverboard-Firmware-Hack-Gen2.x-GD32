@@ -146,7 +146,7 @@ void EXTI4_15_IRQHandler(void)
 
 void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) 	// pos is not used but hall_to_sector mapping :-/
 {
-	pwmGo = pwm;
+	pwmGo = -pwm;
 	uint32_t safe_hall_time_last,safe_hall_time_step;
 	do	// Get current sector (0-5) and other interrupt set data
 	{
@@ -161,7 +161,7 @@ void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) 	// pos is not used 
 	
 	angle_deg = sector * 60.0f;	// Calculate base angle for this sector (0-60° range)
 	angle_deg_add = 0;
-	if (ABS(pwm) > 100)
+	if (ABS(pwmGo) > 100)
 	{
 		if (sector != sectorLast) 
 		{
@@ -189,9 +189,9 @@ void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) 	// pos is not used 
 	uint16_t angle_idx_c = (angle_idx + PHASE_C_OFFSET) % 360;
 
 	// Apply sine table (Q15 multiplication)
-	*y = (pwm * (int32_t)sine_table[angle_idx]) >> 15;
-	*b = (pwm * (int32_t)sine_table[angle_idx_b]) >> 15;
-	*g = (pwm * (int32_t)sine_table[angle_idx_c]) >> 15;
+	*y = (pwmGo * (int32_t)sine_table[angle_idx]) >> 15;
+	*b = (pwmGo * (int32_t)sine_table[angle_idx_b]) >> 15;
+	*g = (pwmGo * (int32_t)sine_table[angle_idx_c]) >> 15;
 }
 
 

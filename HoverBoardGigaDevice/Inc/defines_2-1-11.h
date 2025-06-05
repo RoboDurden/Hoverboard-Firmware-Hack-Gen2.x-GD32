@@ -9,8 +9,8 @@
 
 // LED defines
 #define LED_GREEN PA15
-#define LED_ORANGE PA12
-#define LED_RED PB3
+#define LED_ORANGE PA3
+#define LED_RED PA12
 
 #define UPPER_LED	PA1
 #define LOWER_LED	PA0
@@ -76,5 +76,5 @@
 	#define BUZZER	PB10
 #endif
 
-#define CHARGE_STATE	PF0
+//#define CHARGE_STATE	PF0
 

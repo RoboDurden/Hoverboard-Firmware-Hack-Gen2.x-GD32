@@ -88,7 +88,6 @@ void TIMEOUT_IrqHandler(void)
 #endif
 		}
 		timedOut = SET;
-		
 	}
 	else
 	{

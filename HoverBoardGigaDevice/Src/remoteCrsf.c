@@ -148,6 +148,7 @@ void RemoteCallback(void)	// Get Crsf Packet
 				memcpy(crsfData,inBuffer,CRSF_PACKET_SIZE);
 				failsafe_status = CRSF_SIGNAL_OK;
 				iTimeLast = millis();
+				ResetTimeout();	// Reset the pwm timout to avoid stopping motors	
 			}
 			else
 			{

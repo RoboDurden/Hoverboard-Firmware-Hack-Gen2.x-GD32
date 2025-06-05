@@ -21,8 +21,7 @@ void RemoteUpdate(void)
 		SetPWM(-speed);
 	#endif
 	
-	ResetTimeout();
-	
+	ResetTimeout();	// Reset the pwm timout to avoid stopping motors	
 }
 
 void RemoteCallback(void){};
