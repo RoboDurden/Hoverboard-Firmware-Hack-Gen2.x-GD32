@@ -61,10 +61,7 @@
 #define USART1_TX		PA2
 #define USART1_RX		PA3
 
-#ifdef MASTER
-	// Charge state defines
-	#define CHARGE_STATE	PC15		// hiliving ?
-#endif
+#define CHARGE_STATE	PC15		// hiliving ?
 
 // Timer BLDC short circuit emergency shutoff define
 #define TIMER_BLDC_EMERGENCY_SHUTDOWN	PB12	// hiliving ?

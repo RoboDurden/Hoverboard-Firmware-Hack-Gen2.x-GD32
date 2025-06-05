@@ -92,7 +92,4 @@
 	#define BUZZER	PB9
 #endif
 
-#ifdef MASTER
-	// Charge state defines
-	#define CHARGE_STATE	PC15
-#endif
+#define CHARGE_STATE	PC15

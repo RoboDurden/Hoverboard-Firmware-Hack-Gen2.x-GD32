@@ -76,8 +76,5 @@
 	#define BUZZER PF0
 #endif
 
-#ifdef MASTER
-	// Charge state defines - Not entirely sure, but a good guess
-	#define CHARGE_STATE PC15
-#endif
+#define CHARGE_STATE PC15
 

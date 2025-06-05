@@ -53,49 +53,6 @@ static const int16_t sine_table[SIN_TABLE_SIZE] = {
 
 // Sector mapping table (hall position to sector)
 static const uint8_t hall_to_sector[8] = {
-/*
-	// deepseek
-	0,  // Invalid
-	0,  // Position 1: Sector 0 (0-60°)
-	1,  // Position 2: Sector 1 (60-120°)
-	2,  // Position 3: Sector 2 (120-180°)
-	3,  // Position 4: Sector 3 (180-240°)
-	4,  // Position 5: Sector 4 (240-300°)
-	5,  // Position 6: Sector 5 (300-360°)
-	0   // Invalid
-
-	// hoverboardhavoc
-	0,	// ilegal
-	0,	// 0b100
-	4,	// 0b010
-	5,	// 0b110
-	2,	// 0b001
-	1,	// 0b101
-	3,	// 0b011
-	0		// 0b111
-
-	// hall to pos annotation: for example SA=0 means hall sensor pulls SA down to Ground
-  0, // hall position [-] - No function (access from 1-6) 
-  3, // hall position [1] (SA=1, SB=0, SC=0) -> PWM-position 3
-  5, // hall position [2] (SA=0, SB=1, SC=0) -> PWM-position 5
-  4, // hall position [3] (SA=1, SB=1, SC=0) -> PWM-position 4
-  1, // hall position [4] (SA=0, SB=0, SC=1) -> PWM-position 1
-  2, // hall position [5] (SA=1, SB=0, SC=1) -> PWM-position 2
-  6, // hall position [6] (SA=0, SB=1, SC=1) -> PWM-position 6
-  0, // hall position [-] - No function (access from 1-6) 
-	
-	// pos -> sector
-	0,	// ilegal 0
-	3,	// 0b100	1 idx
-	2,	// 0b010	2
-	1,	// 0b110	3
-	0,	// 0b001	4
-	5,	// 0b101	5
-	4,	// 0b011	6
-	0		// 0b111 = illegal
-	
-*/
-	// hall -> sector
 	0,	// ilegal 0
 	1,	// 0b100	1 idx
 	5,	// 0b010	2
@@ -104,7 +61,6 @@ static const uint8_t hall_to_sector[8] = {
 	2,	// 0b101	5
 	4,	// 0b011	6
 	0		// 0b111 = illegal
-
 };
 
 
