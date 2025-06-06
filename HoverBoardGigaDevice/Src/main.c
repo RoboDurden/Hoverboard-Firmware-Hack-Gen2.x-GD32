@@ -574,7 +574,7 @@ int32_t ShutOff(void)
 	
 	if (speedShutoff)
 	{
-		speedShutoff += speedShutoff > 0 ? -1 : +1 ;
+		speedShutoff += speedShutoff > 0 ? -5 : +5 ;
 		if (ABS(speedShutoff) > 10)
 			return speedShutoff;
 	}

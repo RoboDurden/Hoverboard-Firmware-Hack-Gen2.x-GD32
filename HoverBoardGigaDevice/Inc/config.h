@@ -24,10 +24,10 @@
 		#define LAYOUT 1
 	#endif
 
-	#define BLDC_BC			// old block commutation bldc control
-	//#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden
+	//#define BLDC_BC			// old block commutation bldc control
+	#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden
 	
-	#define BAT_CELLS         	7        // battery number of cells. Normal Hoverboard battery: 10s
+	#define BAT_CELLS         	10        // battery number of cells. Normal Hoverboard battery: 10s
 
 	#define MASTER		// uncomment for MASTER firmware.
 	//#define SLAVE			// uncomment for SLAVE firmware.
