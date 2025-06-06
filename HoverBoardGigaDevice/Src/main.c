@@ -480,7 +480,9 @@ int main (void)
 			{
 				ShowBatteryState(3);
 				BuzzerSet(6,1)	// (iFrequency, iPattern)
-				ShutOff();
+				#ifdef BATTERY_LOW_SHUTOFF
+					ShutOff();
+				#endif
 			}
 
 			#ifdef BUTTON

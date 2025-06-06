@@ -27,7 +27,6 @@
 	//#define BLDC_BC			// old block commutation bldc control
 	#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden
 	
-	#define BAT_CELLS         	10        // battery number of cells. Normal Hoverboard battery: 10s
 
 	#define MASTER		// uncomment for MASTER firmware.
 	//#define SLAVE			// uncomment for SLAVE firmware.
@@ -92,6 +91,9 @@
 	#define CELL_LOW_LVL2     3.3       // Battery almost empty, show orange battery symbol above this Level. Charge now! 
 	#define CELL_LOW_DEAD     3.0       // Undervoltage lockout, show red battery symbol above this Level.
 #endif
+
+#define BAT_CELLS         	10        // battery number of cells. Normal Hoverboard battery: 10s
+//#define BATTERY_LOW_SHUTOFF		// will shut off the board below BAT_LOW_DEAD = BAT_CELLS * CELL_LOW_DEAD, 
 
 
 #define DC_CUR_LIMIT     		15        // Motor DC current limit in amps
