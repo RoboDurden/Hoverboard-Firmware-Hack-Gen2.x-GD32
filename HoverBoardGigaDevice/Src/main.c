@@ -532,6 +532,8 @@ int main (void)
 		// Enable channel output
 		SetEnable(enable);
 
+		//wState = STATE_LedBattLevel;	// overwrite wState recevied from RemoteUart or RemoteUartBus
+		
 		#if (!defined(TEST_HALL2LED)) && (!defined(DEBUG_LED))
 			if (!(wState & STATE_LedBattLevel))
 			{
