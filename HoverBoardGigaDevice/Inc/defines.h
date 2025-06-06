@@ -164,8 +164,8 @@
 	extern uint8_t buzzerFreq;    						// global variable for the buzzer pitch. can be 1, 2, 3, 4, 5, 6, 7...
 	extern uint8_t buzzerPattern; 						// global variable for the buzzer pattern. can be 1, 2, 3, 4, 5, 6, 7...
   #define BuzzerSet(iFrequency, iPattern) {buzzerFreq = iFrequency;buzzerPattern = iPattern;}
-  #define BUZZER_MelodyDown(){int8_t iFreq=8;for (iFreq; iFreq>= 0; iFreq--){ buzzerFreq = iFreq; Delay(100); } buzzerFreq = 0;}
-  #define BUZZER_MelodyUp(){int8_t iFreq=0; for (iFreq; iFreq<= 8; iFreq++){ buzzerFreq = iFreq; Delay(100); } buzzerFreq = 0;}
+  #define BUZZER_MelodyDown(){int8_t iFreq=8;for (; iFreq>= 0; iFreq--){ buzzerFreq = iFreq; Delay(100); } buzzerFreq = 0;}
+  #define BUZZER_MelodyUp(){int8_t iFreq=0; for (; iFreq<= 8; iFreq++){ buzzerFreq = iFreq; Delay(100); } buzzerFreq = 0;}
 #else
   #define BuzzerSet(iFrequency, iPattern)
   #define BUZZER_MelodyDown()

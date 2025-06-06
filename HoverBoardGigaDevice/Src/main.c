@@ -277,10 +277,7 @@ int main (void)
 	#endif
 	
 	#ifdef MASTER_OR_SINGLE
-		FlagStatus enableSlave = RESET;
 		FlagStatus chargeStateLowActive = SET;
-		int16_t sendSlaveValue = 0;
-		uint8_t sendSlaveIdentifier = 0;
 		int16_t pwmMaster = 0;
 		int16_t scaledSpeed = 0;
 		int16_t scaledSteer  = 0;

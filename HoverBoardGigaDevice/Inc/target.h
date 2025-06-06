@@ -94,7 +94,6 @@
 	{\
 		gpio_init(pin&0xffffff00U, mode, GPIO_OSPEED_10MHZ, BIT(pin&0xfU))\
 	}
-	//gpio_bit_set(pin&0xffffff00U, BIT(pin&0xfU));\
 	
 	#define pinModePull(pin,mode,pull) \
 	{\
@@ -187,7 +186,7 @@
 	*/
 	
 	// GD32F130 has 10 channels PA0..PA7 = 0..7 and PB0,PB1 = 8,9 . Only 64 pin MCU has further adc on GPIOC
-	#define PIN_TO_CHANNEL(pin) ((pin&0xffffff00U) ==  GPIOA ? (pin&0xfU) : (pin&0xfU+8) )
+	#define PIN_TO_CHANNEL(pin) ((pin&0xffffff00U) ==  GPIOA ? (pin&0xfU) : ((pin&0xfU)+8) )
 
 /* function in setup.c instead of define saves memory
 	#define pinMode(pin,mode) \

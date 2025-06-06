@@ -120,9 +120,6 @@ void ProessReceived(SerialReceive* pData)
 	//FlagStatus upperLED = RESET;
 	//FlagStatus lowerLED = RESET;
 	//FlagStatus mosfetOut = RESET;
-	
-	// Auxiliary variables
-	uint8_t byte;
 #else
 	// Result variables
 	//int16_t pwmSlave = 0;
@@ -133,10 +130,7 @@ void ProessReceived(SerialReceive* pData)
 	// Auxiliary variables
 	uint8_t identifier = 0;
 	int16_t value = 0;
-	uint8_t byte;
 #endif
-	// Auxiliary variables
-	uint16_t crc;
 	
 	
 #ifdef MASTER

@@ -136,30 +136,13 @@ extern uint32_t steerCounter;								// Steer counter for setting update rate
 // Is called, when the ADC scan sequence is finished
 // -> ADC is triggered from timer0-update-interrupt -> every 31,25us
 //----------------------------------------------------------------------------
-volatile uint8_t bCalculateBLDC = 0;
-
 void DMA_Channel0_IRQHandler(void)
 {
-	//DEBUG_LedSet(	(steerCounter%20) < 5	,0)	
-	// Calculate motor PWMs
-	if (!bCalculateBLDC)
-	{	
-		bCalculateBLDC = 1;
-		CalculateBLDC();
-		bCalculateBLDC = 0;
-	}
-
-	/* outdated
-	#ifdef SLAVE
-	// Calculates RGB LED
-	CalculateLEDPWM();
-	#endif
-	*/
-	
-	if (dma_interrupt_flag_get(DMA_CH0, DMA_INT_FLAG_FTF))
-	{
-		dma_interrupt_flag_clear(DMA_CH0, DMA_INT_FLAG_FTF);        
-	}
+    if (dma_interrupt_flag_get(DMA_CH0, DMA_INT_FLAG_FTF))
+    {
+        dma_interrupt_flag_clear(DMA_CH0, DMA_INT_FLAG_FTF);
+        CalculateBLDC(); //moved behind flag_clear by Deepseek, Safe: NVIC blocks re-entrancy
+    }	
 }
 
 uint16_t iUartCounter = 0;
