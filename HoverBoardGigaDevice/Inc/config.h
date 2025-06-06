@@ -14,7 +14,7 @@
 	// and then set your layout below
 	// Gen2-target-layout is included in defines.h
 	#ifdef GD32F130		// TARGET = 1
-		#define LAYOUT 11
+		#define LAYOUT 1
 		#define LAYOUT_SUB 1	// Layout 2.1.7 exisits as 2.1.7.0 and 2.1.7.1
 	#elif GD32F103		// TARGET = 2
 		#define LAYOUT 1

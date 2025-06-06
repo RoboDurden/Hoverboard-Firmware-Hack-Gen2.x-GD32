@@ -76,7 +76,6 @@ volatile uint8_t bInterrupt;
 #define PHASE_C_OFFSET 240
 
 static int8_t sectorLast = 0;
-static uint32_t lastHallTime = 0 , sectorChangeTime=0;
 int8_t sectorChange = 0;
 int8_t sector = 0;
 int8_t sector10x = 0;
