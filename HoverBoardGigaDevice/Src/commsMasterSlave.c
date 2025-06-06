@@ -12,17 +12,6 @@ FlagStatus mosfetOutMaster = RESET;
 FlagStatus beepsBackwardsMaster = RESET;
 
 
-// Sets beepsBackwards value which will be send to master
-void SetBeepsBackwardsMaster(FlagStatus value)
-{
-	beepsBackwardsMaster = value;
-}
-
-// Returns beepsBackwardsMaster value sent by master
-FlagStatus GetBeepsBackwardsMaster(void)
-{
-	return beepsBackwardsMaster;
-}
 
 
 #ifdef MASTER_OR_SLAVE
@@ -159,7 +148,6 @@ void ProessReceived(SerialReceive* pData)
 	
 	// Send answer
 	
-	//SendMaster(upperLEDMaster, lowerLEDMaster, mosfetOutMaster, beepsBackwardsMaster);
 	SendMaster(GetUpperLEDMaster(), GetLowerLEDMaster(), mosfetOutMaster, beepsBackwardsMaster);
 	
 	// Reset the pwm timout to avoid stopping motors

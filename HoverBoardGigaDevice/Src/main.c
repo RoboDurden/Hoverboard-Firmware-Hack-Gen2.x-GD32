@@ -25,6 +25,7 @@
 
 uint32_t steerCounter = 0;								// Steer counter for setting update rate
 int32_t speed = 0; 												// global variable for speed.    -1000 to 1000
+int32_t speedShutoff = 0;
 int16_t speedLimit = 1000;
 int16_t iConfigMode = 0;
 
@@ -45,7 +46,7 @@ uint8_t  wStateSlave = STATE_LedBattLevel;   // 1=ledGreen, 2=ledOrange, 4=ledRe
 	DataSlave oDataSlave;
 #endif
 
-void ShutOff(void);
+int32_t ShutOff(void);
 
 #ifdef MASTER_OR_SINGLE
 
@@ -67,8 +68,7 @@ extern FlagStatus timedOut;								// Timeoutvariable set by timeout timer
 
 uint32_t inactivity_timeout_counter = 0;	// Inactivity counter
 
-void ShowBatteryState(uint8_t iLevel);
-void BeepsBackwards(FlagStatus beepsBackwards);
+void ShowBatteryState(int8_t iLevel);
 
 	const float lookUpTableAngle[181] =  
 	{
@@ -303,7 +303,7 @@ int main (void)
 	// Init GPIOs
 	GPIO_init();
 	#ifndef REMOTE_AUTODETECT
-		DEBUG_LedSet(SET,1)
+		DEBUG_LedSet(SET,0)
 		
 		#ifdef UPPER_LED
 			digitalWrite(UPPER_LED,SET);
@@ -384,7 +384,7 @@ int main (void)
 		Delay(10); //debounce to prevent immediate ShutOff (100 is to much with a switch instead of a push button)
 	#endif
 
-	DEBUG_LedSet(RESET,1)
+	DEBUG_LedSet(RESET,0)
 	#ifdef UPPER_LED
 		digitalWrite(UPPER_LED,RESET);
 	#endif
@@ -409,6 +409,8 @@ int main (void)
 				RemoteUpdate();
 				//DEBUG_LedSet(RESET,0)
 			}
+			
+			if (speedShutoff)	speed = ShutOff();
 			
 			// Calculate expo rate for less steering with higher speeds
 			expo = MAP((float)ABS(speed), 0, 1000, 1, 0.5);
@@ -451,39 +453,33 @@ int main (void)
 			#endif
 
 				
-			// Show green battery symbol when battery level BAT_LOW_LVL1 is reached
-			if (batteryVoltage > BAT_LOW_LVL1)
-			{
-				// Show green battery light
-				ShowBatteryState(2);
-				
-				// Beeps backwards
-				BeepsBackwards(beepsBackwards);
-			}
 			
-			// Make silent sound and show orange battery symbol when battery level BAT_LOW_LVL2 is reached
-			else if (batteryVoltage > BAT_LOW_LVL2 && batteryVoltage < BAT_LOW_LVL1)
+			if (batteryVoltage > BAT_LOW_LVL1)	// Show green battery symbol when battery level BAT_LOW_LVL1 is reached
 			{
-				// Show orange battery light
-					ShowBatteryState(1);
-				
-				BuzzerSet(5,8)	// (iFrequency, iPattern)
-			}
-			// Make even more sound and show red battery symbol when battery level BAT_LOW_DEAD is reached
-			else if  (batteryVoltage > BAT_LOW_DEAD && batteryVoltage < BAT_LOW_LVL2)
-			{
-				// Show red battery light
 				ShowBatteryState(0);
-
-				BuzzerSet(5,1)	// (iFrequency, iPattern)
+				if (beepsBackwards == SET && speed < -50)
+				{
+					BuzzerSet(5,4)	// (iFrequency, iPattern)
+				}
+				else
+				{
+					BuzzerSet(0,0)	// (iFrequency, iPattern)
+				}
 			}
-			// Shut device off, when battery is dead
-			else if (batteryVoltage < BAT_LOW_DEAD)
+			else if (batteryVoltage > BAT_LOW_LVL2) // Make silent sound and show orange battery symbol when battery level BAT_LOW_LVL2 is reached
 			{
-				ShutOff();
+				ShowBatteryState(1);
+				BuzzerSet(6,3)	// (iFrequency, iPattern)
 			}
-			else
+			else if  (batteryVoltage > BAT_LOW_DEAD) // Make even more sound and show red battery symbol when battery level BAT_LOW_DEAD is reached
 			{
+				ShowBatteryState(2);
+				BuzzerSet(6,2)	// (iFrequency, iPattern)
+			}
+			else 	// Shut device off, when battery is dead
+			{
+				ShowBatteryState(3);
+				BuzzerSet(6,1)	// (iFrequency, iPattern)
 				ShutOff();
 			}
 
@@ -529,6 +525,7 @@ int main (void)
 		//enable &= (getChannel(4)-1024) > 0; //arm switch doesn't work
 		//#endif
 		//enable = SET;		// robo testing
+		//enable = RESET;
 		
 		//DEBUG_LedSet(enable,0);	// macro. iCol: 0=green, 1=organge, 2=red
 			
@@ -547,9 +544,6 @@ int main (void)
 				#ifdef LED_RED
 					digitalWrite(LED_RED,wState & STATE_LedRed ? SET : RESET);
 				#endif
-				//gpio_bit_write(LED_GREEN_PORT, LED_GREEN, wState & STATE_LedGreen ? SET : RESET);
-				//gpio_bit_write(LED_ORANGE_PORT, LED_ORANGE, wState & STATE_LedOrange ? SET : RESET);
-				//gpio_bit_write(LED_RED_PORT, LED_RED, wState & STATE_LedRed ? SET : RESET);
 			}
 		#endif
 		#ifdef UPPER_LED
@@ -558,8 +552,6 @@ int main (void)
 		#ifdef UPPER_LED
 			digitalWrite(UPPER_LED,wState & STATE_LedDown ? SET : RESET);
 		#endif
-		//gpio_bit_write(UPPER_LED_PORT, UPPER_LED_PIN, wState & STATE_LedUp ? SET : RESET);
-		//gpio_bit_write(LOWER_LED_PORT, LOWER_LED_PIN, wState & STATE_LedDown ? SET : RESET);
 
 		if (wState & STATE_Shutoff)	ShutOff();
 
@@ -574,8 +566,22 @@ int main (void)
 //----------------------------------------------------------------------------
 // Turns the device off
 //----------------------------------------------------------------------------
-void ShutOff(void)
+
+int32_t ShutOff(void)
 {
+	
+	if (speedShutoff)
+	{
+		speedShutoff += speedShutoff > 0 ? -1 : +1 ;
+		if (ABS(speedShutoff) > 10)
+			return speedShutoff;
+	}
+	else if (ABS(speed)>10)
+	{
+		speedShutoff = speed;
+		return speedShutoff;
+	}
+	
 	BUZZER_MelodyUp()
 	
 	#ifdef USART_MASTERSLAVE
@@ -585,7 +591,7 @@ void ShutOff(void)
 			wStateSlave = STATE_Shutoff;
 			SendSlave(0);
 		#endif
-	
+
 	// Disable usart
 		usart_deinit(USART_MASTERSLAVE);
 	#endif
@@ -610,55 +616,55 @@ void ShutOff(void)
 //----------------------------------------------------------------------------
 // Shows the battery state on the LEDs
 //----------------------------------------------------------------------------
-void ShowBatteryState(uint8_t iLevel)
+void ShowBatteryState(int8_t iLevel)
 {
 	if (!(wState & STATE_LedBattLevel))
 			return;
 	
-	#if (!defined(TEST_HALL2LED)) && (!defined(DEBUG_LED))
-		if(iLevel == 1)
+	
+	uint32_t aPin[3];
+	uint8_t iLedCount=0;
+	#if defined(LED_GREEN)
+		aPin[iLedCount++] = LED_GREEN;
+	#endif
+	#if defined(LED_ORANGE)
+		aPin[iLedCount++] = LED_ORANGE;
+	#endif
+	#if defined(LED_RED)
+		aPin[iLedCount++] = LED_RED;
+	#endif
+
+	if (iLedCount == 3)		// green -> orange -> red -> blinking red
+	{
+		int8_t i=2; 
+		if (iLevel == 3)
 		{
-			#ifdef LED_ORANGE
-				digitalWrite(LED_ORANGE,SET);
-			#else
-				#ifdef LED_GREEN
-					digitalWrite(LED_GREEN,SET);
-				#endif
-				#ifdef LED_RED
-					digitalWrite(LED_RED,SET);
-			#endif
-			#endif
+			digitalWrite(aPin[2],(steerCounter%50) < 25);		// red led blinking
+			i--;
 		}
+		for(;i>=0;i--)
+		{
+			digitalWrite(aPin[i],i==iLevel);
+		}
+		
+	}
+	else if (iLedCount == 2)	// show the level 0-3 in 2 bits
+	{
+		digitalWrite(aPin[0],iLevel & 0b01);		
+		digitalWrite(aPin[1],iLevel & 0b10);		
+	}
+	else if (iLedCount == 1)
+	{
+		if (iLevel == 0) 		
+			digitalWrite(aPin[0],1);		
 		else
 		{
-			#ifdef LED_GREEN
-				digitalWrite(LED_GREEN,	iLevel==2 ? SET : RESET);
-			#endif
-			#ifdef LED_RED
-				digitalWrite(LED_RED,	iLevel==0 ? SET : RESET);
-			#endif
-			#ifdef LED_ORANGE
-				digitalWrite(LED_ORANGE,	RESET);
-			#endif
+			uint16_t iPeriod = 300/(2*iLevel);
+			digitalWrite(aPin[0],(steerCounter%iPeriod) < (iPeriod/2)	);		// led blinking
 		}
-	#endif
+	}
 }
 
-//----------------------------------------------------------------------------
-// Beeps while driving backwards
-//----------------------------------------------------------------------------
-void BeepsBackwards(FlagStatus beepsBackwards)
-{
-	// If the speed is less than -50, beep while driving backwards
-	if (beepsBackwards == SET && speed < -50)
-	{
-		BuzzerSet(5,4)	// (iFrequency, iPattern)
-	}
-	else
-	{
-		BuzzerSet(0,0)	// (iFrequency, iPattern)
-	}
-}
 #endif
 
 

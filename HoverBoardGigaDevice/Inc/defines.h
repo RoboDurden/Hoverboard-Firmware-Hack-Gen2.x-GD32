@@ -8,7 +8,7 @@
 
 
 #if defined(REMOTE_AUTODETECT)
-	#include "defines_2-ad.h"		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/??
+	#include "defines/defines_2-ad.h"		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/??
 	
 	#define SINGLE
 	#define MASTER_OR_SINGLE

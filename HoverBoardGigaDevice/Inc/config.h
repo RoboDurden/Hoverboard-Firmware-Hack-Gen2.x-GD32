@@ -79,7 +79,7 @@
 	//#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden
 	
 	#define BAT_CELLS         	10        // battery number of cells. Normal Hoverboard battery: 10s
-	#define DEBUG_LED		// uncomment to activate DEBUG_LedSet(bSet,iColor) macro. iCol: 0=green, 1=organge, 2=red
+	//#define DEBUG_LED		// uncomment to activate DEBUG_LedSet(bSet,iColor) macro. iCol: 0=green, 1=organge, 2=red
 	
 #endif
 
@@ -90,7 +90,7 @@
 
 	#define CELL_LOW_LVL1     3.5       // Gently beeps, show green battery symbol above this Level.
 	#define CELL_LOW_LVL2     3.3       // Battery almost empty, show orange battery symbol above this Level. Charge now! 
-	#define CELL_LOW_DEAD     3.1       // Undervoltage lockout, show red battery symbol above this Level.
+	#define CELL_LOW_DEAD     3.0       // Undervoltage lockout, show red battery symbol above this Level.
 #endif
 
 

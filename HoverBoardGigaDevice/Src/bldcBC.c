@@ -4,12 +4,9 @@
 //----------------------------------------------------------------------------
 // Block PWM calculation based on position
 //----------------------------------------------------------------------------
-#ifndef PLATFORMIO
-__INLINE 
-#endif
-void blockPWM(int pwm, int pwmPos, int *y, int *b, int *g)		// robo 2024/09/04: remove __INLINE for PlatformIO
+void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g)
 {
-  switch(pwmPos)
+  switch(pos)
 	{
     case 1:
       *y = 0;
@@ -46,12 +43,7 @@ void blockPWM(int pwm, int pwmPos, int *y, int *b, int *g)		// robo 2024/09/04: 
       *y = 0;
       *b = 0;
       *g = 0;
-  }
-}
-
-void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g)
-{
-    blockPWM(pwm, pos, y, b, g);
+  }	
 }
 
 void InitBldc()
