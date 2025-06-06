@@ -375,11 +375,13 @@ int main (void)
 		while (BUTTON_PUSHED == digitalRead(BUTTON))
 		{
 			fwdgt_counter_reload();	// Reload watchdog while button is pressed
-			if (millis()-iTimePushed > 2000)
-			{
-				iConfigMode = 1;
-				BuzzerSet(8,2);	// (iFrequency, iPattern)
-			}
+			#ifdef REMOTE_ADC
+				if (millis()-iTimePushed > 2000)
+				{
+					iConfigMode = 1;
+					BuzzerSet(8,2);	// (iFrequency, iPattern)
+				}
+			#endif
 		} 
 		Delay(10); //debounce to prevent immediate ShutOff (100 is to much with a switch instead of a push button)
 	#endif

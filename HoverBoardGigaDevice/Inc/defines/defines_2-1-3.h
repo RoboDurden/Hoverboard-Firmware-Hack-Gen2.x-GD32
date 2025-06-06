@@ -70,9 +70,6 @@
 
 // Self hold defines
 // important pin keeps the mosfet open after the on/off button got pushed !
-// main.c:306: gpio_bit_write(SELF_HOLD_PORT, SELF_HOLD_PIN, SET); 
-// and turns off power on Shutdown:
-// main.c:513:	 gpio_bit_write(SELF_HOLD_PORT, SELF_HOLD_PIN, RESET); 
 #define SELF_HOLD PA1		// lerwinDE: master: A11 is used a hold bin, slave: A11 is buzzer pini
 
 // Button defines
