@@ -20,7 +20,7 @@
 #else
 	#define STRINGIZE_AUX(a) #a
 	#define STRINGIZE(a) STRINGIZE_AUX(a)
-	#define INCLUE_FILE(target,version) STRINGIZE(defines_2-target-version.h)
+	#define INCLUE_FILE(target,version) STRINGIZE(defines/defines_2-target-version.h)
 
 	#include INCLUE_FILE(TARGET , LAYOUT)	// "defines_2-target-version.h"
 #endif

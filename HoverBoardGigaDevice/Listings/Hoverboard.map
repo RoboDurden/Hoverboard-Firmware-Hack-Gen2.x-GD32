@@ -1091,24 +1091,24 @@ Image component sizes
        110          6          0          0          0       1347   bldcbc.o
        108          0          0          0          0       2005   comms.o
        252          0          0          2         17       2268   commsmasterslave.o
-      1446         16          0          0          0       7579   gd32f1x0_adc.o
-       844          8          0          0          0       6112   gd32f1x0_dma.o
-      2516          0          0          0          0      13226   gd32f1x0_fmc.o
-       218          0          0          0          0       1973   gd32f1x0_fwdgt.o
-       408          0         12          0          0       4188   gd32f1x0_gpio.o
-       304          0          0          0          0       3140   gd32f1x0_misc.o
-      1840         34          8          0          0      13457   gd32f1x0_rcu.o
-      3424         44          0          0          0      18320   gd32f1x0_timer.o
-      1598          8          0          0          0      11951   gd32f1x0_usart.o
+      1446         16          0          0          0       7602   gd32f1x0_adc.o
+       844          8          0          0          0       6135   gd32f1x0_dma.o
+      2516          0          0          0          0      13249   gd32f1x0_fmc.o
+       218          0          0          0          0       1996   gd32f1x0_fwdgt.o
+       408          0         12          0          0       4211   gd32f1x0_gpio.o
+       304          0          0          0          0       3163   gd32f1x0_misc.o
+      1840         34          8          0          0      13480   gd32f1x0_rcu.o
+      3424         44          0          0          0      18343   gd32f1x0_timer.o
+      1598          8          0          0          0      11974   gd32f1x0_usart.o
        290          0          0          0          9       2570   it.o
       1486          0        724          5         41       5837   main.o
        118          0          0          0          0        658   remotedummy.o
       2280          0          0          0        163       9624   setup.o
-        36          8        360          0       1024        820   startup_gd32f1x0.o
-       316         16          0          4          0       1569   system_gd32f1x0.o
+        36          8        360          0       1024        844   startup_gd32f1x0.o
+       316         16          0          4          0       1592   system_gd32f1x0.o
 
     ----------------------------------------------------------------------
-     18792        140       1158         24       1312     110417   Object Totals
+     18792        140       1158         24       1312     110671   Object Totals
          0          0         32          0          0          0   (incl. Generated)
         14          0          2          3         20          0   (incl. Padding)
 
@@ -1171,8 +1171,8 @@ Image component sizes
 
       Code (inc. data)   RO Data    RW Data    ZI Data      Debug   
 
-     20834        156       1158         24       1312     111249   Grand Totals
-     20834        156       1158         24       1312     111249   ELF Image Totals
+     20834        156       1158         24       1312     111503   Grand Totals
+     20834        156       1158         24       1312     111503   ELF Image Totals
      20834        156       1158         24          0          0   ROM Totals
 
 ==============================================================================
