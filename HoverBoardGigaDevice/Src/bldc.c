@@ -155,11 +155,12 @@ void CalculateBLDC(void)
 	#endif
 	
   // Disable PWM when current limit is reached (current chopping), enable is not set or timeout is reached
+	//DEBUG_LedSet((steerCounter%20) > 10,2);	// macro. iCol: 0=green, 1=organge, 2=red
 	if (currentDC > DC_CUR_LIMIT  || bldc_enable == RESET  || timedOut == SET)	//		
 	{
 
 		timer_automatic_output_disable(TIMER_BLDC);		
-		//DEBUG_LedSet(SET,2);	// macro. iCol: 0=green, 1=organge, 2=red
+		//DEBUG_LedSet((steerCounter%20) > 10,2);	// macro. iCol: 0=green, 1=organge, 2=red
 		return;	// added by deepseek
   }
 	else

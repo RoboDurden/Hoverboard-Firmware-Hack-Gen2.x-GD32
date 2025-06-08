@@ -290,8 +290,7 @@ int main (void)
   SystemCoreClockUpdate();
   SysTick_Config(SystemCoreClock / 1000);	//  Configure SysTick to generate an interrupt every millisecond
 	
-	// Init watchdog
-	if (	Watchdog_init() == ERROR)
+	if (	Watchdog_init() == ERROR)	// Init watchdog
 		while(1);	// If an error accours with watchdog initialization do not start device
 	
 	// Init Interrupts
@@ -303,7 +302,7 @@ int main (void)
 	// Init GPIOs
 	GPIO_init();
 	#ifndef REMOTE_AUTODETECT
-		DEBUG_LedSet(SET,0)
+		DEBUG_LedSet(SET,1)
 		
 		#ifdef UPPER_LED
 			digitalWrite(UPPER_LED,SET);
@@ -387,7 +386,7 @@ int main (void)
 		Delay(10); //debounce to prevent immediate ShutOff (100 is to much with a switch instead of a push button)
 	#endif
 
-	DEBUG_LedSet(RESET,0)
+	DEBUG_LedSet(RESET,1)
 	#ifdef UPPER_LED
 		digitalWrite(UPPER_LED,RESET);
 	#endif
@@ -399,7 +398,9 @@ int main (void)
 		iTimeNextLoop = millis() + DELAY_IN_MAIN_LOOP;
 		
 		steerCounter++;		// something like DELAY_IN_MAIN_LOOP = 5 ms
-		//DEBUG_LedSet(	(steerCounter%200) < 10	,1)
+		//DEBUG_LedSet(	(steerCounter%20) < 10	,0)
+		
+		
 		#ifdef MOSFET_OUT
 			digitalWrite(MOSFET_OUT,	(steerCounter%200) < 100	);	// onboard led blinking :-)
 		#endif
@@ -455,8 +456,6 @@ int main (void)
 
 			#endif
 
-				
-			
 			if (batteryVoltage > BAT_LOW_LVL1)	// Show green battery symbol when battery level BAT_LOW_LVL1 is reached
 			{
 				ShowBatteryState(0);
@@ -530,7 +529,7 @@ int main (void)
 		//enable &= (getChannel(4)-1024) > 0; //arm switch doesn't work
 		//#endif
 		//enable = SET;		// robo testing
-		//enable = RESET;
+		//^enable = RESET;
 		
 		//DEBUG_LedSet(enable,0);	// macro. iCol: 0=green, 1=organge, 2=red
 			
@@ -565,8 +564,7 @@ int main (void)
 
 		//Delay(DELAY_IN_MAIN_LOOP);
 		
-		// Reload watchdog (watchdog fires after 1,6 seconds)
-		fwdgt_counter_reload();
+		fwdgt_counter_reload(); // Reload watchdog until device is off
   }
 }
 
@@ -610,11 +608,7 @@ int32_t ShutOff(void)
 	#ifdef SELF_HOLD
 		digitalWrite(SELF_HOLD,RESET);
 	#endif
-	while(1)
-	{
-		// Reload watchdog until device is off
-		fwdgt_counter_reload();
-	}
+	while(1)	fwdgt_counter_reload(); // Reload watchdog until device is off
 }
 
 
@@ -625,51 +619,53 @@ int32_t ShutOff(void)
 //----------------------------------------------------------------------------
 void ShowBatteryState(int8_t iLevel)
 {
-	if (!(wState & STATE_LedBattLevel))
+	#ifdef DEBUG_LED
+		return;
+	#else
+		if (!(wState & STATE_LedBattLevel))
 			return;
-	
-	
-	uint32_t aPin[3];
-	uint8_t iLedCount=0;
-	#if defined(LED_GREEN)
-		aPin[iLedCount++] = LED_GREEN;
-	#endif
-	#if defined(LED_ORANGE)
-		aPin[iLedCount++] = LED_ORANGE;
-	#endif
-	#if defined(LED_RED)
-		aPin[iLedCount++] = LED_RED;
-	#endif
+		uint32_t aPin[3];
+		uint8_t iLedCount=0;
+		#if defined(LED_GREEN)
+			aPin[iLedCount++] = LED_GREEN;
+		#endif
+		#if defined(LED_ORANGE)
+			aPin[iLedCount++] = LED_ORANGE;
+		#endif
+		#if defined(LED_RED)
+			aPin[iLedCount++] = LED_RED;
+		#endif
 
-	if (iLedCount == 3)		// green -> orange -> red -> blinking red
-	{
-		int8_t i=2; 
-		if (iLevel == 3)
+		if (iLedCount == 3)		// green -> orange -> red -> blinking red
 		{
-			digitalWrite(aPin[2],(steerCounter%50) < 25);		// red led blinking
-			i--;
+			int8_t i=2; 
+			if (iLevel == 3)
+			{
+				digitalWrite(aPin[2],(steerCounter%50) < 25);		// red led blinking
+				i--;
+			}
+			for(;i>=0;i--)
+			{
+				digitalWrite(aPin[i],i==iLevel);
+			}
+			
 		}
-		for(;i>=0;i--)
+		else if (iLedCount == 2)	// show the level 0-3 in 2 bits
 		{
-			digitalWrite(aPin[i],i==iLevel);
+			digitalWrite(aPin[0],iLevel & 0b01);		
+			digitalWrite(aPin[1],iLevel & 0b10);		
 		}
-		
-	}
-	else if (iLedCount == 2)	// show the level 0-3 in 2 bits
-	{
-		digitalWrite(aPin[0],iLevel & 0b01);		
-		digitalWrite(aPin[1],iLevel & 0b10);		
-	}
-	else if (iLedCount == 1)
-	{
-		if (iLevel == 0) 		
-			digitalWrite(aPin[0],1);		
-		else
+		else if (iLedCount == 1)
 		{
-			uint16_t iPeriod = 300/(2*iLevel);
-			digitalWrite(aPin[0],(steerCounter%iPeriod) < (iPeriod/2)	);		// led blinking
+			if (iLevel == 0) 		
+				digitalWrite(aPin[0],1);		
+			else
+			{
+				uint16_t iPeriod = 300/(2*iLevel);
+				digitalWrite(aPin[0],(steerCounter%iPeriod) < (iPeriod/2)	);		// led blinking
+			}
 		}
-	}
+	#endif
 }
 
 #endif

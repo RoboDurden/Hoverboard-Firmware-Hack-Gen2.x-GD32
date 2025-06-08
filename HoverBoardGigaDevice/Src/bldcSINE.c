@@ -4,6 +4,7 @@
 #ifdef BLDC_SINE
 #include <math.h>
 
+
 // Precomputed sine table for 0-360° (1° steps) in Q15 format
 #define SIN_TABLE_SIZE 360
 static const int16_t sine_table[SIN_TABLE_SIZE] = {
@@ -113,7 +114,7 @@ void InitBldc()
 	rcu_periph_clock_enable(RCU_CFGCMP);  // Combines AF and SYSCFG functionality
 	aHallEXTI[0] = InitEXTI(HALL_A);
 	aHallEXTI[1] = InitEXTI(HALL_B);
-	aHallEXTI[2] = InitEXTI(HALL_C);
+	aHallEXTI[2] = InitEXTI(HALL_C);		// PA2 on 2.1.4 !
 }
 
 void _HandleEXTI()
@@ -130,11 +131,16 @@ void _HandleEXTI()
 	}
 }
 
+/*
+                EXPORT  EXTI0_1_IRQHandler                [WEAK]
+                EXPORT  EXTI2_3_IRQHandler                [WEAK]
+                EXPORT  EXTI4_15_IRQHandler               [WEAK]
+*/
 void EXTI0_1_IRQHandler(void) 
 {
 	_HandleEXTI();
 }
-void EXTI3_4_IRQHandler(void) 
+void EXTI2_3_IRQHandler(void) 
 {
 	_HandleEXTI();
 }
@@ -145,6 +151,7 @@ void EXTI4_15_IRQHandler(void)
 
 void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) 	// pos is not used but hall_to_sector mapping :-/
 {
+	
 	pwmGo = -pwm;
 	uint32_t safe_hall_time_last,safe_hall_time_step;
 	do	// Get current sector (0-5) and other interrupt set data

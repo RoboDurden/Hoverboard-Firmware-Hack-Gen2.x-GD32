@@ -152,6 +152,22 @@
         <Bp>
           <Number>0</Number>
           <Type>0</Type>
+          <LineNumber>157</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>0</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>0</BreakIfRCount>
+          <Filename>.\Src\bldcSINE.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression></Expression>
+        </Bp>
+        <Bp>
+          <Number>1</Number>
+          <Type>0</Type>
           <LineNumber>628</LineNumber>
           <EnabledFlag>1</EnabledFlag>
           <Address>0</Address>
@@ -166,7 +182,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>1</Number>
+          <Number>2</Number>
           <Type>0</Type>
           <LineNumber>252</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -182,7 +198,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>2</Number>
+          <Number>3</Number>
           <Type>0</Type>
           <LineNumber>223</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -198,7 +214,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>3</Number>
+          <Number>4</Number>
           <Type>0</Type>
           <LineNumber>907</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -214,7 +230,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>4</Number>
+          <Number>5</Number>
           <Type>0</Type>
           <LineNumber>911</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -230,7 +246,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>5</Number>
+          <Number>6</Number>
           <Type>0</Type>
           <LineNumber>895</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -246,7 +262,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>6</Number>
+          <Number>7</Number>
           <Type>0</Type>
           <LineNumber>876</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -262,7 +278,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>7</Number>
+          <Number>8</Number>
           <Type>0</Type>
           <LineNumber>155</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -278,7 +294,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>8</Number>
+          <Number>9</Number>
           <Type>0</Type>
           <LineNumber>141</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -294,7 +310,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>9</Number>
+          <Number>10</Number>
           <Type>0</Type>
           <LineNumber>156</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -310,7 +326,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>10</Number>
+          <Number>11</Number>
           <Type>0</Type>
           <LineNumber>167</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -326,7 +342,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>11</Number>
+          <Number>12</Number>
           <Type>0</Type>
           <LineNumber>168</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -342,7 +358,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>12</Number>
+          <Number>13</Number>
           <Type>0</Type>
           <LineNumber>888</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -358,7 +374,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>13</Number>
+          <Number>14</Number>
           <Type>0</Type>
           <LineNumber>923</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -374,7 +390,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>14</Number>
+          <Number>15</Number>
           <Type>0</Type>
           <LineNumber>879</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -390,7 +406,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>15</Number>
+          <Number>16</Number>
           <Type>0</Type>
           <LineNumber>891</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -406,7 +422,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>16</Number>
+          <Number>17</Number>
           <Type>0</Type>
           <LineNumber>898</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -422,7 +438,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>17</Number>
+          <Number>18</Number>
           <Type>0</Type>
           <LineNumber>910</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -438,7 +454,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>18</Number>
+          <Number>19</Number>
           <Type>0</Type>
           <LineNumber>914</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -454,7 +470,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>19</Number>
+          <Number>20</Number>
           <Type>0</Type>
           <LineNumber>926</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -470,7 +486,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>20</Number>
+          <Number>21</Number>
           <Type>0</Type>
           <LineNumber>870</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -486,7 +502,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>21</Number>
+          <Number>22</Number>
           <Type>0</Type>
           <LineNumber>873</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -502,7 +518,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>22</Number>
+          <Number>23</Number>
           <Type>0</Type>
           <LineNumber>882</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -518,7 +534,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>23</Number>
+          <Number>24</Number>
           <Type>0</Type>
           <LineNumber>885</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -534,7 +550,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>24</Number>
+          <Number>25</Number>
           <Type>0</Type>
           <LineNumber>889</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -550,7 +566,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>25</Number>
+          <Number>26</Number>
           <Type>0</Type>
           <LineNumber>892</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -566,7 +582,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>26</Number>
+          <Number>27</Number>
           <Type>0</Type>
           <LineNumber>901</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -582,7 +598,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>27</Number>
+          <Number>28</Number>
           <Type>0</Type>
           <LineNumber>904</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -598,7 +614,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>28</Number>
+          <Number>29</Number>
           <Type>0</Type>
           <LineNumber>905</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -614,7 +630,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>29</Number>
+          <Number>30</Number>
           <Type>0</Type>
           <LineNumber>908</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -630,7 +646,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>30</Number>
+          <Number>31</Number>
           <Type>0</Type>
           <LineNumber>917</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -646,7 +662,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>31</Number>
+          <Number>32</Number>
           <Type>0</Type>
           <LineNumber>920</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -662,7 +678,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>32</Number>
+          <Number>33</Number>
           <Type>0</Type>
           <LineNumber>144</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -678,7 +694,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>33</Number>
+          <Number>34</Number>
           <Type>0</Type>
           <LineNumber>145</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -694,7 +710,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>34</Number>
+          <Number>35</Number>
           <Type>0</Type>
           <LineNumber>157</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -710,7 +726,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>35</Number>
+          <Number>36</Number>
           <Type>0</Type>
           <LineNumber>204</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -726,7 +742,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>36</Number>
+          <Number>37</Number>
           <Type>0</Type>
           <LineNumber>143</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -742,7 +758,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>37</Number>
+          <Number>38</Number>
           <Type>0</Type>
           <LineNumber>137</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -758,7 +774,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>38</Number>
+          <Number>39</Number>
           <Type>0</Type>
           <LineNumber>139</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -774,7 +790,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>39</Number>
+          <Number>40</Number>
           <Type>0</Type>
           <LineNumber>160</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -790,7 +806,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>40</Number>
+          <Number>41</Number>
           <Type>0</Type>
           <LineNumber>179</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -806,7 +822,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>41</Number>
+          <Number>42</Number>
           <Type>0</Type>
           <LineNumber>136</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -822,7 +838,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>42</Number>
+          <Number>43</Number>
           <Type>0</Type>
           <LineNumber>138</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -838,7 +854,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>43</Number>
+          <Number>44</Number>
           <Type>0</Type>
           <LineNumber>140</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -854,7 +870,7 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>44</Number>
+          <Number>45</Number>
           <Type>0</Type>
           <LineNumber>142</LineNumber>
           <EnabledFlag>1</EnabledFlag>
@@ -870,9 +886,41 @@
           <Expression></Expression>
         </Bp>
         <Bp>
-          <Number>45</Number>
+          <Number>46</Number>
           <Type>0</Type>
-          <LineNumber>654</LineNumber>
+          <LineNumber>164</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>0</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>0</BreakIfRCount>
+          <Filename>.\Src\bldcSINE.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression></Expression>
+        </Bp>
+        <Bp>
+          <Number>47</Number>
+          <Type>0</Type>
+          <LineNumber>186</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>0</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>0</BreakIfRCount>
+          <Filename>.\Src\bldcSINE.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression></Expression>
+        </Bp>
+        <Bp>
+          <Number>48</Number>
+          <Type>0</Type>
+          <LineNumber>649</LineNumber>
           <EnabledFlag>1</EnabledFlag>
           <Address>0</Address>
           <ByteObject>0</ByteObject>

@@ -11,8 +11,8 @@
 #define PHASE_B		PB0
 #define PHASE_C		PB1
 
-#define LED_RED		PA15
-#define LED_ORANGE		PB4
+#define LED_RED		PB4
+#define LED_ORANGE		PA15
 #define LED_GREEN		PB3
 #define UPPER_LED		PC13
 #define LOWER_LED		PB5
