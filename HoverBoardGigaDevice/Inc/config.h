@@ -14,7 +14,7 @@
 	// and then set your layout below
 	// Gen2-target-layout is included in defines.h
 	#ifdef GD32F130		// TARGET = 1
-		#define LAYOUT 1
+		#define LAYOUT 4
 		#define LAYOUT_SUB 1	// Layout 2.1.7 exisits as 2.1.7.0 and 2.1.7.1
 	#elif GD32F103		// TARGET = 2
 		#define LAYOUT 1
@@ -24,11 +24,11 @@
 		#define LAYOUT 1
 	#endif
 
-	//#define BLDC_BC			// old block commutation bldc control
-	#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden. 
+	#define BLDC_BC			// old block commutation bldc control
+	//#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden. 
 													// 2025/06/08:	works for 2.1.11 but not for 2.1.4
 	
-#define BAT_CELLS         	10        // battery number of cells. Normal Hoverboard battery: 10s
+#define BAT_CELLS         	7        // battery number of cells. Normal Hoverboard battery: 10s
 //#define BATTERY_LOW_SHUTOFF		// will shut off the board below BAT_LOW_DEAD = BAT_CELLS * CELL_LOW_DEAD, 
 
 	//#define MASTER		// uncomment for MASTER firmware.

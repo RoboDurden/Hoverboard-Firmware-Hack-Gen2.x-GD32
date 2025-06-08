@@ -89,24 +89,37 @@
 	*/
 
 	#define GPIO_MODE_INPUT GPIO_MODE_IN_FLOATING
-	#define GPIO_MODE_OUTPUT GPIO_MODE_OUT_OD
+	#define GPIO_MODE_OUTPUT GPIO_MODE_OUT_PP
+	// maybe GPIO_MODE_OUT_PP instead of GPIO_MODE_OUT_OD
+	#define GPIO_MODE_ANALOG	GPIO_MODE_AIN
 	#define pinMode(pin,mode) \
 	{\
-		gpio_init(pin&0xffffff00U, mode, GPIO_OSPEED_10MHZ, BIT(pin&0xfU))\
+		gpio_init(pin&0xffffff00U, mode, GPIO_OSPEED_50MHZ, BIT(pin&0xfU));\
 	}
-	
+		//	gpio_init(pin&0xffffff00U, mode, GPIO_OSPEED_10MHZ, BIT(pin&0xfU))\
+
+	#define pinModeSpeed(pin,mode,speed) \
+	{\
+		gpio_init(pin&0xffffff00U, mode, speed, BIT(pin&0xfU));\
+	}
+
+	#define GPIO_PUPD_PULLUP GPIO_MODE_IPU
+	#define GPIO_PUPD_PULLDOWN GPIO_MODE_IPD
 	#define pinModePull(pin,mode,pull) \
 	{\
-		gpio_init(pin&0xffffff00U, (pull==GPIO_PUPD_PULLUP ? GPIO_MODE_IPU : GPIO_MODE_IPD) , GPIO_OSPEED_10MHZ, BIT(pin&0xfU))\
+		gpio_init(pin&0xffffff00U, pull , GPIO_OSPEED_10MHZ, BIT(pin&0xfU));\
 	}
+
+	//     gpio_init(TIMER_BLDC_GH_PORT, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, TIMER_BLDC_GH_PIN);    
 
 	#define pinModeAF(pin, AF, pullUpDown,speed) \
 	{\
-		todo :-/ \
-		gpio_mode_set(pin&0xffffff00U , GPIO_MODE_AF, pullUpDown, BIT(pin&0xfU));	\
-		gpio_output_options_set(pin&0xffffff00U, GPIO_OTYPE_PP, speed, BIT(pin&0xfU));	\
-		gpio_af_set(pin&0xffffff00U, AF(pin), BIT(pin&0xfU));		\
+		 gpio_init(pin&0xffffff00U, pullUpDown, GPIO_OSPEED_50MHZ, BIT(pin&0xfU)); 	\
 	}
+		// gpio_mode_set(pin&0xffffff00U , GPIO_MODE_AF, pullUpDown, BIT(pin&0xfU));	\
+		// gpio_output_options_set(pin&0xffffff00U, GPIO_OTYPE_PP, speed, BIT(pin&0xfU));	\
+		// gpio_af_set(pin&0xffffff00U, AF(pin), BIT(pin&0xfU));		\
+
 	
 	
 	#define digitalWrite(pin,set) gpio_bit_write(pin&0xffffff00U,  (BIT(pin&0xfU) ), set)
@@ -145,8 +158,12 @@
 	#define adc_special_function_config(a,b)	adc_special_function_config(ADC0,a,b)
 	
 	#define DMA_Channel0_IRQn DMA0_Channel0_IRQn
+	#define TIMER0_BRK_UP_TRG_COM_IRQn TIMER0_UP_IRQn
 	#define TARGET_nvic_irq_enable(a, b, c){nvic_irq_enable(a, b, c);}
 
+	#define FMC_FLAG_END FMC_FLAG_BANK0_END 
+	#define FMC_FLAG_WPERR FMC_FLAG_BANK0_WPERR
+	
 	// it.c
 	#define TIMER0_BRK_UP_TRG_COM_IRQHandler TIMER0_UP_IRQHandler
 	#define adc_software_trigger_enable(a) adc_software_trigger_enable(ADC0,a)
