@@ -27,7 +27,7 @@ uint32_t steerCounter = 0;								// Steer counter for setting update rate
 int32_t speed = 0; 												// global variable for speed.    -1000 to 1000
 int32_t speedShutoff = 0;
 int16_t speedLimit = 1000;
-int16_t iConfigMode = 0;
+
 
 
 #define STATE_LedGreen 1	
@@ -371,6 +371,7 @@ int main (void)
 
 	#ifdef BUTTON
 		// Wait until button is released
+		
 		uint32_t iTimePushed = millis();
 		while (BUTTON_PUSHED == digitalRead(BUTTON))
 		{

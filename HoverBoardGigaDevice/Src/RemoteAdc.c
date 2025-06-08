@@ -27,7 +27,7 @@ extern ConfigData oConfig;
 
 #define LOWPASS 0.01
 
-extern int16_t iConfigMode;	// 0 = default behavior
+int16_t iConfigMode = 0;	// 0 = default behavior
 float fSpeed=2048, fSteer=2048;	// mid point of 12 bit adc
 
 uint32_t iTimeNextCase = 0;

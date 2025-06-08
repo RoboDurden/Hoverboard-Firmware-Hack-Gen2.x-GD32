@@ -1,6 +1,8 @@
 #ifndef REMOTE_H
 #define REMOTE_H
 
+	extern int16_t iConfigMode;	// 0 = default behavior, some RemotXY can enter config mode on BUTTON longpress at startup
+
 	void RemoteCallback(void);		// must be implemented by all remotes
 	void RemoteUpdate(void);			// must be implemented by all remotes
 
