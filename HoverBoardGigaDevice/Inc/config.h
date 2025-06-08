@@ -24,13 +24,14 @@
 		#define LAYOUT 1
 	#endif
 
-	//#define BLDC_BC			// old block commutation bldc control
-	#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden
+	#define BLDC_BC			// old block commutation bldc control
+	//#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden. 
+													// 2025/06/08:	works for 2.1.11 but not for 2.1.4
 	
 
-	#define MASTER		// uncomment for MASTER firmware.
+	//#define MASTER		// uncomment for MASTER firmware.
 	//#define SLAVE			// uncomment for SLAVE firmware.
-	//#define SINGLE			// uncomment if firmware is for single board and no master-slave dual board setup
+	#define SINGLE			// uncomment if firmware is for single board and no master-slave dual board setup
 
 	#if defined(MASTER) || defined(SINGLE)
 		
