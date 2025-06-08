@@ -37,7 +37,6 @@ Section Cross References
     main.o(.text) refers to fcmple.o(.text) for __aeabi_fcmple
     main.o(.text) refers to main.o(.data.wState) for wState
     main.o(.text) refers to main.o(.data.beepsBackwards) for beepsBackwards
-    main.o(.text) refers to dcmple.o(.text) for __aeabi_dcmple
     main.o(.text) refers to bldc.o(.bss.buzzerPattern) for buzzerPattern
     main.o(.text) refers to main.o(.bss.inactivity_timeout_counter) for inactivity_timeout_counter
     main.o(.text) refers to main.o(.bss.enable) for enable
@@ -204,7 +203,6 @@ Section Cross References
     fcmplt.o(.text) refers (Special) to iusefp.o(.text) for __I$use$fp
     fcmpge.o(.text) refers (Special) to iusefp.o(.text) for __I$use$fp
     fcmpgt.o(.text) refers (Special) to iusefp.o(.text) for __I$use$fp
-    dcmple.o(.text) refers (Special) to iusefp.o(.text) for __I$use$fp
     fflti.o(.text) refers (Special) to iusefp.o(.text) for __I$use$fp
     fflti.o(.text) refers to fepilogue.o(.text) for _float_epilogue
     ffltui.o(.text) refers (Special) to iusefp.o(.text) for __I$use$fp
@@ -326,7 +324,6 @@ Image Symbol Table
     ../fplib/microlib/fpcmp.c                0x00000000   Number         0  fcmplt.o ABSOLUTE
     ../fplib/microlib/fpcmp.c                0x00000000   Number         0  fcmpge.o ABSOLUTE
     ../fplib/microlib/fpcmp.c                0x00000000   Number         0  fcmpgt.o ABSOLUTE
-    ../fplib/microlib/fpcmp.c                0x00000000   Number         0  dcmple.o ABSOLUTE
     ../fplib/microlib/fpdiv.c                0x00000000   Number         0  fdiv.o ABSOLUTE
     ../fplib/microlib/fpdiv.c                0x00000000   Number         0  ddiv.o ABSOLUTE
     ../fplib/microlib/fpepilogue.c           0x00000000   Number         0  fepilogue.o ABSOLUTE
@@ -387,8 +384,8 @@ Image Symbol Table
     .ARM.Collect$$$$0000000F                 0x08000178   Section        0  entry11a.o(.ARM.Collect$$$$0000000F)
     .ARM.Collect$$$$00002712                 0x08000178   Section        4  entry2.o(.ARM.Collect$$$$00002712)
     [Anonymous Symbol]                       0x0800017c   Section        0  main.o(.text)
-    [Anonymous Symbol]                       0x08000894   Section        0  bldc.o(.text)
-    [Anonymous Symbol]                       0x08000ce0   Section        0  bldcsine.o(.text)
+    [Anonymous Symbol]                       0x0800088c   Section        0  bldc.o(.text)
+    [Anonymous Symbol]                       0x08000cd8   Section        0  bldcsine.o(.text)
     [Anonymous Symbol]                       0x080010a0   Section        0  setup.o(.text)
     [Anonymous Symbol]                       0x08001848   Section        0  it.o(.text)
     [Anonymous Symbol]                       0x08001938   Section        0  remotedummy.o(.text)
@@ -414,32 +411,31 @@ Image Symbol Table
     .text                                    0x08004d38   Section        0  fcmplt.o(.text)
     .text                                    0x08004d54   Section        0  fcmpge.o(.text)
     .text                                    0x08004d70   Section        0  fcmpgt.o(.text)
-    .text                                    0x08004d8c   Section        0  dcmple.o(.text)
-    .text                                    0x08004dc2   Section        0  fflti.o(.text)
-    .text                                    0x08004dd4   Section        0  ffltui.o(.text)
-    .text                                    0x08004dde   Section        0  dflti.o(.text)
-    .text                                    0x08004e00   Section        0  dfltui.o(.text)
-    .text                                    0x08004e1a   Section        0  ffixi.o(.text)
-    .text                                    0x08004e4c   Section        0  dfixi.o(.text)
-    .text                                    0x08004e8a   Section        0  f2d.o(.text)
-    .text                                    0x08004eb0   Section        0  d2f.o(.text)
-    .text                                    0x08004ee8   Section        0  llshl.o(.text)
-    .text                                    0x08004f06   Section        0  llushr.o(.text)
-    .text                                    0x08004f26   Section        0  llsshr.o(.text)
-    .text                                    0x08004f4a   Section        0  iusefp.o(.text)
-    .text                                    0x08004f4a   Section        0  fepilogue.o(.text)
-    .text                                    0x08004fb8   Section        0  depilogue.o(.text)
-    .text                                    0x08005074   Section       36  init.o(.text)
-    i.__scatterload_copy                     0x08005098   Section       14  handlers.o(i.__scatterload_copy)
-    i.__scatterload_null                     0x080050a6   Section        2  handlers.o(i.__scatterload_null)
-    i.__scatterload_zeroinit                 0x080050a8   Section       14  handlers.o(i.__scatterload_zeroinit)
-    .L__const.up_or_down.up_down             0x080050b6   Data          12  bldc.o(.rodata..L__const.up_or_down.up_down)
-    .Lswitch.table.gpio_deinit.1             0x080050c2   Data          12  gd32f1x0_gpio.o(.rodata..Lswitch.table.gpio_deinit.1)
-    hall_to_sector                           0x080050ce   Data           8  bldcsine.o(.rodata.cst8)
-    [Anonymous Symbol]                       0x080050ce   Section        0  bldcsine.o(.rodata.cst8)
-    .L__const.rcu_clock_freq_get.apb2_exp    0x080050d6   Data           8  gd32f1x0_rcu.o(.rodata.cst8)
-    sine_table                               0x080053bc   Data         720  bldcsine.o(.rodata.sine_table)
-    [Anonymous Symbol]                       0x080053bc   Section        0  bldcsine.o(.rodata.sine_table)
+    .text                                    0x08004d8c   Section        0  fflti.o(.text)
+    .text                                    0x08004d9e   Section        0  ffltui.o(.text)
+    .text                                    0x08004da8   Section        0  dflti.o(.text)
+    .text                                    0x08004dca   Section        0  dfltui.o(.text)
+    .text                                    0x08004de4   Section        0  ffixi.o(.text)
+    .text                                    0x08004e16   Section        0  dfixi.o(.text)
+    .text                                    0x08004e54   Section        0  f2d.o(.text)
+    .text                                    0x08004e7a   Section        0  d2f.o(.text)
+    .text                                    0x08004eb2   Section        0  llshl.o(.text)
+    .text                                    0x08004ed0   Section        0  llushr.o(.text)
+    .text                                    0x08004ef0   Section        0  llsshr.o(.text)
+    .text                                    0x08004f14   Section        0  iusefp.o(.text)
+    .text                                    0x08004f14   Section        0  fepilogue.o(.text)
+    .text                                    0x08004f82   Section        0  depilogue.o(.text)
+    .text                                    0x0800503c   Section       36  init.o(.text)
+    i.__scatterload_copy                     0x08005060   Section       14  handlers.o(i.__scatterload_copy)
+    i.__scatterload_null                     0x0800506e   Section        2  handlers.o(i.__scatterload_null)
+    i.__scatterload_zeroinit                 0x08005070   Section       14  handlers.o(i.__scatterload_zeroinit)
+    .L__const.up_or_down.up_down             0x0800507e   Data          12  bldc.o(.rodata..L__const.up_or_down.up_down)
+    .Lswitch.table.gpio_deinit.1             0x0800508a   Data          12  gd32f1x0_gpio.o(.rodata..Lswitch.table.gpio_deinit.1)
+    hall_to_sector                           0x08005096   Data           8  bldcsine.o(.rodata.cst8)
+    [Anonymous Symbol]                       0x08005096   Section        0  bldcsine.o(.rodata.cst8)
+    .L__const.rcu_clock_freq_get.apb2_exp    0x0800509e   Data           8  gd32f1x0_rcu.o(.rodata.cst8)
+    sine_table                               0x08005384   Data         720  bldcsine.o(.rodata.sine_table)
+    [Anonymous Symbol]                       0x08005384   Section        0  bldcsine.o(.rodata.sine_table)
     STACK                                    0x20000120   Section     1024  startup_gd32f1x0.o(STACK)
 
     Global Symbols
@@ -464,21 +460,21 @@ Image Symbol Table
     _main_init                               0x08000171   Thumb Code     0  entry9a.o(.ARM.Collect$$$$0000000B)
     __rt_final_cpp                           0x08000179   Thumb Code     0  entry10a.o(.ARM.Collect$$$$0000000D)
     __rt_final_exit                          0x08000179   Thumb Code     0  entry11a.o(.ARM.Collect$$$$0000000F)
-    main                                     0x0800017d   Thumb Code  1538  main.o(.text)
-    ShutOff                                  0x08000781   Thumb Code   128  main.o(.text)
-    ShowBatteryState                         0x08000801   Thumb Code   148  main.o(.text)
-    modulo                                   0x08000895   Thumb Code    22  bldc.o(.text)
-    up_or_down                               0x080008ad   Thumb Code    60  bldc.o(.text)
-    SetEnable                                0x080008e9   Thumb Code    12  bldc.o(.text)
-    SetPWM                                   0x080008f5   Thumb Code    74  bldc.o(.text)
-    CalculateBLDC                            0x08000941   Thumb Code   926  bldc.o(.text)
-    InitEXTI                                 0x08000ce1   Thumb Code    62  bldcsine.o(.text)
-    InitBldc                                 0x08000d21   Thumb Code   134  bldcsine.o(.text)
-    _HandleEXTI                              0x08000da9   Thumb Code   174  bldcsine.o(.text)
-    EXTI0_1_IRQHandler                       0x08000e59   Thumb Code     4  bldcsine.o(.text)
-    EXTI2_3_IRQHandler                       0x08000e5d   Thumb Code     4  bldcsine.o(.text)
-    EXTI4_15_IRQHandler                      0x08000e61   Thumb Code     4  bldcsine.o(.text)
-    bldc_get_pwm                             0x08000e65   Thumb Code   572  bldcsine.o(.text)
+    main                                     0x0800017d   Thumb Code  1530  main.o(.text)
+    ShutOff                                  0x08000779   Thumb Code   128  main.o(.text)
+    ShowBatteryState                         0x080007f9   Thumb Code   148  main.o(.text)
+    modulo                                   0x0800088d   Thumb Code    22  bldc.o(.text)
+    up_or_down                               0x080008a5   Thumb Code    60  bldc.o(.text)
+    SetEnable                                0x080008e1   Thumb Code    12  bldc.o(.text)
+    SetPWM                                   0x080008ed   Thumb Code    74  bldc.o(.text)
+    CalculateBLDC                            0x08000939   Thumb Code   926  bldc.o(.text)
+    InitEXTI                                 0x08000cd9   Thumb Code    62  bldcsine.o(.text)
+    InitBldc                                 0x08000d19   Thumb Code   134  bldcsine.o(.text)
+    _HandleEXTI                              0x08000da1   Thumb Code   174  bldcsine.o(.text)
+    EXTI0_1_IRQHandler                       0x08000e51   Thumb Code     4  bldcsine.o(.text)
+    EXTI2_3_IRQHandler                       0x08000e55   Thumb Code     4  bldcsine.o(.text)
+    EXTI4_15_IRQHandler                      0x08000e59   Thumb Code     4  bldcsine.o(.text)
+    bldc_get_pwm                             0x08000e5d   Thumb Code   580  bldcsine.o(.text)
     pinMode                                  0x080010a1   Thumb Code    42  setup.o(.text)
     pinModePull                              0x080010cd   Thumb Code    40  setup.o(.text)
     Interrupt_init                           0x080010f5   Thumb Code     8  setup.o(.text)
@@ -819,35 +815,34 @@ Image Symbol Table
     __aeabi_fcmplt                           0x08004d39   Thumb Code    28  fcmplt.o(.text)
     __aeabi_fcmpge                           0x08004d55   Thumb Code    28  fcmpge.o(.text)
     __aeabi_fcmpgt                           0x08004d71   Thumb Code    28  fcmpgt.o(.text)
-    __aeabi_dcmple                           0x08004d8d   Thumb Code    54  dcmple.o(.text)
-    __aeabi_i2f                              0x08004dc3   Thumb Code    18  fflti.o(.text)
-    __aeabi_ui2f                             0x08004dd5   Thumb Code    10  ffltui.o(.text)
-    __aeabi_i2d                              0x08004ddf   Thumb Code    34  dflti.o(.text)
-    __aeabi_ui2d                             0x08004e01   Thumb Code    26  dfltui.o(.text)
-    __aeabi_f2iz                             0x08004e1b   Thumb Code    50  ffixi.o(.text)
-    __aeabi_d2iz                             0x08004e4d   Thumb Code    62  dfixi.o(.text)
-    __aeabi_f2d                              0x08004e8b   Thumb Code    38  f2d.o(.text)
-    __aeabi_d2f                              0x08004eb1   Thumb Code    56  d2f.o(.text)
-    __aeabi_llsl                             0x08004ee9   Thumb Code    30  llshl.o(.text)
-    _ll_shift_l                              0x08004ee9   Thumb Code     0  llshl.o(.text)
-    __aeabi_llsr                             0x08004f07   Thumb Code    32  llushr.o(.text)
-    _ll_ushift_r                             0x08004f07   Thumb Code     0  llushr.o(.text)
-    __aeabi_lasr                             0x08004f27   Thumb Code    36  llsshr.o(.text)
-    _ll_sshift_r                             0x08004f27   Thumb Code     0  llsshr.o(.text)
-    __I$use$fp                               0x08004f4b   Thumb Code     0  iusefp.o(.text)
-    _float_round                             0x08004f4b   Thumb Code    18  fepilogue.o(.text)
-    _float_epilogue                          0x08004f5d   Thumb Code    92  fepilogue.o(.text)
-    _double_round                            0x08004fb9   Thumb Code    30  depilogue.o(.text)
-    _double_epilogue                         0x08004fd7   Thumb Code   156  depilogue.o(.text)
-    __scatterload                            0x08005075   Thumb Code    28  init.o(.text)
-    __scatterload_rt2                        0x08005075   Thumb Code     0  init.o(.text)
-    __scatterload_copy                       0x08005099   Thumb Code    14  handlers.o(i.__scatterload_copy)
-    __scatterload_null                       0x080050a7   Thumb Code     2  handlers.o(i.__scatterload_null)
-    __scatterload_zeroinit                   0x080050a9   Thumb Code    14  handlers.o(i.__scatterload_zeroinit)
-    hall_to_pos                              0x080050de   Data           8  bldc.o(.rodata.hall_to_pos)
-    lookUpTableAngle                         0x080050e8   Data         724  main.o(.rodata.lookUpTableAngle)
-    Region$$Table$$Base                      0x0800568c   Number         0  anon$$obj.o(Region$$Table)
-    Region$$Table$$Limit                     0x080056ac   Number         0  anon$$obj.o(Region$$Table)
+    __aeabi_i2f                              0x08004d8d   Thumb Code    18  fflti.o(.text)
+    __aeabi_ui2f                             0x08004d9f   Thumb Code    10  ffltui.o(.text)
+    __aeabi_i2d                              0x08004da9   Thumb Code    34  dflti.o(.text)
+    __aeabi_ui2d                             0x08004dcb   Thumb Code    26  dfltui.o(.text)
+    __aeabi_f2iz                             0x08004de5   Thumb Code    50  ffixi.o(.text)
+    __aeabi_d2iz                             0x08004e17   Thumb Code    62  dfixi.o(.text)
+    __aeabi_f2d                              0x08004e55   Thumb Code    38  f2d.o(.text)
+    __aeabi_d2f                              0x08004e7b   Thumb Code    56  d2f.o(.text)
+    __aeabi_llsl                             0x08004eb3   Thumb Code    30  llshl.o(.text)
+    _ll_shift_l                              0x08004eb3   Thumb Code     0  llshl.o(.text)
+    __aeabi_llsr                             0x08004ed1   Thumb Code    32  llushr.o(.text)
+    _ll_ushift_r                             0x08004ed1   Thumb Code     0  llushr.o(.text)
+    __aeabi_lasr                             0x08004ef1   Thumb Code    36  llsshr.o(.text)
+    _ll_sshift_r                             0x08004ef1   Thumb Code     0  llsshr.o(.text)
+    __I$use$fp                               0x08004f15   Thumb Code     0  iusefp.o(.text)
+    _float_round                             0x08004f15   Thumb Code    18  fepilogue.o(.text)
+    _float_epilogue                          0x08004f27   Thumb Code    92  fepilogue.o(.text)
+    _double_round                            0x08004f83   Thumb Code    30  depilogue.o(.text)
+    _double_epilogue                         0x08004fa1   Thumb Code   156  depilogue.o(.text)
+    __scatterload                            0x0800503d   Thumb Code    28  init.o(.text)
+    __scatterload_rt2                        0x0800503d   Thumb Code     0  init.o(.text)
+    __scatterload_copy                       0x08005061   Thumb Code    14  handlers.o(i.__scatterload_copy)
+    __scatterload_null                       0x0800506f   Thumb Code     2  handlers.o(i.__scatterload_null)
+    __scatterload_zeroinit                   0x08005071   Thumb Code    14  handlers.o(i.__scatterload_zeroinit)
+    hall_to_pos                              0x080050a6   Data           8  bldc.o(.rodata.hall_to_pos)
+    lookUpTableAngle                         0x080050b0   Data         724  main.o(.rodata.lookUpTableAngle)
+    Region$$Table$$Base                      0x08005654   Number         0  anon$$obj.o(Region$$Table)
+    Region$$Table$$Limit                     0x08005674   Number         0  anon$$obj.o(Region$$Table)
     SystemCoreClock                          0x20000000   Data           4  system_gd32f1x0.o(.data.SystemCoreClock)
     batteryVoltage                           0x20000004   Data           4  bldc.o(.data.batteryVoltage)
     beepsBackwards                           0x20000008   Data           1  main.o(.data.beepsBackwards)
@@ -915,26 +910,26 @@ Memory Map of the image
 
   Image Entry point : 0x08000169
 
-  Load Region LR_IROM1 (Base: 0x08000000, Size: 0x000056c8, Max: 0x00010000, ABSOLUTE)
+  Load Region LR_IROM1 (Base: 0x08000000, Size: 0x00005690, Max: 0x00010000, ABSOLUTE)
 
-    Execution Region ER_IROM1 (Exec base: 0x08000000, Load base: 0x08000000, Size: 0x000056ac, Max: 0x00010000, ABSOLUTE)
+    Execution Region ER_IROM1 (Exec base: 0x08000000, Load base: 0x08000000, Size: 0x00005674, Max: 0x00010000, ABSOLUTE)
 
     Exec Addr    Load Addr    Size         Type   Attr      Idx    E Section Name        Object
 
     0x08000000   0x08000000   0x00000168   Data   RO          274    RESET               startup_gd32f1x0.o
     0x08000168   0x08000168   0x00000000   Code   RO          291  * .ARM.Collect$$$$00000000  mc_w.l(entry.o)
-    0x08000168   0x08000168   0x00000004   Code   RO          332    .ARM.Collect$$$$00000001  mc_w.l(entry2.o)
-    0x0800016c   0x0800016c   0x00000004   Code   RO          335    .ARM.Collect$$$$00000004  mc_w.l(entry5.o)
-    0x08000170   0x08000170   0x00000000   Code   RO          337    .ARM.Collect$$$$00000008  mc_w.l(entry7b.o)
-    0x08000170   0x08000170   0x00000000   Code   RO          339    .ARM.Collect$$$$0000000A  mc_w.l(entry8b.o)
-    0x08000170   0x08000170   0x00000008   Code   RO          340    .ARM.Collect$$$$0000000B  mc_w.l(entry9a.o)
-    0x08000178   0x08000178   0x00000000   Code   RO          342    .ARM.Collect$$$$0000000D  mc_w.l(entry10a.o)
-    0x08000178   0x08000178   0x00000000   Code   RO          344    .ARM.Collect$$$$0000000F  mc_w.l(entry11a.o)
-    0x08000178   0x08000178   0x00000004   Code   RO          333    .ARM.Collect$$$$00002712  mc_w.l(entry2.o)
-    0x0800017c   0x0800017c   0x00000718   Code   RO            1    .text               main.o
-    0x08000894   0x08000894   0x0000044a   Code   RO           26    .text               bldc.o
-    0x08000cde   0x08000cde   0x00000002   PAD
-    0x08000ce0   0x08000ce0   0x000003c0   Code   RO           60    .text               bldcsine.o
+    0x08000168   0x08000168   0x00000004   Code   RO          330    .ARM.Collect$$$$00000001  mc_w.l(entry2.o)
+    0x0800016c   0x0800016c   0x00000004   Code   RO          333    .ARM.Collect$$$$00000004  mc_w.l(entry5.o)
+    0x08000170   0x08000170   0x00000000   Code   RO          335    .ARM.Collect$$$$00000008  mc_w.l(entry7b.o)
+    0x08000170   0x08000170   0x00000000   Code   RO          337    .ARM.Collect$$$$0000000A  mc_w.l(entry8b.o)
+    0x08000170   0x08000170   0x00000008   Code   RO          338    .ARM.Collect$$$$0000000B  mc_w.l(entry9a.o)
+    0x08000178   0x08000178   0x00000000   Code   RO          340    .ARM.Collect$$$$0000000D  mc_w.l(entry10a.o)
+    0x08000178   0x08000178   0x00000000   Code   RO          342    .ARM.Collect$$$$0000000F  mc_w.l(entry11a.o)
+    0x08000178   0x08000178   0x00000004   Code   RO          331    .ARM.Collect$$$$00002712  mc_w.l(entry2.o)
+    0x0800017c   0x0800017c   0x00000710   Code   RO            1    .text               main.o
+    0x0800088c   0x0800088c   0x0000044a   Code   RO           26    .text               bldc.o
+    0x08000cd6   0x08000cd6   0x00000002   PAD
+    0x08000cd8   0x08000cd8   0x000003c8   Code   RO           60    .text               bldcsine.o
     0x080010a0   0x080010a0   0x000007a8   Code   RO           85    .text               setup.o
     0x08001848   0x08001848   0x000000ee   Code   RO          103    .text               it.o
     0x08001936   0x08001936   0x00000002   PAD
@@ -966,50 +961,48 @@ Memory Map of the image
     0x08004d38   0x08004d38   0x0000001c   Code   RO          308    .text               mf_w.l(fcmplt.o)
     0x08004d54   0x08004d54   0x0000001c   Code   RO          310    .text               mf_w.l(fcmpge.o)
     0x08004d70   0x08004d70   0x0000001c   Code   RO          312    .text               mf_w.l(fcmpgt.o)
-    0x08004d8c   0x08004d8c   0x00000036   Code   RO          314    .text               mf_w.l(dcmple.o)
-    0x08004dc2   0x08004dc2   0x00000012   Code   RO          316    .text               mf_w.l(fflti.o)
-    0x08004dd4   0x08004dd4   0x0000000a   Code   RO          318    .text               mf_w.l(ffltui.o)
-    0x08004dde   0x08004dde   0x00000022   Code   RO          320    .text               mf_w.l(dflti.o)
-    0x08004e00   0x08004e00   0x0000001a   Code   RO          322    .text               mf_w.l(dfltui.o)
-    0x08004e1a   0x08004e1a   0x00000032   Code   RO          324    .text               mf_w.l(ffixi.o)
-    0x08004e4c   0x08004e4c   0x0000003e   Code   RO          326    .text               mf_w.l(dfixi.o)
-    0x08004e8a   0x08004e8a   0x00000026   Code   RO          328    .text               mf_w.l(f2d.o)
-    0x08004eb0   0x08004eb0   0x00000038   Code   RO          330    .text               mf_w.l(d2f.o)
-    0x08004ee8   0x08004ee8   0x0000001e   Code   RO          346    .text               mc_w.l(llshl.o)
-    0x08004f06   0x08004f06   0x00000020   Code   RO          348    .text               mc_w.l(llushr.o)
-    0x08004f26   0x08004f26   0x00000024   Code   RO          350    .text               mc_w.l(llsshr.o)
-    0x08004f4a   0x08004f4a   0x00000000   Code   RO          352    .text               mc_w.l(iusefp.o)
-    0x08004f4a   0x08004f4a   0x0000006e   Code   RO          353    .text               mf_w.l(fepilogue.o)
-    0x08004fb8   0x08004fb8   0x000000ba   Code   RO          355    .text               mf_w.l(depilogue.o)
-    0x08005072   0x08005072   0x00000002   PAD
-    0x08005074   0x08005074   0x00000024   Code   RO          357    .text               mc_w.l(init.o)
-    0x08005098   0x08005098   0x0000000e   Code   RO          361    i.__scatterload_copy  mc_w.l(handlers.o)
-    0x080050a6   0x080050a6   0x00000002   Code   RO          362    i.__scatterload_null  mc_w.l(handlers.o)
-    0x080050a8   0x080050a8   0x0000000e   Code   RO          363    i.__scatterload_zeroinit  mc_w.l(handlers.o)
-    0x080050b6   0x080050b6   0x0000000c   Data   RO           43    .rodata..L__const.up_or_down.up_down  bldc.o
-    0x080050c2   0x080050c2   0x0000000c   Data   RO          194    .rodata..Lswitch.table.gpio_deinit.1  gd32f1x0_gpio.o
-    0x080050ce   0x080050ce   0x00000008   Data   RO           76    .rodata.cst8        bldcsine.o
-    0x080050d6   0x080050d6   0x00000008   Data   RO          232    .rodata.cst8        gd32f1x0_rcu.o
-    0x080050de   0x080050de   0x00000008   Data   RO           44    .rodata.hall_to_pos  bldc.o
-    0x080050e6   0x080050e6   0x00000002   PAD
-    0x080050e8   0x080050e8   0x000002d4   Data   RO           14    .rodata.lookUpTableAngle  main.o
-    0x080053bc   0x080053bc   0x000002d0   Data   RO           77    .rodata.sine_table  bldcsine.o
-    0x0800568c   0x0800568c   0x00000020   Data   RO          360    Region$$Table       anon$$obj.o
+    0x08004d8c   0x08004d8c   0x00000012   Code   RO          314    .text               mf_w.l(fflti.o)
+    0x08004d9e   0x08004d9e   0x0000000a   Code   RO          316    .text               mf_w.l(ffltui.o)
+    0x08004da8   0x08004da8   0x00000022   Code   RO          318    .text               mf_w.l(dflti.o)
+    0x08004dca   0x08004dca   0x0000001a   Code   RO          320    .text               mf_w.l(dfltui.o)
+    0x08004de4   0x08004de4   0x00000032   Code   RO          322    .text               mf_w.l(ffixi.o)
+    0x08004e16   0x08004e16   0x0000003e   Code   RO          324    .text               mf_w.l(dfixi.o)
+    0x08004e54   0x08004e54   0x00000026   Code   RO          326    .text               mf_w.l(f2d.o)
+    0x08004e7a   0x08004e7a   0x00000038   Code   RO          328    .text               mf_w.l(d2f.o)
+    0x08004eb2   0x08004eb2   0x0000001e   Code   RO          344    .text               mc_w.l(llshl.o)
+    0x08004ed0   0x08004ed0   0x00000020   Code   RO          346    .text               mc_w.l(llushr.o)
+    0x08004ef0   0x08004ef0   0x00000024   Code   RO          348    .text               mc_w.l(llsshr.o)
+    0x08004f14   0x08004f14   0x00000000   Code   RO          350    .text               mc_w.l(iusefp.o)
+    0x08004f14   0x08004f14   0x0000006e   Code   RO          351    .text               mf_w.l(fepilogue.o)
+    0x08004f82   0x08004f82   0x000000ba   Code   RO          353    .text               mf_w.l(depilogue.o)
+    0x0800503c   0x0800503c   0x00000024   Code   RO          355    .text               mc_w.l(init.o)
+    0x08005060   0x08005060   0x0000000e   Code   RO          359    i.__scatterload_copy  mc_w.l(handlers.o)
+    0x0800506e   0x0800506e   0x00000002   Code   RO          360    i.__scatterload_null  mc_w.l(handlers.o)
+    0x08005070   0x08005070   0x0000000e   Code   RO          361    i.__scatterload_zeroinit  mc_w.l(handlers.o)
+    0x0800507e   0x0800507e   0x0000000c   Data   RO           43    .rodata..L__const.up_or_down.up_down  bldc.o
+    0x0800508a   0x0800508a   0x0000000c   Data   RO          194    .rodata..Lswitch.table.gpio_deinit.1  gd32f1x0_gpio.o
+    0x08005096   0x08005096   0x00000008   Data   RO           76    .rodata.cst8        bldcsine.o
+    0x0800509e   0x0800509e   0x00000008   Data   RO          232    .rodata.cst8        gd32f1x0_rcu.o
+    0x080050a6   0x080050a6   0x00000008   Data   RO           44    .rodata.hall_to_pos  bldc.o
+    0x080050ae   0x080050ae   0x00000002   PAD
+    0x080050b0   0x080050b0   0x000002d4   Data   RO           14    .rodata.lookUpTableAngle  main.o
+    0x08005384   0x08005384   0x000002d0   Data   RO           77    .rodata.sine_table  bldcsine.o
+    0x08005654   0x08005654   0x00000020   Data   RO          358    Region$$Table       anon$$obj.o
 
 
-    Execution Region RW_IRAM1 (Exec base: 0x20000000, Load base: 0x080056b0, Size: 0x00000520, Max: 0x00002000, ABSOLUTE)
+    Execution Region RW_IRAM1 (Exec base: 0x20000000, Load base: 0x08005678, Size: 0x00000520, Max: 0x00002000, ABSOLUTE)
 
     Exec Addr    Load Addr    Size         Type   Attr      Idx    E Section Name        Object
 
-    0x20000000   0x080056b0   0x00000004   Data   RW          283    .data.SystemCoreClock  system_gd32f1x0.o
-    0x20000004   0x080056b4   0x00000004   Data   RW           28    .data.batteryVoltage  bldc.o
-    0x20000008   0x080056b8   0x00000001   Data   RW           11    .data.beepsBackwards  main.o
-    0x20000009   0x080056b9   0x00000003   PAD
-    0x2000000c   0x080056bc   0x00000004   Data   RW           29    .data.currentDC     bldc.o
-    0x20000010   0x080056c0   0x00000002   Data   RW           37    .data.offsetdc      bldc.o
-    0x20000012   0x080056c2   0x00000002   Data   RW            6    .data.speedLimit    main.o
-    0x20000014   0x080056c4   0x00000001   Data   RW            7    .data.wState        main.o
-    0x20000015   0x080056c5   0x00000003   PAD
+    0x20000000   0x08005678   0x00000004   Data   RW          283    .data.SystemCoreClock  system_gd32f1x0.o
+    0x20000004   0x0800567c   0x00000004   Data   RW           28    .data.batteryVoltage  bldc.o
+    0x20000008   0x08005680   0x00000001   Data   RW           11    .data.beepsBackwards  main.o
+    0x20000009   0x08005681   0x00000003   PAD
+    0x2000000c   0x08005684   0x00000004   Data   RW           29    .data.currentDC     bldc.o
+    0x20000010   0x08005688   0x00000002   Data   RW           37    .data.offsetdc      bldc.o
+    0x20000012   0x0800568a   0x00000002   Data   RW            6    .data.speedLimit    main.o
+    0x20000014   0x0800568c   0x00000001   Data   RW            7    .data.wState        main.o
+    0x20000015   0x0800568d   0x00000003   PAD
     0x20000018        -       0x0000000c   Zero   RW           71    .bss.aHallEXTI      bldcsine.o
     0x20000024        -       0x00000004   Zero   RW           45    .bss.adc_buffer     bldc.o
     0x20000028        -       0x00000004   Zero   RW           66    .bss.angle_deg      bldcsine.o
@@ -1024,10 +1017,10 @@ Memory Map of the image
     0x2000003d        -       0x00000001   Zero   RW           41    .bss.buzzerPattern  bldc.o
     0x2000003e        -       0x00000002   Zero   RW           35    .bss.buzzerTimer    bldc.o
     0x20000040        -       0x00000001   Zero   RW           39    .bss.buzzerToggle   bldc.o
-    0x20000041   0x080056c5   0x00000003   PAD
+    0x20000041   0x0800568d   0x00000003   PAD
     0x20000044        -       0x00000024   Zero   RW           91    .bss.dma_init_struct_adc  setup.o
     0x20000068        -       0x00000001   Zero   RW           15    .bss.enable         main.o
-    0x20000069   0x080056c5   0x00000003   PAD
+    0x20000069   0x0800568d   0x00000003   PAD
     0x2000006c        -       0x00000004   Zero   RW           65    .bss.fDT            bldcsine.o
     0x20000070        -       0x00000004   Zero   RW           50    .bss.filter_reg     bldc.o
     0x20000074        -       0x00000001   Zero   RW           33    .bss.hall           bldc.o
@@ -1035,35 +1028,35 @@ Memory Map of the image
     0x20000076        -       0x00000001   Zero   RW           47    .bss.hall_b         bldc.o
     0x20000077        -       0x00000001   Zero   RW           48    .bss.hall_c         bldc.o
     0x20000078        -       0x00000001   Zero   RW           75    .bss.hall_last      bldcsine.o
-    0x20000079   0x080056c5   0x00000001   PAD
+    0x20000079   0x0800568d   0x00000001   PAD
     0x2000007a        -       0x00000002   Zero   RW           73    .bss.hall_time_last  bldcsine.o
     0x2000007c        -       0x00000002   Zero   RW           74    .bss.hall_time_step  bldcsine.o
-    0x2000007e   0x080056c5   0x00000002   PAD
+    0x2000007e   0x0800568d   0x00000002   PAD
     0x20000080        -       0x00000004   Zero   RW           42    .bss.iOdom          bldc.o
     0x20000084        -       0x00000004   Zero   RW           17    .bss.iTimeNextLoop  main.o
     0x20000088        -       0x00000004   Zero   RW           13    .bss.inactivity_timeout_counter  main.o
     0x2000008c        -       0x00000001   Zero   RW           51    .bss.lastPos        bldc.o
-    0x2000008d   0x080056c5   0x00000003   PAD
+    0x2000008d   0x0800568d   0x00000003   PAD
     0x20000090        -       0x00000004   Zero   RW          107    .bss.msTicks        it.o
     0x20000094        -       0x00000012   Zero   RW           92    .bss.oConfig        setup.o
     0x200000a6        -       0x00000002   Zero   RW           36    .bss.offsetcount    bldc.o
     0x200000a8        -       0x00000001   Zero   RW           49    .bss.pos            bldc.o
-    0x200000a9   0x080056c5   0x00000003   PAD
+    0x200000a9   0x0800568d   0x00000003   PAD
     0x200000ac        -       0x00000004   Zero   RW           70    .bss.pwmGo          bldcsine.o
     0x200000b0        -       0x00000002   Zero   RW           16    .bss.pwmSlave       main.o
-    0x200000b2   0x080056c5   0x00000002   PAD
+    0x200000b2   0x0800568d   0x00000002   PAD
     0x200000b4        -       0x00000004   Zero   RW           30    .bss.realSpeed      bldc.o
     0x200000b8        -       0x00000001   Zero   RW           63    .bss.sector         bldcsine.o
     0x200000b9        -       0x00000001   Zero   RW           64    .bss.sector10x      bldcsine.o
     0x200000ba        -       0x00000001   Zero   RW           62    .bss.sectorChange   bldcsine.o
-    0x200000bb   0x080056c5   0x00000001   PAD
+    0x200000bb   0x0800568d   0x00000001   PAD
     0x200000bc        -       0x00000004   Zero   RW            4    .bss.speed          main.o
     0x200000c0        -       0x00000004   Zero   RW           38    .bss.speedCounter   bldc.o
     0x200000c4        -       0x00000004   Zero   RW            5    .bss.speedShutoff   main.o
     0x200000c8        -       0x00000004   Zero   RW            9    .bss.steer          main.o
     0x200000cc        -       0x00000004   Zero   RW            3    .bss.steerCounter   main.o
     0x200000d0        -       0x00000001   Zero   RW          106    .bss.timedOut       it.o
-    0x200000d1   0x080056c5   0x00000003   PAD
+    0x200000d1   0x0800568d   0x00000003   PAD
     0x200000d4        -       0x00000004   Zero   RW          105    .bss.timeoutCounter_ms  it.o
     0x200000d8        -       0x00000010   Zero   RW           87    .bss.timeoutTimer_paramter_struct  setup.o
     0x200000e8        -       0x00000018   Zero   RW           90    .bss.timerBldc_break_parameter_struct  setup.o
@@ -1080,7 +1073,7 @@ Image component sizes
       Code (inc. data)   RO Data    RW Data    ZI Data      Debug   Object Name
 
       1098          0         20         10         38       3653   bldc.o
-       960          0        728          0         43       6314   bldcsine.o
+       968          0        728          0         43       6395   bldcsine.o
       1446         16          0          0          0       7602   gd32f1x0_adc.o
        844          8          0          0          0       6135   gd32f1x0_dma.o
        366          0          0          0          0       3198   gd32f1x0_exti.o
@@ -1092,14 +1085,14 @@ Image component sizes
        258          4          0          0          0       2965   gd32f1x0_syscfg.o
       3424         44          0          0          0      18343   gd32f1x0_timer.o
        238          0          0          0          9       2400   it.o
-      1816          0        724          4         27       6674   main.o
+      1808          0        724          4         27       6671   main.o
        114          0          0          0          0        663   remotedummy.o
       1960          0          0          0        126       9388   setup.o
         36          8        360          0       1024        844   startup_gd32f1x0.o
        316         16          0          4          0       1592   system_gd32f1x0.o
 
     ----------------------------------------------------------------------
-     18176        130       1886         24       1288     105870   Object Totals
+     18176        130       1886         24       1288     105948   Object Totals
          0          0         32          0          0          0   (incl. Generated)
         14          0          2          6         21          0   (incl. Padding)
 
@@ -1123,7 +1116,6 @@ Image component sizes
         32          0          0          0          0         68   llushr.o
         56          0          0          0          0         88   d2f.o
        334          0          0          0          0        148   dadd.o
-        54          0          0          0          0         80   dcmple.o
        222          0          0          0          0        100   ddiv.o
        186          0          0          0          0        176   depilogue.o
         62          0          0          0          0         80   dfixi.o
@@ -1144,18 +1136,18 @@ Image component sizes
        100          0          0          0          0         76   fmul.o
 
     ----------------------------------------------------------------------
-      2126         16          0          0          0       2208   Library Totals
-         2          0          0          0          0          0   (incl. Padding)
+      2070         16          0          0          0       2128   Library Totals
+         0          0          0          0          0          0   (incl. Padding)
 
     ----------------------------------------------------------------------
 
       Code (inc. data)   RO Data    RW Data    ZI Data      Debug   Library Name
 
        184         16          0          0          0        272   mc_w.l
-      1940          0          0          0          0       1936   mf_w.l
+      1886          0          0          0          0       1856   mf_w.l
 
     ----------------------------------------------------------------------
-      2126         16          0          0          0       2208   Library Totals
+      2070         16          0          0          0       2128   Library Totals
 
     ----------------------------------------------------------------------
 
@@ -1164,15 +1156,15 @@ Image component sizes
 
       Code (inc. data)   RO Data    RW Data    ZI Data      Debug   
 
-     20302        146       1886         24       1288     106766   Grand Totals
-     20302        146       1886         24       1288     106766   ELF Image Totals
-     20302        146       1886         24          0          0   ROM Totals
+     20246        146       1886         24       1288     106816   Grand Totals
+     20246        146       1886         24       1288     106816   ELF Image Totals
+     20246        146       1886         24          0          0   ROM Totals
 
 ==============================================================================
 
-    Total RO  Size (Code + RO Data)                22188 (  21.67kB)
+    Total RO  Size (Code + RO Data)                22132 (  21.61kB)
     Total RW  Size (RW Data + ZI Data)              1312 (   1.28kB)
-    Total ROM Size (Code + RO Data + RW Data)      22212 (  21.69kB)
+    Total ROM Size (Code + RO Data + RW Data)      22156 (  21.64kB)
 
 ==============================================================================
 

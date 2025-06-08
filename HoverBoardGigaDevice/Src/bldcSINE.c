@@ -131,11 +131,6 @@ void _HandleEXTI()
 	}
 }
 
-/*
-                EXPORT  EXTI0_1_IRQHandler                [WEAK]
-                EXPORT  EXTI2_3_IRQHandler                [WEAK]
-                EXPORT  EXTI4_15_IRQHandler               [WEAK]
-*/
 void EXTI0_1_IRQHandler(void) 
 {
 	_HandleEXTI();
@@ -154,6 +149,7 @@ void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) 	// pos is not used 
 	
 	pwmGo = -pwm;
 	uint32_t safe_hall_time_last,safe_hall_time_step;
+	uint8_t iRetries = 10;
 	do	// Get current sector (0-5) and other interrupt set data
 	{
 		bInterrupt = 0;
@@ -161,7 +157,7 @@ void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) 	// pos is not used 
 		sectorLast = hall_to_sector[hall_last];
 		safe_hall_time_last = hall_time_last;  // Timestamp of last edge. last_edge and pos might change any time by gpio interrupt! 
 		safe_hall_time_step = hall_time_step;
-	} while (bInterrupt);	 // during last three mappings, a hall interrupt might have occured
+	} while (bInterrupt && iRetries--);	 // during last three mappings, a hall interrupt might have occured
 
 	sector10x = 10* sector;
 	
