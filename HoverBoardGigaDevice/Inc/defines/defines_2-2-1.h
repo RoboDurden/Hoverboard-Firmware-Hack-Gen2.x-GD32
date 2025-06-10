@@ -6,13 +6,11 @@
 // WARNING, this is the 2.1.4 defines and only as a placeholder to let firmware compile
 
 // autodetect 2024/04/05 by robo
-#define HALL_A		PA0
-#define HALL_B		PA1
+#define HALL_A		PA1
+#define HALL_B		PA0
 #define HALL_C		PA2
-#define PHASE_A		PA7
-#define PHASE_B		PB0
-#define PHASE_C		PB1
 
+/*
 #define LED_RED		PA15
 #define LED_ORANGE		PB4
 #define LED_GREEN		PB3
@@ -21,11 +19,13 @@
 //#define ONBOARD_LED		P??
 #define BUZZER		PA11
 
-#define VBATT		PA5
-#define CURRENT_DC		PA6
 #define SELF_HOLD		PA3
 //#define BUTTON		P??
 #define BUTTON_PU		PA4
+*/
+
+#define VBATT		PA5
+#define CURRENT_DC		PA7
 
 
 #define ADC_BATTERY_VOLT      0.025392524927  	//	robo, calibrated with 27V power supply
@@ -39,8 +39,7 @@
 #define BLDC_BL PB14		
 #define BLDC_YH PA8			// yellow
 #define BLDC_YL PB13		
-#define TIMER_BLDC_PULLUP	GPIO_PUPD_NONE	// robo: not sure if some boards indeed nned GPIO_PUPD_PULLUP like 2.2 or 2.3
-
+#define TIMER_BLDC_PULLUP	GPIO_MODE_AF_PP	// robo: not sure if some boards indeed nned GPIO_PUPD_PULLUP like 2.2 or 2.3
 
 // Timer BLDC short circuit emergency shutoff define
 //#define TIMER_BLDC_EMERGENCY_SHUTDOWN	TODO_PIN

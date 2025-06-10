@@ -3,7 +3,30 @@
 	#define TARGET_nvic_irq_enable(a, b, c){nvic_irq_enable(a, b);}
 	#define TARGET_nvic_priority_group_set(a)	// that function does not exist for this target = not needed ?
 	#define TARGET_adc_vbat_disable()
-		#define TARGET_ADC_RDATA ADC_RDATA
+	#define TARGET_ADC_RDATA ADC_RDATA
+	
+	#define TARGET_fwdgt_window_value_config(a) fwdgt_window_value_config(a)
+	
+	
+	
+	#define TARGET_ADC_RDATA ADC_RDATA
+	#define TARGET_adc_dma_mode_enable()	adc_dma_mode_enable()
+	#define TARGET_dma_deinit(a) dma_deinit(a)
+	#define TARGET_dma_init(a,b) dma_init(a,b)
+	#define TARGET_dma_circulation_enable(a) dma_circulation_enable(a)
+	#define TARGET_dma_memory_to_memory_disable(a) dma_memory_to_memory_disable(a)
+	#define TARGET_dma_interrupt_enable(a,b) dma_interrupt_enable(a,b)
+	#define TARGET_dma_transfer_number_config(a,b) dma_transfer_number_config(a,b)
+	#define TARGET_dma_channel_enable(a) dma_channel_enable(a)
+	#define TARGET_adc_channel_length_config(a,b) adc_channel_length_config(a,b)
+	#define TARGET_adc_regular_channel_config(a,b,c)	adc_regular_channel_config(a,b,c)
+	#define TARGET_adc_data_alignment_config(a)	adc_data_alignment_config(a)
+	#define TARGET_adc_external_trigger_config(a,b)	adc_external_trigger_config(a,b)
+	#define TARGET_adc_external_trigger_source_config(a,b)	adc_external_trigger_source_config(a,b)
+	#define TARGET_adc_watchdog_disable() adc_watchdog_disable()
+	#define TARGET_adc_enable()	adc_enable()
+	#define TARGET_adc_calibration_enable()	adc_calibration_enable()
+	#define TARGET_adc_special_function_config(a,b)	adc_special_function_config(a,b)
 
 #elif defined MM32SPIN05	
 	#include "mm32_device.h"
@@ -89,83 +112,131 @@
 	*/
 
 	#define GPIO_MODE_INPUT GPIO_MODE_IN_FLOATING
-	#define GPIO_MODE_OUTPUT GPIO_MODE_OUT_OD
+	#define GPIO_MODE_OUTPUT GPIO_MODE_OUT_PP
+	// maybe GPIO_MODE_OUT_PP instead of GPIO_MODE_OUT_OD
+	#define GPIO_MODE_ANALOG	GPIO_MODE_AIN
 	#define pinMode(pin,mode) \
 	{\
-		gpio_init(pin&0xffffff00U, mode, GPIO_OSPEED_10MHZ, BIT(pin&0xfU))\
+		gpio_init(pin&0xffffff00U, mode, GPIO_OSPEED_50MHZ, BIT(pin&0xfU));\
 	}
-	
+		//	gpio_init(pin&0xffffff00U, mode, GPIO_OSPEED_10MHZ, BIT(pin&0xfU))\
+
+	#define pinModeSpeed(pin,mode,speed) \
+	{\
+		gpio_init(pin&0xffffff00U, mode, speed, BIT(pin&0xfU));\
+	}
+
+	#define GPIO_PUPD_PULLUP GPIO_MODE_IPU
+	#define GPIO_PUPD_PULLDOWN GPIO_MODE_IPD
 	#define pinModePull(pin,mode,pull) \
 	{\
-		gpio_init(pin&0xffffff00U, (pull==GPIO_PUPD_PULLUP ? GPIO_MODE_IPU : GPIO_MODE_IPD) , GPIO_OSPEED_10MHZ, BIT(pin&0xfU))\
+		gpio_init(pin&0xffffff00U, pull , GPIO_OSPEED_10MHZ, BIT(pin&0xfU));\
 	}
+
+	//     gpio_init(TIMER_BLDC_GH_PORT, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, TIMER_BLDC_GH_PIN);    
 
 	#define pinModeAF(pin, AF, pullUpDown,speed) \
 	{\
-		todo :-/ \
-		gpio_mode_set(pin&0xffffff00U , GPIO_MODE_AF, pullUpDown, BIT(pin&0xfU));	\
-		gpio_output_options_set(pin&0xffffff00U, GPIO_OTYPE_PP, speed, BIT(pin&0xfU));	\
-		gpio_af_set(pin&0xffffff00U, AF(pin), BIT(pin&0xfU));		\
+		 gpio_init(pin&0xffffff00U, pullUpDown, GPIO_OSPEED_50MHZ, BIT(pin&0xfU)); 	\
 	}
+		// gpio_mode_set(pin&0xffffff00U , GPIO_MODE_AF, pullUpDown, BIT(pin&0xfU));	\
+		// gpio_output_options_set(pin&0xffffff00U, GPIO_OTYPE_PP, speed, BIT(pin&0xfU));	\
+		// gpio_af_set(pin&0xffffff00U, AF(pin), BIT(pin&0xfU));		\
+
 	
 	
 	#define digitalWrite(pin,set) gpio_bit_write(pin&0xffffff00U,  (BIT(pin&0xfU) ), set)
 	#define digitalRead(pin) 			gpio_input_bit_get(pin&0xffffff00U, BIT(pin&0xfU))
 
 	// setup.c
-	
 	#define TARGET_nvic_priority_group_set nvic_priority_group_set
-	#define fwdgt_window_value_config(a) SUCCESS
-	#define rcu_periph_clock_enable(RCU_TIMER_TIMEOUT) rcu_periph_clock_enable(RCU_TIMER3)
-	#define TIMER13_IRQn TIMER3_IRQn
+	#define TARGET_fwdgt_window_value_config(a) SUCCESS
 	
+	#define TIMER_TIMEOUT TIMER3
+	#define TIMEOUT_IrqHandler TIMER3_IRQHandler
+	#define RCU_TIMER_TIMEOUT	RCU_TIMER3
+	#define TIMER_TIMEOUT_IRQn TIMER3_IRQn
+	// bug:-(  #define rcu_periph_clock_enable(RCU_TIMER_TIMEOUT) rcu_periph_clock_enable(RCU_TIMER3)
+
 	//setup.c::Adc_init()
 	#define RCU_ADC RCU_ADC0
 	#define RCU_DMA RCU_DMA0
 	#define RCU_ADCCK_APB2_DIV6 RCU_CKADC_CKAPB2_DIV6
-	#define dma_deinit(a) dma_deinit(DMA0, a)
+	#define TARGET_dma_deinit(a) dma_deinit(DMA0, a)
 	#define TARGET_ADC_RDATA ADC_RDATA(ADC0)
-	#define dma_init(a,b) dma_init(DMA0,a,b)
-	#define dma_circulation_enable(a) dma_circulation_enable(DMA0,a)
-	#define dma_memory_to_memory_disable(a) dma_memory_to_memory_disable(DMA0,a)
-	#define dma_interrupt_enable(a,b) dma_interrupt_enable(DMA0,a,b)
-	#define dma_transfer_number_config(a,b) dma_transfer_number_config(DMA0,a,b)
-	#define dma_channel_enable(a) dma_channel_enable(DMA0,a)
-	#define adc_channel_length_config(a,b) adc_channel_length_config(ADC0,a,b)
-	#define adc_regular_channel_config(a,b,c)	adc_regular_channel_config(ADC0,a,b,c)
-	#define adc_data_alignment_config(a)	adc_data_alignment_config(ADC0,a)
-	#define adc_external_trigger_config(a,b)	adc_external_trigger_config(ADC0,a,b)
-	#define adc_external_trigger_source_config(a,b)	adc_external_trigger_source_config(ADC0,a,b)
+	#define TARGET_dma_init(a,b) dma_init(DMA0,a,b)
+	#define TARGET_dma_circulation_enable(a) dma_circulation_enable(DMA0,a)
+	#define TARGET_dma_memory_to_memory_disable(a) dma_memory_to_memory_disable(DMA0,a)
+	
+	#define TARGET_dma_interrupt_enable(a,b) dma_interrupt_enable(DMA0,a,b)
+	#define TARGET_dma_transfer_number_config(a,b) dma_transfer_number_config(DMA0,a,b)
+	#define TARGET_dma_channel_enable(a) dma_channel_enable(DMA0,a)
+	#define TARGET_adc_channel_length_config(a,b) adc_channel_length_config(ADC0,a,b)
+	#define TARGET_adc_regular_channel_config(a,b,c)	adc_regular_channel_config(ADC0,a,b,c)
+	#define TARGET_adc_data_alignment_config(a)	adc_data_alignment_config(ADC0,a)
+	#define TARGET_adc_external_trigger_config(a,b)	adc_external_trigger_config(ADC0,a,b)
+	#define TARGET_adc_external_trigger_source_config(a,b)	adc_external_trigger_source_config(ADC0,a,b)
 	#define ADC_EXTTRIG_REGULAR_NONE ADC0_1_2_EXTTRIG_REGULAR_NONE
 	#define TARGET_adc_vbat_disable adc_tempsensor_vrefint_disable
-	#define adc_watchdog_disable() adc_watchdog_disable(ADC0)
-	#define adc_enable()	adc_enable(ADC0)
-	#define adc_calibration_enable()	adc_calibration_enable(ADC0)
-	#define adc_dma_mode_enable()	adc_dma_mode_enable(ADC0)
-	#define adc_special_function_config(a,b)	adc_special_function_config(ADC0,a,b)
-	
+	#define TARGET_adc_watchdog_disable() adc_watchdog_disable(ADC0)
+	#define TARGET_adc_enable()	adc_enable(ADC0)
+	#define TARGET_adc_calibration_enable()	adc_calibration_enable(ADC0)
+	#define TARGET_adc_dma_mode_enable()	adc_dma_mode_enable(ADC0)
+	#define TARGET_adc_special_function_config(a,b)	adc_special_function_config(ADC0,a,b)
+
 	#define DMA_Channel0_IRQn DMA0_Channel0_IRQn
+	#define TIMER0_BRK_UP_TRG_COM_IRQn TIMER0_UP_IRQn
 	#define TARGET_nvic_irq_enable(a, b, c){nvic_irq_enable(a, b, c);}
 
+	#define FMC_FLAG_END FMC_FLAG_BANK0_END 
+	#define FMC_FLAG_WPERR FMC_FLAG_BANK0_WPERR
+	
+	
 	// it.c
-	#define TIMER0_BRK_UP_TRG_COM_IRQHandler TIMER0_UP_IRQHandler
-	#define adc_software_trigger_enable(a) adc_software_trigger_enable(ADC0,a)
-	#define dma_interrupt_flag_get(a,b)	dma_interrupt_flag_get(DMA0,a,b)
-	#define dma_interrupt_flag_clear(a,b)	dma_interrupt_flag_clear(DMA0,a,b)
+	#define TARGET_DMA_Channel0_IRQHandler DMA0_Channel0_IRQHandler
+	#define TARGET_TIMER0_BRK_UP_TRG_COM_IRQHandler TIMER0_UP_IRQHandler
+	#define TARGET_adc_software_trigger_enable(a) adc_software_trigger_enable(ADC0,a)
+	#define TARGET_dma_interrupt_flag_get(a,b)	dma_interrupt_flag_get(DMA0,a,b)
+	#define TARGET_dma_interrupt_flag_clear(a,b)	dma_interrupt_flag_clear(DMA0,a,b)
+	
 	
 #else
 	#include "gd32f1x0.h"
 	#include "gd32f1x0_gpio.h"
 	#include "gd32f1x0_exti.h"
 	#include "gd32f1x0_rcu.h"
-
+	// it.c
+	#define TARGET_DMA_Channel0_IRQHandler DMA_Channel0_IRQHandler
+	#define TARGET_TIMER0_BRK_UP_TRG_COM_IRQHandler TIMER0_BRK_UP_TRG_COM_IRQHandler
 	
-	
+	// setup.c
+	#define TARGET_dma_interrupt_flag_get(a,b) dma_interrupt_flag_get(a,b)
+	#define TARGET_dma_interrupt_flag_clear(a,b) dma_interrupt_flag_clear(a,b)
+	#define TARGET_adc_software_trigger_enable(a) adc_software_trigger_enable(a)	
+	#define TARGET_fwdgt_window_value_config(a) fwdgt_window_value_config(a)
 	#define TARGET_nvic_irq_enable(a, b, c){nvic_irq_enable(a, b, c);}
 	#define TARGET_nvic_priority_group_set(a){nvic_priority_group_set(a);}
 	#define TARGET_adc_vbat_disable(){adc_vbat_disable();}
-	
 	#define TARGET_ADC_RDATA ADC_RDATA
+	#define TARGET_adc_dma_mode_enable()	adc_dma_mode_enable()
+	#define TARGET_dma_deinit(a) dma_deinit(a)
+	#define TARGET_dma_init(a,b) dma_init(a,b)
+	#define TARGET_dma_circulation_enable(a) dma_circulation_enable(a)
+	#define TARGET_dma_memory_to_memory_disable(a) dma_memory_to_memory_disable(a)
+	#define TARGET_dma_interrupt_enable(a,b) dma_interrupt_enable(a,b)
+	#define TARGET_dma_transfer_number_config(a,b) dma_transfer_number_config(a,b)
+	#define TARGET_dma_channel_enable(a) dma_channel_enable(a)
+	#define TARGET_adc_channel_length_config(a,b) adc_channel_length_config(a,b)
+	#define TARGET_adc_regular_channel_config(a,b,c)	adc_regular_channel_config(a,b,c)
+	#define TARGET_adc_data_alignment_config(a)	adc_data_alignment_config(a)
+	#define TARGET_adc_external_trigger_config(a,b)	adc_external_trigger_config(a,b)
+	#define TARGET_adc_external_trigger_source_config(a,b)	adc_external_trigger_source_config(a,b)
+	#define TARGET_adc_watchdog_disable() adc_watchdog_disable()
+	#define TARGET_adc_enable()	adc_enable()
+	#define TARGET_adc_calibration_enable()	adc_calibration_enable()
+	#define TARGET_adc_special_function_config(a,b)	adc_special_function_config(a,b)
+	#define TARGET_nvic_irq_enable(a, b, c){nvic_irq_enable(a, b, c);}
+	
 	
 #endif
 

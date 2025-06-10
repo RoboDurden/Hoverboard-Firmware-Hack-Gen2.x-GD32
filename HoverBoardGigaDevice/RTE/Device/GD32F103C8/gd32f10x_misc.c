@@ -5,11 +5,12 @@
     \version 2014-12-26, V1.0.0, firmware for GD32F10x
     \version 2017-06-20, V2.0.0, firmware for GD32F10x
     \version 2018-07-31, V2.1.0, firmware for GD32F10x
-    \version 2020-09-30, V2.2.0, firmware for GD32F10x
 */
 
 /*
-    Copyright (c) 2020, GigaDevice Semiconductor Inc.
+    Copyright (c) 2018, GigaDevice Semiconductor Inc.
+
+    All rights reserved.
 
     Redistribution and use in source and binary forms, with or without modification, 
 are permitted provided that the following conditions are met:
@@ -101,7 +102,7 @@ void nvic_irq_enable(uint8_t nvic_irq,
     temp_priority = (uint32_t)nvic_irq_pre_priority << (0x4U - temp_pre);
     temp_priority |= nvic_irq_sub_priority &(0x0FU >> (0x4U - temp_sub));
     temp_priority = temp_priority << 0x04U;
-    NVIC->IP[nvic_irq] = (uint8_t)temp_priority;
+    NVIC->IPR[nvic_irq] = (uint8_t)temp_priority;
 
     /* enable the selected IRQ */
     NVIC->ISER[nvic_irq >> 0x05U] = (uint32_t)0x01U << (nvic_irq & (uint8_t)0x1FU);

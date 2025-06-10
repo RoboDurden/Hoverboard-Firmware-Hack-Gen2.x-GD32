@@ -22,7 +22,7 @@
 #endif
 
 
-
+uint32_t iBug = 0;
 uint32_t steerCounter = 0;								// Steer counter for setting update rate
 int32_t speed = 0; 												// global variable for speed.    -1000 to 1000
 int32_t speedShutoff = 0;
@@ -270,6 +270,7 @@ uint32_t iTimeNextLoop = 0;
 //----------------------------------------------------------------------------
 int main (void)
 {
+	iBug = 1;
 	ConfigRead();		// reads oConfig defined in defines.h from flash
 	
 	#ifdef REMOTE_AUTODETECT
@@ -290,15 +291,16 @@ int main (void)
   SystemCoreClockUpdate();
   SysTick_Config(SystemCoreClock / 1000);	//  Configure SysTick to generate an interrupt every millisecond
 	
+iBug = 2;
 	if (	Watchdog_init() == ERROR)	// Init watchdog
 		while(1);	// If an error accours with watchdog initialization do not start device
-	
+iBug = 3;	
 	// Init Interrupts
 	Interrupt_init();
-	
+iBug = 4;	
 	// Init timeout timer
 	TimeoutTimer_init();
-
+iBug = 5;
 	// Init GPIOs
 	GPIO_init();
 	#ifndef REMOTE_AUTODETECT
@@ -313,9 +315,9 @@ int main (void)
 			digitalWrite(SELF_HOLD,SET);
 		#endif
 	#endif
-
+iBug = 6;
 	InitBldc();		// virtual function implemented by bldcBC.c and bldcSINE.c
-	
+iBug = 7;	
 	#ifdef USART0_BAUD
 			USART0_Init(USART0_BAUD);
 	#endif
@@ -325,10 +327,10 @@ int main (void)
 	
 	// Init ADC
 	ADC_init();
-	
+iBug = 8;	
 	// Init PWM
 	PWM_init();
-
+iBug = 9;
 /*
 	// added by deepseek: Apply fixed PWM pattern to lock rotor to known position
 	does heavily freeze the motor :-(
@@ -367,7 +369,7 @@ int main (void)
 
 	// Startup-Sound
 	BUZZER_MelodyDown()
-
+iBug = 10;
 	#ifdef BUTTON
 		// Wait until button is released
 		
@@ -396,7 +398,7 @@ int main (void)
 		if (millis() < iTimeNextLoop)	
 			continue;
 		iTimeNextLoop = millis() + DELAY_IN_MAIN_LOOP;
-		
+iBug++;		
 		steerCounter++;		// something like DELAY_IN_MAIN_LOOP = 5 ms
 		//DEBUG_LedSet(	(steerCounter%20) < 10	,0)
 		

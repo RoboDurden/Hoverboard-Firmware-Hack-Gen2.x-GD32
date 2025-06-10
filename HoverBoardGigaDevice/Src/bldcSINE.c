@@ -87,6 +87,73 @@ float angle_deg_final = 0;
 uint16_t angle_idx = 0;
 int pwmGo = 0;
 
+#if TARGET == 2
+
+#include "gd32f10x.h"
+#include "gd32f10x_gpio.h"
+#include "gd32f10x_exti.h"
+#include "gd32f10x_rcu.h"
+
+uint32_t InitEXTI(uint32_t iPinArduino) 
+{
+    uint8_t  iPin  = iPinArduino & 0xFF;
+    uint32_t iPort = iPinArduino & 0xFFFFFF00; 
+    
+    uint32_t iPinEXTI = BIT(iPin);
+    uint8_t iPortEXTI_SOURCE = (iPort & 0xFFFF) / 0x400; // EXTI_SOURCE_GPIOA=0, GPIOB=1, etc.
+    
+    gpio_exti_source_select(iPortEXTI_SOURCE, iPin); // Changed function
+    exti_init(iPinEXTI, EXTI_INTERRUPT, EXTI_TRIG_BOTH);
+    exti_flag_clear(iPinEXTI);
+    
+    // Configure NVIC with highest priority (0)
+   if (iPin < 1)      nvic_irq_enable(EXTI0_IRQn, 0, 0);
+   else if (iPin < 2) nvic_irq_enable(EXTI1_IRQn, 0, 0);
+   else if (iPin < 3) nvic_irq_enable(EXTI2_IRQn, 0, 0);
+   else if (iPin < 4) nvic_irq_enable(EXTI3_IRQn, 0, 0);
+   else if (iPin < 5) nvic_irq_enable(EXTI4_IRQn, 0, 0);
+   else if (iPin < 10) nvic_irq_enable(EXTI5_9_IRQn, 0, 0);
+   else               nvic_irq_enable(EXTI10_15_IRQn, 0, 0);
+    
+   return iPinEXTI;
+}
+
+uint32_t aHallEXTI[3];
+void InitBldc() {
+    rcu_periph_clock_enable(RCU_AF); // Changed clock for GD32F103
+    aHallEXTI[0] = InitEXTI(HALL_A);
+    aHallEXTI[1] = InitEXTI(HALL_B);
+    aHallEXTI[2] = InitEXTI(HALL_C);
+}
+
+
+// _HandleEXTI remains identical to original
+void _HandleEXTI() {
+	uint8_t i=0;for (; i<3; i++)
+	if (exti_interrupt_flag_get(aHallEXTI[i]))
+	{
+		bInterrupt = 1;
+		hall_time_step = buzzerTimer>hall_time_last ? buzzerTimer-hall_time_last : buzzerTimer + (0x00010000-hall_time_last);
+		hall_time_last = buzzerTimer;  // PWM_FREQ (16 kHz)
+		hall_last = hall;
+		hall = digitalRead(HALL_A) + digitalRead(HALL_B)*2 + digitalRead(HALL_C)*4;		
+		exti_flag_clear(aHallEXTI[i]);
+	}
+}
+
+void EXTI0_IRQHandler(void) { _HandleEXTI(); }
+void EXTI1_IRQHandler(void) { _HandleEXTI(); }
+void EXTI2_IRQHandler(void) { _HandleEXTI(); }
+void EXTI3_IRQHandler(void) { _HandleEXTI(); }
+void EXTI4_IRQHandler(void) { _HandleEXTI(); }
+
+// Grouped EXTI handlers
+void EXTI5_9_IRQHandler(void)   { _HandleEXTI(); }
+void EXTI10_15_IRQHandler(void) { _HandleEXTI(); }
+
+
+#else
+
 uint32_t InitEXTI(uint32_t iPinArduino)		// init EXTernal Interrupt
 {
 	uint8_t		iPin	= iPinArduino & 0xFF ;
@@ -130,12 +197,8 @@ void _HandleEXTI()
 		exti_flag_clear(aHallEXTI[i]);
 	}
 }
+#endif
 
-/*
-                EXPORT  EXTI0_1_IRQHandler                [WEAK]
-                EXPORT  EXTI2_3_IRQHandler                [WEAK]
-                EXPORT  EXTI4_15_IRQHandler               [WEAK]
-*/
 void EXTI0_1_IRQHandler(void) 
 {
 	_HandleEXTI();

@@ -120,29 +120,53 @@ void TIMEOUT_IrqHandler(void)
 // AND when downcouting of timer0 is finished and the UPDATE-flag is set
 // -> pwm of timer0 running with 16kHz -> interrupt every 31,25us
 //----------------------------------------------------------------------------
-void TIMER0_BRK_UP_TRG_COM_IRQHandler(void)
+extern uint32_t steerCounter;								// Steer counter for setting update rate
+uint32_t iPwmTicks = 0, iPwmTicks0 = 0, iPwmCounter = 0;
+uint32_t iAdcTicks = 0, iAdcTicks0 = 0, iAdcCounter = 0;
+#define COUNT_Irqs 1000
+
+//void TIMER0_UP_IRQHandler(void)	//JMA must match the name in startup_gd32f10x_hd.s
+#ifndef TARGET_TIMER0_BRK_UP_TRG_COM_IRQHandler
+	#error "TIMER0_BRK_UP_TRG_COM_IRQHandler not defined for active target in target.h"
+#endif
+void TARGET_TIMER0_BRK_UP_TRG_COM_IRQHandler(void)
 {
+	if (COUNT_Irqs == ++iPwmCounter)
+	{
+		iPwmTicks = msTicks - iPwmTicks0;
+		iPwmTicks0 = msTicks;
+		iPwmCounter = 0;
+	}
 	// Start ADC conversion
-	adc_software_trigger_enable(ADC_REGULAR_CHANNEL);
-	
+	TARGET_adc_software_trigger_enable(ADC_REGULAR_CHANNEL);
+	//adc_software_trigger_enable(ADC0, ADC_REGULAR_CHANNEL); //jma: ADC0 added for GD32F103
+		
 	// Clear timer update interrupt flag
 	timer_interrupt_flag_clear(TIMER_BLDC, TIMER_INT_UP);
 }
-
-extern uint32_t steerCounter;								// Steer counter for setting update rate
 
 //----------------------------------------------------------------------------
 // This function handles DMA_Channel0_IRQHandler interrupt
 // Is called, when the ADC scan sequence is finished
 // -> ADC is triggered from timer0-update-interrupt -> every 31,25us
 //----------------------------------------------------------------------------
-void DMA_Channel0_IRQHandler(void)
+#ifndef TARGET_DMA_Channel0_IRQHandler
+	#error "TARGET_DMA_Channel0_IRQHandler not defined for active target in target.h"
+#endif
+void TARGET_DMA_Channel0_IRQHandler(void)
 {
-    if (dma_interrupt_flag_get(DMA_CH0, DMA_INT_FLAG_FTF))
-    {
-        dma_interrupt_flag_clear(DMA_CH0, DMA_INT_FLAG_FTF);
-        CalculateBLDC(); //moved behind flag_clear by Deepseek, Safe: NVIC blocks re-entrancy
-    }	
+	if (COUNT_Irqs == ++iAdcCounter)
+	{
+		iAdcTicks = msTicks - iAdcTicks0;
+		iAdcTicks0 = msTicks;
+		iAdcCounter = 0;
+	}
+	CalculateBLDC(); //moved behind flag_clear by Deepseek, Safe: NVIC blocks re-entrancy
+
+	if (TARGET_dma_interrupt_flag_get(DMA_CH0, DMA_INT_FLAG_FTF))
+	{
+			TARGET_dma_interrupt_flag_clear(DMA_CH0, DMA_INT_FLAG_FTF);
+	}	
 }
 
 uint16_t iUartCounter = 0;
