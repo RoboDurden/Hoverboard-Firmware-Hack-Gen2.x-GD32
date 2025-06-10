@@ -101,7 +101,7 @@ void nvic_irq_enable(uint8_t nvic_irq,
     temp_priority = (uint32_t)nvic_irq_pre_priority << (0x4U - temp_pre);
     temp_priority |= nvic_irq_sub_priority &(0x0FU >> (0x4U - temp_sub));
     temp_priority = temp_priority << 0x04U;
-    NVIC->IPR[nvic_irq] = (uint8_t)temp_priority;
+    NVIC->IP[nvic_irq] = (uint8_t)temp_priority;
 
     /* enable the selected IRQ */
     NVIC->ISER[nvic_irq >> 0x05U] = (uint32_t)0x01U << (nvic_irq & (uint8_t)0x1FU);

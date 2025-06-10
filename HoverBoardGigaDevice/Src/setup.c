@@ -158,8 +158,6 @@ void GPIO_init(void)
 	// Init PWM output Pins
 	// Configure: Alternate functions,  [Floating mode] / Pull-up / Pull-down
 	// Configure: Push-Pull mode, Output max speed 2MHz
-	
-	//gpio_init(BLDC_GH&0xffffff00U, TIMER_BLDC_PULLUP, GPIO_OSPEED_50MHZ, BIT(BLDC_GH&0xfU)); 	\
 	pinModeAF(BLDC_GH, AF_TIMER0_BLDC, TIMER_BLDC_PULLUP, GPIO_OSPEED_2MHZ);
 	pinModeAF(BLDC_GL, AF_TIMER0_BLDC, TIMER_BLDC_PULLUP, GPIO_OSPEED_2MHZ);
 	pinModeAF(BLDC_BH, AF_TIMER0_BLDC, TIMER_BLDC_PULLUP, GPIO_OSPEED_2MHZ);
@@ -277,6 +275,8 @@ void PWM_init(void)
 	timerBldc_paramter_struct.alignedmode = TIMER_COUNTER_CENTER_BOTH;	//changed from TIMER_COUNTER_CENTER_DOWN by deepseek for SVM;
 	timerBldc_paramter_struct.period = BLDC_TIMER_PERIOD;
 	timerBldc_paramter_struct.clockdivision = TIMER_CKDIV_DIV1;
+
+	
 	timerBldc_paramter_struct.repetitioncounter = 0;
 	timer_auto_reload_shadow_disable(TIMER_BLDC);
 	
@@ -329,9 +329,16 @@ void PWM_init(void)
 	timerBldc_break_parameter_struct.protectmode			= TIMER_CCHP_PROT_OFF;
 	timerBldc_break_parameter_struct.outputautostate 	= TIMER_OUTAUTO_ENABLE;
 	timerBldc_break_parameter_struct.breakpolarity		= TIMER_BREAK_POLARITY_LOW;
-	timerBldc_break_parameter_struct.deadtime 				= DEAD_TIME;	//deepseek: Add dead time configuration (critical for SVM):
-	timerBldc_break_parameter_struct.breakstate				= TIMER_BREAK_DISABLE;		// Gen2.2 HarleyBob used TIMER_BREAK_DISABLE instead of TIMER_BREAK_ENABLE
-	
+
+	//timerBldc_break_parameter_struct.deadtime 				= DEAD_TIME;
+	//timerBldc_break_parameter_struct.breakstate				= TIMER_BREAK_DISABLE;		// Gen2.2 HarleyBob used TIMER_BREAK_DISABLE instead of TIMER_BREAK_ENABLE
+	//deepseek: Add dead time configuration (critical for SVM):
+	#ifdef BLDC_SINEx
+		timerBldc_break_parameter_struct.deadtime = 0;  // No dead time needed for SVM   ; robo: really ?? deadtime is to prevent short cut through highside mosfet and lowside mosfet being on at the same time
+	#else
+		timerBldc_break_parameter_struct.deadtime 				= DEAD_TIME;
+	#endif
+	timerBldc_break_parameter_struct.breakstate = TIMER_BREAK_DISABLE;
 
 	
 	

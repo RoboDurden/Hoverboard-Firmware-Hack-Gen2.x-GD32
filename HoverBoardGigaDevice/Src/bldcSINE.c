@@ -131,6 +131,11 @@ void _HandleEXTI()
 	}
 }
 
+/*
+                EXPORT  EXTI0_1_IRQHandler                [WEAK]
+                EXPORT  EXTI2_3_IRQHandler                [WEAK]
+                EXPORT  EXTI4_15_IRQHandler               [WEAK]
+*/
 void EXTI0_1_IRQHandler(void) 
 {
 	_HandleEXTI();

@@ -1,31 +1,35 @@
-// Gen2_2.1
-
+// from https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/20
 #ifdef MASTER_OR_SINGLE		// layout 2.2 and 2.7 have buzzer on the slave board.
 	#define HAS_BUZZER
 #endif
 
-#define HALL_A		PA1
-#define HALL_B		PA0
+// WARNING, this is the 2.1.4 defines and only as a placeholder to let firmware compile
+
+// autodetect 2024/04/05 by robo
+#define HALL_A		PA0
+#define HALL_B		PA1
 #define HALL_C		PA2
+#define PHASE_A		PA7
+#define PHASE_B		PB0
+#define PHASE_C		PB1
 
-#define LED_RED			PB3
-#define LED_ORANGE	PA15
-#define LED_GREEN		PA12
-#define UPPER_LED		PA11
+#define LED_RED		PA15
+#define LED_ORANGE		PB4
+#define LED_GREEN		PB3
+#define UPPER_LED		PC13
+#define LOWER_LED		PB5
 //#define ONBOARD_LED		P??
-
-#define BUZZER			PB1
+#define BUZZER		PA11
 
 #define VBATT		PA5
-#define CURRENT_DC		PA7
+#define CURRENT_DC		PA6
+#define SELF_HOLD		PA3
+//#define BUTTON		P??
+#define BUTTON_PU		PA4
 
-#define SELF_HOLD		PA4
-#define BUTTON		PA3
-//#define BUTTON_PU		PA3
 
-
-#define ADC_BATTERY_VOLT      0.01205891378
-#define MOTOR_AMP_CONV_DC_AMP 0.201465201465	// 3,3V * 1/3 - 0,004Ohm * IL(ampere) = (ADC-Data/4095) *3,3V
+#define ADC_BATTERY_VOLT      0.025392524927  	//	robo, calibrated with 27V power supply
+#define MOTOR_AMP_CONV_DC_AMP 0.0201465201465		//	robo,  only a very quick comparison to multimeter
 
 
 // Brushless Control DC (BLDC) defines
@@ -35,7 +39,7 @@
 #define BLDC_BL PB14		
 #define BLDC_YH PA8			// yellow
 #define BLDC_YL PB13		
-#define TIMER_BLDC_PULLUP	GPIO_MODE_AF_PP
+#define TIMER_BLDC_PULLUP	GPIO_PUPD_NONE	// robo: not sure if some boards indeed nned GPIO_PUPD_PULLUP like 2.2 or 2.3
 
 
 // Timer BLDC short circuit emergency shutoff define
@@ -48,12 +52,4 @@
 
 
 // GD32F130 USART1 GD32F130 TX/RX: (PA14/PA15)AF1 , (PA2,PA3)AF1	, (PA8/PB0)AlternateFunction4
-/*
-// Usart master slave defines JMA OK
-#define USART_MASTERSLAVE USART2 //was USART1
-#define USART_MASTERSLAVE_TX_PIN GPIO_PIN_10 //was GPIO_PIN_2
-#define USART_MASTERSLAVE_TX_PORT GPIOB //was GPIOA
-#define USART_MASTERSLAVE_RX_PIN GPIO_PIN_11 //was GPIO_PIN_3
-#define USART_MASTERSLAVE_RX_PORT GPIOB //was GPIOA
-*/
 
