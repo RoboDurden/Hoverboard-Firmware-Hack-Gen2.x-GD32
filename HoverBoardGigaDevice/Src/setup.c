@@ -65,6 +65,7 @@ dma_parameter_struct dma_init_struct_usart;
 
 uint8_t usart0_rx_buf[1];
 uint8_t usart1_rx_buf[1];
+uint8_t usart2_rx_buf[1];
 
 
 // DMA (ADC) structs
@@ -721,6 +722,163 @@ void USART1_Init(uint32_t iBaud)
 #endif
 }
 
+void USART2_Init(uint32_t iBaud)
+{
+#ifdef HAS_USART2
+	
+	// Init USART2
+	#if REMOTE_USART==2 && defined(REMOTE_UARTBUS)	// no pullup resistors with multiple boards on the UartBus - Esp32/Arduino (Serial.begin) have to setup pullups
+		#define USART1_PUPD	GPIO_MODE_AF_OD
+	#else
+		#define USART2_PUPD	GPIO_MODE_AF_PP
+	#endif
+	// gpio_init(USART_MASTERSLAVE_TX_PORT, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, USART_MASTERSLAVE_TX_PIN); // JW:
+	// gpio_init(pin&0xffffff00U, pullUpDown, GPIO_OSPEED_50MHZ, BIT(pin&0xfU));
+	pinModePull(USART2_TX, USART2_PUPD, GPIO_OSPEED_50MHZ);	// // GD32F130: GPIO_AF_1 = USART
+	pinModePull(USART2_RX, USART2_PUPD, GPIO_OSPEED_50MHZ);	
+	
+	// Enable ADC and DMA clock
+	rcu_periph_clock_enable(RCU_USART2);
+	rcu_periph_clock_enable(RCU_DMA0);
+
+	
+	// Reset USART
+	usart_deinit(USART2);	
+	
+	// Init USART for 115200 baud, 8N1
+	usart_baudrate_set(USART2, iBaud);
+	usart_parity_config(USART2, USART_PM_NONE);
+	usart_word_length_set(USART2, USART_WL_8BIT);
+	usart_stop_bit_set(USART2, USART_STB_1BIT);
+	
+	usart_hardware_flow_rts_config(USART2, USART_RTS_DISABLE);  // JW: Disable RTS
+	usart_hardware_flow_cts_config(USART2, USART_CTS_DISABLE);  // JW: Disable CTS
+	
+	//JMA no oversampling in F103  TARGET_usart_oversample_config(USART2, USART_OVSMOD_16);
+	
+	// Enable both transmitter and receiver
+	usart_transmit_config(USART2, USART_TRANSMIT_ENABLE);
+	usart_receive_config(USART2, USART_RECEIVE_ENABLE);
+	
+	//syscfg_dma_remap_enable(SYSCFG_DMA_REMAP_USART0RX|SYSCFG_DMA_REMAP_USART0TX);
+
+	// Enable USART
+	usart_enable(USART2);
+	
+	// Interrupt channel 3 enable
+	nvic_irq_enable(DMA0_Channel3_IRQn, 2, 0);
+	
+	// Initialize DMA channel 4 for USART_SLAVE RX
+	TARGET_dma_deinit(DMA_CH4);
+	dma_init_struct_usart.direction = DMA_PERIPHERAL_TO_MEMORY;
+	dma_init_struct_usart.memory_addr = (uint32_t)usart2_rx_buf;
+	dma_init_struct_usart.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
+	dma_init_struct_usart.memory_width = DMA_MEMORY_WIDTH_8BIT;
+	dma_init_struct_usart.number = 1;
+	dma_init_struct_usart.periph_addr = USART1_DATA_RX_ADDRESS;
+	dma_init_struct_usart.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
+	dma_init_struct_usart.periph_width = DMA_PERIPHERAL_WIDTH_8BIT;
+	dma_init_struct_usart.priority = DMA_PRIORITY_ULTRA_HIGH;
+	TARGET_dma_init(DMA_CH4, &dma_init_struct_usart);
+	
+	// Configure DMA mode
+	TARGET_dma_circulation_enable(DMA_CH4);
+	TARGET_dma_memory_to_memory_disable(DMA_CH4);
+
+	// USART DMA enable for transmission and receive
+	usart_dma_receive_config(USART2, USART_DENR_ENABLE);
+	
+	// Enable DMA transfer complete interrupt
+	TARGET_dma_interrupt_enable(DMA_CH4, DMA_CHXCTL_FTFIE);
+	
+	// At least clear number of remaining data to be transferred by the DMA 
+	TARGET_dma_transfer_number_config(DMA_CH4, 1);
+	
+	// Enable dma receive channel
+	TARGET_dma_channel_enable(DMA_CH4);
+#endif
+}
+
+/* for deepseek gd32f103
+void pinModeAF2(uint32_t iPinArduino,uint32_t pullUpDown,uint32_t speed)
+{
+	uint8_t  iPin  = iPinArduino & 0xFF;
+	uint32_t iPort = iPinArduino & 0xFFFFFF00; 
+
+	//(pin==PB6 ? GPIO_AF_0 : GPIO_AF_1)
+	
+	gpio_mode_set(iPin&0xffffff00U , GPIO_MODE_AF, pullUpDown, BIT(iPin&0xfU));	\
+	gpio_output_options_set(iPin&0xffffff00U, GPIO_OTYPE_PP, speed, BIT(iPin&0xfU));	\
+	gpio_af_set(iPin&0xffffff00U, AF(iPin), BIT(iPin&0xfU));		\
+	
+}
+
+
+void USART0_InitNew(uint32_t iBaud)  // Changed from USART0_Init to USART1_Init
+{
+    #if REMOTE_USART==0 && defined(REMOTE_UARTBUS)
+        #define USART1_PUPD GPIO_PUPD_NONE
+    #else
+        #define USART1_PUPD GPIO_PUPD_PULLUP
+    #endif
+
+    // GPIO Configuration (PB6=TX, PB7=RX)
+    gpio_mode_set(GPIOB, GPIO_MODE_AF, USART1_PUPD, GPIO_PIN_6);
+    gpio_output_options_set(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_6);
+    gpio_af_set(GPIOB, GPIO_AF_0, GPIO_PIN_6);  // AF0 for USART1 on PB6
+
+    gpio_mode_set(GPIOB, GPIO_MODE_AF, USART1_PUPD, GPIO_PIN_7);
+    gpio_output_options_set(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_7);
+    gpio_af_set(GPIOB, GPIO_AF_0, GPIO_PIN_7);  // AF0 for USART1 on PB7
+
+    // Enable USART1 and DMA clocks
+    rcu_periph_clock_enable(RCU_USART1);  // Changed from RCU_USART0
+    rcu_periph_clock_enable(RCU_DMA);
+
+    // USART Configuration (8N1)
+    usart_baudrate_set(USART1, iBaud);  // Changed to USART1
+    usart_parity_config(USART1, USART_PM_NONE);
+    usart_word_length_set(USART1, USART_WL_8BIT);
+    usart_stop_bit_set(USART1, USART_STB_1BIT);
+    TARGET_usart_oversample_config(USART1, USART_OVSMOD_16);
+
+    // Enable TX/RX
+    usart_transmit_config(USART1, USART_TRANSMIT_ENABLE);
+    usart_receive_config(USART1, USART_RECEIVE_ENABLE);
+    usart_enable(USART1);
+
+    // Configure DMA for RX (Channel 5)
+    TARGET_dma_deinit(DMA_CH5);  // Changed to DMA_CH5 (USART1_RX channel)
+    dma_parameter_struct dma_init_struct_usart;  // Declare structure (ensure this exists)
+    
+    dma_init_struct_usart.direction = DMA_PERIPHERAL_TO_MEMORY;
+    dma_init_struct_usart.memory_addr = (uint32_t)usart1_rx_buf;  // Update buffer name if needed
+    dma_init_struct_usart.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
+    dma_init_struct_usart.memory_width = DMA_MEMORY_WIDTH_8BIT;
+    dma_init_struct_usart.number = 1;
+    dma_init_struct_usart.periph_addr = (uint32_t)&USART1_DATA;  // Direct data register address
+    dma_init_struct_usart.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
+    dma_init_struct_usart.periph_width = DMA_PERIPHERAL_WIDTH_8BIT;
+    dma_init_struct_usart.priority = DMA_PRIORITY_ULTRA_HIGH;
+    TARGET_dma_init(DMA_CH5, &dma_init_struct_usart);  // Initialize Channel 5
+
+    TARGET_dma_circulation_enable(DMA_CH5);  // Circular mode
+    TARGET_dma_memory_to_memory_disable(DMA_CH5);
+
+    // Enable DMA for USART1 RX
+    usart_dma_receive_config(USART1, USART_DENR_ENABLE);  // Changed to USART1
+
+    // Enable DMA transfer complete interrupt
+    TARGET_dma_interrupt_enable(DMA_CH5, DMA_INT_FLAG_FTF);  // Flag name may vary
+		
+    TARGET_nvic_irq_enable(DMA0_Channel5_IRQn, 2, 0);  // Updated IRQ for DMA Ch5
+
+    // Start DMA
+    TARGET_dma_transfer_number_config(DMA_CH5, 1);
+    TARGET_dma_channel_enable(DMA_CH5);
+}
+*/
+
 void USART0_Init(uint32_t iBaud)
 {
 #ifdef HAS_USART0
@@ -731,6 +889,16 @@ void USART0_Init(uint32_t iBaud)
 	#else
 		#define USART0_PUPD	GPIO_PUPD_PULLUP
 	#endif
+	/*
+	gpio_mode_set(GPIOB, GPIO_MODE_AF, USART0_PUPD, GPIO_PIN_6);
+	gpio_output_options_set(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_6);
+	gpio_af_set(GPIOB, GPIO_AF_0, GPIO_PIN_6);
+
+	gpio_mode_set(GPIOB, GPIO_MODE_AF, USART0_PUPD, GPIO_PIN_7);
+	gpio_output_options_set(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_7);
+	gpio_af_set(GPIOB, GPIO_AF_0, GPIO_PIN_7);
+	*/
+	
 	pinModeAF(USART0_TX, AF_USART0_TX, USART0_PUPD,GPIO_OSPEED_50MHZ);	// // GD32F130: GPIO_AF_0 = USART, GPIO_AF_1 = I2C
 	pinModeAF(USART0_RX, AF_USART0_RX, USART0_PUPD,GPIO_OSPEED_50MHZ);	
 	//gpio_mode_set(USART0_TX_PORT , GPIO_MODE_AF, GPIO_PUPD_PULLUP, USART0_TX_PIN);	
@@ -749,7 +917,7 @@ void USART0_Init(uint32_t iBaud)
 	usart_parity_config(USART0, USART_PM_NONE);
 	usart_word_length_set(USART0, USART_WL_8BIT);
 	usart_stop_bit_set(USART0, USART_STB_1BIT);
-	usart_oversample_config(USART0, USART_OVSMOD_16);
+	TARGET_usart_oversample_config(USART0, USART_OVSMOD_16);
 	
 	
 	// Enable both transmitter and receiver
@@ -764,7 +932,7 @@ void USART0_Init(uint32_t iBaud)
 	TARGET_nvic_irq_enable(DMA_Channel1_2_IRQn, 2, 0);
 	
 	// Initialize DMA channel 2 for USART0 RX
-	dma_deinit(DMA_CH2);
+	TARGET_dma_deinit(DMA_CH2);
 	dma_init_struct_usart.direction = DMA_PERIPHERAL_TO_MEMORY;
 	dma_init_struct_usart.memory_addr = (uint32_t)usart0_rx_buf;
 	dma_init_struct_usart.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
@@ -774,23 +942,23 @@ void USART0_Init(uint32_t iBaud)
 	dma_init_struct_usart.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
 	dma_init_struct_usart.periph_width = DMA_PERIPHERAL_WIDTH_8BIT;
 	dma_init_struct_usart.priority = DMA_PRIORITY_ULTRA_HIGH;
-	dma_init(DMA_CH2, &dma_init_struct_usart);
+	TARGET_dma_init(DMA_CH2, &dma_init_struct_usart);
 	
 	// Configure DMA mode
-	dma_circulation_enable(DMA_CH2);
-	dma_memory_to_memory_disable(DMA_CH2);
+	TARGET_dma_circulation_enable(DMA_CH2);
+	TARGET_dma_memory_to_memory_disable(DMA_CH2);
 
 	// USART DMA enable for transmission and receive
 	usart_dma_receive_config(USART0, USART_DENR_ENABLE);
 	
 	// Enable DMA transfer complete interrupt
-	dma_interrupt_enable(DMA_CH2, DMA_CHXCTL_FTFIE);
+	TARGET_dma_interrupt_enable(DMA_CH2, DMA_CHXCTL_FTFIE);
 	
 	// At least clear number of remaining data to be transferred by the DMA 
-	dma_transfer_number_config(DMA_CH2, 1);
+	TARGET_dma_transfer_number_config(DMA_CH2, 1);
 	
 	// Enable dma receive channel
-	dma_channel_enable(DMA_CH2);
+	TARGET_dma_channel_enable(DMA_CH2);
 	
 #endif
 }

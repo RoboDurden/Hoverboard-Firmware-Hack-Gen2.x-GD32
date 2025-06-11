@@ -14,7 +14,7 @@
 
 extern uint8_t usart0_rx_buf[1];
 extern uint8_t usart1_rx_buf[1];
-
+extern uint8_t usart2_rx_buf[1];
 
 static int16_t iReceivePos = 0;	
 

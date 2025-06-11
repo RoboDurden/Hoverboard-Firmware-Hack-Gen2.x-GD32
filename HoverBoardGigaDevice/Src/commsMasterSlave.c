@@ -62,6 +62,7 @@ FlagStatus beepsBackwardsMaster = RESET;
 
 extern uint8_t usart0_rx_buf[1];
 extern uint8_t usart1_rx_buf[1];
+extern uint8_t usart2_rx_buf[1];
 //extern uint8_t usartMasterSlave_rx_buf[USART_MASTERSLAVE_RX_BUFFERSIZE];
 
 //void SendBuffer(uint32_t usart_periph, uint8_t buffer[], uint8_t length);

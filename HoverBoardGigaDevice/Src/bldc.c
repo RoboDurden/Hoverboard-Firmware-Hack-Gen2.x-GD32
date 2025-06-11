@@ -211,7 +211,6 @@ void CalculateBLDC(void)
 			DEBUG_LedSet(SET,2);	// macro. iCol: 0=green, 1=organge, 2=red
 			return;
 	}
-	
 		
 	// Calculate low-pass filter for pwm value
 	filter_reg = filter_reg - (filter_reg >> FILTER_SHIFT) + bldc_inputFilterPwm;

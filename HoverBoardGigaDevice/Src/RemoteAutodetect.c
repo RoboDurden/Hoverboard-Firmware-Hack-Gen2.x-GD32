@@ -19,7 +19,7 @@ uint16_t wMenuStage = MENU_INIT;
 
 extern uint8_t usart0_rx_buf[1];
 extern uint8_t usart1_rx_buf[1];
-
+extern uint8_t usart2_rx_buf[1];
 
 
 extern int32_t steer;

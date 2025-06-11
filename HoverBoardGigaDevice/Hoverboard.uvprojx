@@ -554,6 +554,16 @@
               <FileType>5</FileType>
               <FilePath>.\Inc\defines.h</FilePath>
             </File>
+            <File>
+              <FileName>configSelect.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\configSelect.h</FilePath>
+            </File>
+            <File>
+              <FileName>configDebug.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\configDebug.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -660,6 +670,11 @@
               <FilePath>.\Inc\defines\defines_2-2-1.h</FilePath>
             </File>
             <File>
+              <FileName>defines_2-2-3.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\defines\defines_2-2-3.h</FilePath>
+            </File>
+            <File>
               <FileName>defines_2-3-1.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines\defines_2-3-1.h</FilePath>
@@ -678,11 +693,6 @@
               <FileName>defines_2-x-y.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines\defines_2-x-y.h</FilePath>
-            </File>
-            <File>
-              <FileName>defines_2-2-3.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Inc\defines\defines_2-2-3.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -1242,6 +1252,16 @@
               <FileType>5</FileType>
               <FilePath>.\Inc\defines.h</FilePath>
             </File>
+            <File>
+              <FileName>configSelect.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\configSelect.h</FilePath>
+            </File>
+            <File>
+              <FileName>configDebug.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\configDebug.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1348,6 +1368,11 @@
               <FilePath>.\Inc\defines\defines_2-2-1.h</FilePath>
             </File>
             <File>
+              <FileName>defines_2-2-3.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\defines\defines_2-2-3.h</FilePath>
+            </File>
+            <File>
               <FileName>defines_2-3-1.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines\defines_2-3-1.h</FilePath>
@@ -1366,11 +1391,6 @@
               <FileName>defines_2-x-y.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines\defines_2-x-y.h</FilePath>
-            </File>
-            <File>
-              <FileName>defines_2-2-3.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Inc\defines\defines_2-2-3.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -1930,6 +1950,16 @@
               <FileType>5</FileType>
               <FilePath>.\Inc\defines.h</FilePath>
             </File>
+            <File>
+              <FileName>configSelect.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\configSelect.h</FilePath>
+            </File>
+            <File>
+              <FileName>configDebug.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\configDebug.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -2036,6 +2066,11 @@
               <FilePath>.\Inc\defines\defines_2-2-1.h</FilePath>
             </File>
             <File>
+              <FileName>defines_2-2-3.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\defines\defines_2-2-3.h</FilePath>
+            </File>
+            <File>
               <FileName>defines_2-3-1.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines\defines_2-3-1.h</FilePath>
@@ -2054,11 +2089,6 @@
               <FileName>defines_2-x-y.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines\defines_2-x-y.h</FilePath>
-            </File>
-            <File>
-              <FileName>defines_2-2-3.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Inc\defines\defines_2-2-3.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -2618,6 +2648,16 @@
               <FileType>5</FileType>
               <FilePath>.\Inc\defines.h</FilePath>
             </File>
+            <File>
+              <FileName>configSelect.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\configSelect.h</FilePath>
+            </File>
+            <File>
+              <FileName>configDebug.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\configDebug.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -2724,6 +2764,11 @@
               <FilePath>.\Inc\defines\defines_2-2-1.h</FilePath>
             </File>
             <File>
+              <FileName>defines_2-2-3.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\defines\defines_2-2-3.h</FilePath>
+            </File>
+            <File>
               <FileName>defines_2-3-1.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines\defines_2-3-1.h</FilePath>
@@ -2742,11 +2787,6 @@
               <FileName>defines_2-x-y.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines\defines_2-x-y.h</FilePath>
-            </File>
-            <File>
-              <FileName>defines_2-2-3.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Inc\defines\defines_2-2-3.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -3412,6 +3452,12 @@
         <targetInfos>
           <targetInfo name="GD32F103"/>
         </targetInfos>
+      </file>
+      <file attr="config" category="source" condition="Compiler ARMCC" name="Device\Source\ARM\startup_gd32f10x_md.s" version="2.0.2">
+        <instance index="0" removed="1">RTE\Device\GD32F103C8\startup_gd32f10x_md.s</instance>
+        <component Cclass="Device" Cgroup="Startup" Cvendor="GigaDevice" Cversion="2.0.2" condition="GD32F10xMD"/>
+        <package name="GD32F10x_DFP" schemaVersion="1.2" url="https://gd32mcu.com/data/documents/pack/" vendor="GigaDevice" version="2.0.3"/>
+        <targetInfos/>
       </file>
       <file attr="config" category="source" name="Device\Source\system_gd32f10x.c" version="2.0.1">
         <instance index="0">RTE\Device\GD32F103C8\system_gd32f10x.c</instance>

@@ -315,14 +315,15 @@ iBug = 5;
 			digitalWrite(SELF_HOLD,SET);
 		#endif
 	#endif
-iBug = 6;
-	InitBldc();		// virtual function implemented by bldcBC.c and bldcSINE.c
 iBug = 7;	
 	#ifdef USART0_BAUD
 			USART0_Init(USART0_BAUD);
 	#endif
 	#ifdef USART1_BAUD
 			USART1_Init(USART1_BAUD);
+	#endif
+	#ifdef USART2_BAUD
+			USART2_Init(USART2_BAUD);
 	#endif
 	
 	// Init ADC
@@ -331,6 +332,10 @@ iBug = 8;
 	// Init PWM
 	PWM_init();
 iBug = 9;
+
+	InitBldc();		// virtual function implemented by bldcBC.c and bldcSINE.c
+iBug = 6;
+
 /*
 	// added by deepseek: Apply fixed PWM pattern to lock rotor to known position
 	does heavily freeze the motor :-(

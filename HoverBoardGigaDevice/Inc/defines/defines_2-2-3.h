@@ -51,5 +51,5 @@
 
 // master-slave header
 #define USART2_TX	PB10
-#define USART2_RX	PBB11
+#define USART2_RX	PB11
 

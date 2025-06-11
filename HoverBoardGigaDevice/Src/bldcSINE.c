@@ -94,11 +94,14 @@ int pwmGo = 0;
 #include "gd32f10x_exti.h"
 #include "gd32f10x_rcu.h"
 
-uint32_t InitEXTI(uint32_t iPinArduino) 
+uint32_t InitEXTI(uint32_t iPinArduino,uint8_t iPrePriority) 
 {
     uint8_t  iPin  = iPinArduino & 0xFF;
     uint32_t iPort = iPinArduino & 0xFFFFFF00; 
     
+	  // Configure GPIO pin as input with pull-up
+    gpio_init(iPort, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ, BIT(iPin));	// GPIO_MODE_IPU
+	
     uint32_t iPinEXTI = BIT(iPin);
     uint8_t iPortEXTI_SOURCE = (iPort & 0xFFFF) / 0x400; // EXTI_SOURCE_GPIOA=0, GPIOB=1, etc.
     
@@ -107,49 +110,61 @@ uint32_t InitEXTI(uint32_t iPinArduino)
     exti_flag_clear(iPinEXTI);
     
     // Configure NVIC with highest priority (0)
-   if (iPin < 1)      nvic_irq_enable(EXTI0_IRQn, 0, 0);
-   else if (iPin < 2) nvic_irq_enable(EXTI1_IRQn, 0, 0);
-   else if (iPin < 3) nvic_irq_enable(EXTI2_IRQn, 0, 0);
-   else if (iPin < 4) nvic_irq_enable(EXTI3_IRQn, 0, 0);
-   else if (iPin < 5) nvic_irq_enable(EXTI4_IRQn, 0, 0);
-   else if (iPin < 10) nvic_irq_enable(EXTI5_9_IRQn, 0, 0);
-   else               nvic_irq_enable(EXTI10_15_IRQn, 0, 0);
-    
+    if (iPin == 0)       nvic_irq_enable(EXTI0_IRQn, iPrePriority, 0);
+    else if (iPin == 1)  nvic_irq_enable(EXTI1_IRQn, iPrePriority, 0);
+    else if (iPin == 2)  nvic_irq_enable(EXTI2_IRQn, iPrePriority, 0);
+    else if (iPin == 3)  nvic_irq_enable(EXTI3_IRQn, iPrePriority, 0);
+    else if (iPin == 4)  nvic_irq_enable(EXTI4_IRQn, iPrePriority, 0);
+    else if (iPin < 10)  nvic_irq_enable(EXTI5_9_IRQn, iPrePriority, 0);
+    else                 nvic_irq_enable(EXTI10_15_IRQn, iPrePriority, 0);    
    return iPinEXTI;
 }
 
 uint32_t aHallEXTI[3];
+uint32_t aHallCountEXTI[3] = {0,0,0};
+
+
 void InitBldc() {
-    rcu_periph_clock_enable(RCU_AF); // Changed clock for GD32F103
-    aHallEXTI[0] = InitEXTI(HALL_A);
-    aHallEXTI[1] = InitEXTI(HALL_B);
-    aHallEXTI[2] = InitEXTI(HALL_C);
+    //rcu_periph_clock_enable(RCU_GPIOA);	allready done in GPIO_init()
+    rcu_periph_clock_enable(RCU_AF); // Required for EXTI configuration
+	
+	
+    aHallEXTI[0] = InitEXTI(HALL_A,0);
+    aHallEXTI[1] = InitEXTI(HALL_B,1);
+    aHallEXTI[2] = InitEXTI(HALL_C,2);
 }
 
+int8_t iIrqLast = -1;
+uint32_t iIrqCount = 0;
 
 // _HandleEXTI remains identical to original
-void _HandleEXTI() {
+void _HandleEXTI(int8_t iIrq) 
+{
+	iIrqLast = iIrq;
+	iIrqCount++;
 	uint8_t i=0;for (; i<3; i++)
-	if (exti_interrupt_flag_get(aHallEXTI[i]))
+	if (exti_interrupt_flag_get(aHallEXTI[i])!= RESET)
 	{
 		bInterrupt = 1;
 		hall_time_step = buzzerTimer>hall_time_last ? buzzerTimer-hall_time_last : buzzerTimer + (0x00010000-hall_time_last);
 		hall_time_last = buzzerTimer;  // PWM_FREQ (16 kHz)
 		hall_last = hall;
 		hall = digitalRead(HALL_A) + digitalRead(HALL_B)*2 + digitalRead(HALL_C)*4;		
-		exti_flag_clear(aHallEXTI[i]);
+		aHallCountEXTI[i]++;
+		exti_interrupt_flag_clear(aHallEXTI[i]);
+		//exti_flag_clear(aHallEXTI[i]);
 	}
 }
 
-void EXTI0_IRQHandler(void) { _HandleEXTI(); }
-void EXTI1_IRQHandler(void) { _HandleEXTI(); }
-void EXTI2_IRQHandler(void) { _HandleEXTI(); }
-void EXTI3_IRQHandler(void) { _HandleEXTI(); }
-void EXTI4_IRQHandler(void) { _HandleEXTI(); }
+void EXTI0_IRQHandler(void) { _HandleEXTI(0); }
+void EXTI1_IRQHandler(void) { _HandleEXTI(1); }
+void EXTI2_IRQHandler(void) { _HandleEXTI(2); }
+void EXTI3_IRQHandler(void) { _HandleEXTI(3); }
+void EXTI4_IRQHandler(void) { _HandleEXTI(4); }
 
 // Grouped EXTI handlers
-void EXTI5_9_IRQHandler(void)   { _HandleEXTI(); }
-void EXTI10_15_IRQHandler(void) { _HandleEXTI(); }
+void EXTI5_9_IRQHandler(void)   { _HandleEXTI(5); }
+void EXTI10_15_IRQHandler(void) { _HandleEXTI(10); }
 
 
 #else
@@ -197,25 +212,17 @@ void _HandleEXTI()
 		exti_flag_clear(aHallEXTI[i]);
 	}
 }
+void EXTI0_1_IRQHandler(void) {	_HandleEXTI();}
+void EXTI2_3_IRQHandler(void) {	_HandleEXTI();}
+void EXTI4_15_IRQHandler(void){	_HandleEXTI();}
+
 #endif
 
-void EXTI0_1_IRQHandler(void) 
-{
-	_HandleEXTI();
-}
-void EXTI2_3_IRQHandler(void) 
-{
-	_HandleEXTI();
-}
-void EXTI4_15_IRQHandler(void) 
-{
-	_HandleEXTI();
-}
 
 void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) 	// pos is not used but hall_to_sector mapping :-/
 {
-	
 	pwmGo = -pwm;
+		return;
 	uint32_t safe_hall_time_last,safe_hall_time_step;
 	uint8_t iRetries = 10;
 	do	// Get current sector (0-5) and other interrupt set data

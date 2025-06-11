@@ -14,7 +14,7 @@
 	// and then set your layout below
 	// Gen2-target-layout is included in defines.h
 	#ifdef GD32F130		// TARGET = 1
-		#define LAYOUT 1
+		#define LAYOUT 4
 		#define LAYOUT_SUB 1	// Layout 2.1.7 exisits as 2.1.7.0 and 2.1.7.1
 	#elif GD32F103		// TARGET = 2
 		#define LAYOUT 1
@@ -23,12 +23,11 @@
 	#elif MM32SPIN05	// TARGET = 4
 		#define LAYOUT 1
 	#endif
-
-	//#define BLDC_BC			// old block commutation bldc control
-	#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden. 
+	#define BLDC_BC			// old block commutation bldc control
+	//#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden. 
 													// 2025/06/08:	works for 2.1.11 but not for 2.1.4
 	
-#define BAT_CELLS         	10        // battery number of cells. Normal Hoverboard battery: 10s
+#define BAT_CELLS         	7        // battery number of cells. Normal Hoverboard battery: 10s
 //#define BATTERY_LOW_SHUTOFF		// will shut off the board below BAT_LOW_DEAD = BAT_CELLS * CELL_LOW_DEAD, 
 
 	//#define MASTER		// uncomment for MASTER firmware.
@@ -38,8 +37,8 @@
 	#if defined(MASTER) || defined(SINGLE)
 		
 		// choose only one 'remote' to control the motor
-		#define REMOTE_DUMMY
-		//#define REMOTE_UART
+		//#define REMOTE_DUMMY
+		#define REMOTE_UART
 		//#define REMOTE_UARTBUS	// ESP32 as master and multiple boards as multiple slaves ESP.tx-Hovers.rx and ESP.rx-Hovers.tx
 		//#define REMOTE_CRSF		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/26
 		//#define REMOTE_ADC	// speed is PA2=TX and steer is PA3=RX of the masterslave header. Get 3.3V from the flash header
@@ -64,7 +63,7 @@
 		#define SPEED_COEFFICIENT   -1
 		#define STEER_COEFFICIENT   1
 		
-		//#define DISABLE_BUTTON	// this is the opposite of former CHECK_BUTTON define.
+		#define DISABLE_BUTTON	// this is the opposite of former CHECK_BUTTON define.
 															// remove '//' if you use a slave board as master 
 															// or if you turn the boards on/off by injecting a postive voltage into the input pin of the 2pin BUTTON header
 
@@ -99,7 +98,7 @@
 
 
 #define DC_CUR_LIMIT     		15        // Motor DC current limit in amps
-#define DEAD_TIME        		60        // PWM deadtime (60 = 1�s, measured by oscilloscope)
+#define DEAD_TIME        		60        // PWM deadtime (60 = 1?s, measured by oscilloscope)
 #define PWM_FREQ         		16000     // PWM frequency in Hz
 
 

@@ -1,7 +1,7 @@
 #ifndef REMOTE_CRSF_H
 #define REMOTE_CRSF_H
 
-#include "../Inc/config.h"
+#include "../Inc/configSelect.h"
 
 #define REMOTE_BAUD 115200
 

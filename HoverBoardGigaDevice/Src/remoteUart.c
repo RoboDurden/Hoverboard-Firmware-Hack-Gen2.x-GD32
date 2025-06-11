@@ -16,6 +16,7 @@
 
 extern uint8_t usart0_rx_buf[1];
 extern uint8_t usart1_rx_buf[1];
+extern uint8_t usart2_rx_buf[1];
 //extern uint8_t usartSteer_COM_rx_buf[USART_STEER_COM_RX_BUFFERSIZE];
 //static uint8_t aReceiveBuffer[USART_STEER_RX_BYTES];
 

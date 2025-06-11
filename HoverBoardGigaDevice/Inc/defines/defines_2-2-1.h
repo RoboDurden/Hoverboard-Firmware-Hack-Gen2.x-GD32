@@ -52,3 +52,7 @@
 
 // GD32F130 USART1 GD32F130 TX/RX: (PA14/PA15)AF1 , (PA2,PA3)AF1	, (PA8/PB0)AlternateFunction4
 
+// master-slave header
+#define USART2_TX	PB10
+#define USART2_RX	PB11
+

@@ -32,7 +32,7 @@
 #define BLDC_H
 
 //#include "gd32f1x0.h"
-//#include "../Inc/config.h"
+//#include "../Inc/configSelect.h"
 #include "../Inc/defines.h"
 
 // Internal constants

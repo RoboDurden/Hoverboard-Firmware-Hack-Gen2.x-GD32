@@ -139,9 +139,9 @@
 	{\
 		 gpio_init(pin&0xffffff00U, pullUpDown, GPIO_OSPEED_50MHZ, BIT(pin&0xfU)); 	\
 	}
-		// gpio_mode_set(pin&0xffffff00U , GPIO_MODE_AF, pullUpDown, BIT(pin&0xfU));	\
-		// gpio_output_options_set(pin&0xffffff00U, GPIO_OTYPE_PP, speed, BIT(pin&0xfU));	\
-		// gpio_af_set(pin&0xffffff00U, AF(pin), BIT(pin&0xfU));		\
+//		gpio_mode_set(pin&0xffffff00U , GPIO_MODE_AF, pullUpDown, BIT(pin&0xfU));	\
+		gpio_output_options_set(pin&0xffffff00U, GPIO_OTYPE_PP, speed, BIT(pin&0xfU));	\
+		gpio_af_set(pin&0xffffff00U, AF(pin), BIT(pin&0xfU));		\
 
 	
 	
@@ -158,6 +158,11 @@
 	#define TIMER_TIMEOUT_IRQn TIMER3_IRQn
 	// bug:-(  #define rcu_periph_clock_enable(RCU_TIMER_TIMEOUT) rcu_periph_clock_enable(RCU_TIMER3)
 
+	//setup.c::USART init
+	
+	#define TARGET_usart_oversample_config(a,b)	//JMA no oversampling in F103 usart_oversample_config(USART_STEER_COM, USART_OVSMOD_16);
+	#define DMA_Channel1_2_IRQn DMA0_Channel2_IRQn
+	
 	//setup.c::Adc_init()
 	#define RCU_ADC RCU_ADC0
 	#define RCU_DMA RCU_DMA0
@@ -210,6 +215,10 @@
 	#define TARGET_TIMER0_BRK_UP_TRG_COM_IRQHandler TIMER0_BRK_UP_TRG_COM_IRQHandler
 	
 	// setup.c
+	
+	// setup.c::usart init
+	#define TARGET_usart_oversample_config(a,b)	usart_oversample_config(a,b)
+	
 	#define TARGET_dma_interrupt_flag_get(a,b) dma_interrupt_flag_get(a,b)
 	#define TARGET_dma_interrupt_flag_clear(a,b) dma_interrupt_flag_clear(a,b)
 	#define TARGET_adc_software_trigger_enable(a) adc_software_trigger_enable(a)	

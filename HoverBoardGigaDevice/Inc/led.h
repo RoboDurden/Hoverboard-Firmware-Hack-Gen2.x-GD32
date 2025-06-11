@@ -32,7 +32,7 @@
 #define LED_H
 
 //#include "gd32f1x0.h"
-#include "../Inc/config.h"
+#include "../Inc/configSelect.h"
 
 // Only slave has LED mechanism
 #ifdef SLAVE

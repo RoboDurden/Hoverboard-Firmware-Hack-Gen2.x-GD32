@@ -32,7 +32,7 @@
 #define SETUP_H
 
 //#include "gd32f1x0.h"
-#include "../Inc/config.h"
+#include "../Inc/configSelect.h"
 
 
 #ifndef pinMode
@@ -40,10 +40,9 @@
 	void pinMode(uint32_t pin, uint32_t mode);
 #endif
 
-//#define USART0_RX_BUFFERSIZE 1
-//#define USART1_RX_BUFFERSIZE 1
-#define USART0_DATA_RX_ADDRESS ((uint32_t)0x40013824)	//((uint32_t)0x40013824)
+#define USART0_DATA_RX_ADDRESS ((uint32_t)0x40013824)
 #define USART1_DATA_RX_ADDRESS ((uint32_t)0x40004424)
+#define USART2_DATA_RX_ADDRESS ((uint32_t)0x40004424)		//robo: should be different for USART2 on gd32f103 ?
 
 
 
@@ -90,6 +89,7 @@ void ADC_init(void);
 
 void USART0_Init(uint32_t iBaud);
 void USART1_Init(uint32_t iBaud);
+void USART2_Init(uint32_t iBaud);
 
 //----------------------------------------------------------------------------
 // Initializes the usart master slave

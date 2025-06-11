@@ -3,7 +3,7 @@
 
 #include "../Inc/target.h"
 #include "../Inc/setup.h"
-#include "../Inc/config.h"
+#include "../Inc/configSelect.h"
 #include "../Inc/remote.h"
 
 
@@ -123,11 +123,22 @@
 		#define USART0_BAUD REMOTE_BAUD		// defined in remoteUart.h or remoteCrsf.h or remoteUartBus.h
 		#define USART_REMOTE USART0
 		#define USART_REMOTE_BUFFER usart0_rx_buf		// defined in setup.c
-	#else
-		#define HAS_USART1
-		#define USART1_BAUD REMOTE_BAUD		// defined in remoteUart.h or remoteCrsf.h or remoteUartBus.h
-		#define USART_REMOTE USART1
-		#define USART_REMOTE_BUFFER usart1_rx_buf		// defined in setup.c
+	#else 
+		#if REMOTE_USART == 1
+			#define HAS_USART1
+			#define USART1_BAUD REMOTE_BAUD		// defined in remoteUart.h or remoteCrsf.h or remoteUartBus.h
+			#define USART_REMOTE USART1
+			#define USART_REMOTE_BUFFER usart1_rx_buf		// defined in setup.c
+		#else 
+			#if REMOTE_USART == 2
+				#define HAS_USART2
+				#define USART2_BAUD REMOTE_BAUD		// defined in remoteUart.h or remoteCrsf.h or remoteUartBus.h
+				#define USART_REMOTE USART2
+				#define USART_REMOTE_BUFFER usart2_rx_buf		// defined in setup.c
+			#else
+				#error "no REMOTE_USART choosen (0, 1 or 2)
+			#endif
+		#endif
 	#endif
 #endif
 
@@ -138,10 +149,20 @@
 		#define USART_MASTERSLAVE USART0
 		#define USART_MASTERSLAVE_BUFFER usart0_rx_buf		// defined in setup.c
 	#else
-		#define HAS_USART1
-		#define USART1_BAUD 115200
-		#define USART_MASTERSLAVE USART1
-		#define USART_MASTERSLAVE_BUFFER usart1_rx_buf		// defined in setup.c
+			#if MASTERSLAVE_USART == 1
+				#define HAS_USART1
+				#define USART0_BAUD 115200
+				#define USART_MASTERSLAVE USART1
+				#define USART_MASTERSLAVE_BUFFER usart1_rx_buf		// defined in setup.c
+			#else
+			 	#if MASTERSLAVE_USART == 2
+				#define HAS_USART2
+				#define USART0_BAUD 115200
+				#define USART_MASTERSLAVE USART2
+				#define USART_MASTERSLAVE_BUFFER usart2_rx_buf		// defined in setup.c
+			#else
+			#endif
+		#endif
 	#endif
 #endif
 
