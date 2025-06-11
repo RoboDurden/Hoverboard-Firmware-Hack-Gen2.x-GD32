@@ -465,9 +465,19 @@
           <GroupName>Inc</GroupName>
           <Files>
             <File>
+              <FileName>configSelect.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\configSelect.h</FilePath>
+            </File>
+            <File>
               <FileName>config.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\config.h</FilePath>
+            </File>
+            <File>
+              <FileName>configDebug.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\configDebug.h</FilePath>
             </File>
             <File>
               <FileName>setup.h</FileName>
@@ -553,16 +563,6 @@
               <FileName>defines.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines.h</FilePath>
-            </File>
-            <File>
-              <FileName>configSelect.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Inc\configSelect.h</FilePath>
-            </File>
-            <File>
-              <FileName>configDebug.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Inc\configDebug.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -1163,9 +1163,19 @@
           <GroupName>Inc</GroupName>
           <Files>
             <File>
+              <FileName>configSelect.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\configSelect.h</FilePath>
+            </File>
+            <File>
               <FileName>config.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\config.h</FilePath>
+            </File>
+            <File>
+              <FileName>configDebug.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\configDebug.h</FilePath>
             </File>
             <File>
               <FileName>setup.h</FileName>
@@ -1251,16 +1261,6 @@
               <FileName>defines.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines.h</FilePath>
-            </File>
-            <File>
-              <FileName>configSelect.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Inc\configSelect.h</FilePath>
-            </File>
-            <File>
-              <FileName>configDebug.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Inc\configDebug.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -1861,9 +1861,19 @@
           <GroupName>Inc</GroupName>
           <Files>
             <File>
+              <FileName>configSelect.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\configSelect.h</FilePath>
+            </File>
+            <File>
               <FileName>config.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\config.h</FilePath>
+            </File>
+            <File>
+              <FileName>configDebug.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\configDebug.h</FilePath>
             </File>
             <File>
               <FileName>setup.h</FileName>
@@ -1949,16 +1959,6 @@
               <FileName>defines.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines.h</FilePath>
-            </File>
-            <File>
-              <FileName>configSelect.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Inc\configSelect.h</FilePath>
-            </File>
-            <File>
-              <FileName>configDebug.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Inc\configDebug.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -2559,9 +2559,19 @@
           <GroupName>Inc</GroupName>
           <Files>
             <File>
+              <FileName>configSelect.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\configSelect.h</FilePath>
+            </File>
+            <File>
               <FileName>config.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\config.h</FilePath>
+            </File>
+            <File>
+              <FileName>configDebug.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\configDebug.h</FilePath>
             </File>
             <File>
               <FileName>setup.h</FileName>
@@ -2647,16 +2657,6 @@
               <FileName>defines.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines.h</FilePath>
-            </File>
-            <File>
-              <FileName>configSelect.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Inc\configSelect.h</FilePath>
-            </File>
-            <File>
-              <FileName>configDebug.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Inc\configDebug.h</FilePath>
             </File>
           </Files>
         </Group>
