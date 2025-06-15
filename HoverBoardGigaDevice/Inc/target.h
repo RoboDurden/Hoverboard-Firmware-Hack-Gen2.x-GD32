@@ -28,6 +28,10 @@
 	#define TARGET_adc_calibration_enable()	adc_calibration_enable()
 	#define TARGET_adc_special_function_config(a,b)	adc_special_function_config(a,b)
 
+	#define USART0_DATA_RX_ADDRESS ((uint32_t)0x40013824)
+	#define USART1_DATA_RX_ADDRESS ((uint32_t)0x40004424)
+	#define USART2_DATA_RX_ADDRESS ((uint32_t)0x40004424)		//robo: should be different for USART2 on gd32f103 ?
+
 #elif defined MM32SPIN05	
 	#include "mm32_device.h"
 	#include "hal_conf.h"
@@ -126,11 +130,20 @@
 		gpio_init(pin&0xffffff00U, mode, speed, BIT(pin&0xfU));\
 	}
 
+	/* GPIO_MODE_AIN: analog input mode
+		GPIO_MODE_IN_FLOATING: floating input mode
+		GPIO_MODE_IPD: pull-down input mode
+		GPIO_MODE_IPU: pull-up input mode
+		GPIO_MODE_OUT_OD: GPIO output with open-drain
+		GPIO_MODE_OUT_PP: GPIO output with push-pull
+		GPIO_MODE_AF_OD: AFIO output with open-drain
+		GPIO_MODE_AF_PP: AFIO output with push-pull */
 	#define GPIO_PUPD_PULLUP GPIO_MODE_IPU
 	#define GPIO_PUPD_PULLDOWN GPIO_MODE_IPD
+	#define GPIO_PUPD_NONE GPIO_MODE_IN_FLOATING
 	#define pinModePull(pin,mode,pull) \
 	{\
-		gpio_init(pin&0xffffff00U, pull , GPIO_OSPEED_10MHZ, BIT(pin&0xfU));\
+		gpio_init(pin&0xffffff00U, pull , GPIO_OSPEED_50MHZ, BIT(pin&0xfU));\
 	}
 
 	//     gpio_init(TIMER_BLDC_GH_PORT, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, TIMER_BLDC_GH_PIN);    
@@ -139,9 +152,6 @@
 	{\
 		 gpio_init(pin&0xffffff00U, pullUpDown, GPIO_OSPEED_50MHZ, BIT(pin&0xfU)); 	\
 	}
-//		gpio_mode_set(pin&0xffffff00U , GPIO_MODE_AF, pullUpDown, BIT(pin&0xfU));	\
-		gpio_output_options_set(pin&0xffffff00U, GPIO_OTYPE_PP, speed, BIT(pin&0xfU));	\
-		gpio_af_set(pin&0xffffff00U, AF(pin), BIT(pin&0xfU));		\
 
 	
 	
@@ -192,12 +202,17 @@
 	#define DMA_Channel0_IRQn DMA0_Channel0_IRQn
 	#define TIMER0_BRK_UP_TRG_COM_IRQn TIMER0_UP_IRQn
 	#define TARGET_nvic_irq_enable(a, b, c){nvic_irq_enable(a, b, c);}
-
+	
+	// usart0
 	#define FMC_FLAG_END FMC_FLAG_BANK0_END 
 	#define FMC_FLAG_WPERR FMC_FLAG_BANK0_WPERR
+	#define TARGET_DMA_CH2 DMA_CH4
+	#define TARGET_DMA_Channel1_2_IRQn DMA0_Channel4_IRQn
+	#define USART0_DATA_RX_ADDRESS (uint32_t)&USART_DATA(USART0)
 	
 	
 	// it.c
+	#define TARGET_DMA_Channel1_2_IRQHandler DMA0_Channel4_IRQHandler
 	#define TARGET_DMA_Channel0_IRQHandler DMA0_Channel0_IRQHandler
 	#define TARGET_TIMER0_BRK_UP_TRG_COM_IRQHandler TIMER0_UP_IRQHandler
 	#define TARGET_adc_software_trigger_enable(a) adc_software_trigger_enable(ADC0,a)
@@ -246,6 +261,15 @@
 	#define TARGET_adc_special_function_config(a,b)	adc_special_function_config(a,b)
 	#define TARGET_nvic_irq_enable(a, b, c){nvic_irq_enable(a, b, c);}
 	
+	// usart 0
+	#define TARGET_DMA_Channel1_2_IRQn DMA_Channel1_2_IRQn
+	#define TARGET_DMA_CH2 DMA_CH2
+	#define TARGET_DMA_Channel1_2_IRQHandler DMA_Channel1_2_IRQHandler
+
+	#define USART0_DATA_RX_ADDRESS ((uint32_t)0x40013824)
+	#define USART1_DATA_RX_ADDRESS ((uint32_t)0x40004424)
+	#define USART2_DATA_RX_ADDRESS ((uint32_t)0x40004424)		//robo: should be different for USART2 on gd32f103 ?
+
 	
 #endif
 

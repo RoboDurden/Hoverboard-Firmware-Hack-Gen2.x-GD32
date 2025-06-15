@@ -4,7 +4,7 @@
 //
 //    please share feedback to https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x
 #define _DEBUG      // debug output to first hardware serial port
-//#define DEBUG_RX    // additional hoverboard-rx debug output
+//  #define DEBUG_RX    // additional hoverboard-rx debug output
 
 #define ESP32       // comment out if using Arduino
 

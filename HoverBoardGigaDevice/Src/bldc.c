@@ -198,7 +198,7 @@ void CalculateBLDC(void)
 
 	// Determine current position based on hall sensors
 	#ifdef REMOTE_AUTODETECT
-		pos = AutodetectBldc(hall_to_pos[hall],buzzerTimer);
+		pos = AutodetectBldc(hall_to_pos[hall],buzzerTimer);	// AUTODETECT_Stage_Hall | AUTODETECT_Stage_HallOrder
 		AutodetectScan(buzzerTimer);
 	#else
 		pos = hall_to_pos[hall];
@@ -218,7 +218,7 @@ void CalculateBLDC(void)
 
 	// Update PWM channels based on position y(ellow), b(lue), g(reen)
 	//blockPWM(bldc_outputFilterPwm, pos, &y, &b, &g);
-		
+
 	bldc_get_pwm(bldc_outputFilterPwm, pos, &y, &b, &g);
 
 	// Set PWM output (pwm_res/2 is the mean value, setvalue has to be between 10 and pwm_res-10)

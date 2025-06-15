@@ -40,9 +40,6 @@
 	void pinMode(uint32_t pin, uint32_t mode);
 #endif
 
-#define USART0_DATA_RX_ADDRESS ((uint32_t)0x40013824)
-#define USART1_DATA_RX_ADDRESS ((uint32_t)0x40004424)
-#define USART2_DATA_RX_ADDRESS ((uint32_t)0x40004424)		//robo: should be different for USART2 on gd32f103 ?
 
 
 

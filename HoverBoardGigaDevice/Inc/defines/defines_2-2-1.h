@@ -13,7 +13,7 @@
 /*
 #define LED_RED		PA15
 #define LED_ORANGE		PB4
-#define LED_GREEN		PB3
+#define LED_GREEN		PB3		// autodetect :-)
 #define UPPER_LED		PC13
 #define LOWER_LED		PB5
 //#define ONBOARD_LED		P??
@@ -40,6 +40,35 @@
 #define BLDC_YH PA8			// yellow
 #define BLDC_YL PB13		
 #define TIMER_BLDC_PULLUP	GPIO_MODE_AF_PP	// robo: not sure if some boards indeed nned GPIO_PUPD_PULLUP like 2.2 or 2.3
+
+// Brushless Control DC (BLDC) defines
+// Channel G
+#define RCU_TIMER_BLDC RCU_TIMER0
+#define TIMER_BLDC TIMER0
+#define TIMER_BLDC_CHANNEL_G TIMER_CH_2
+#define TIMER_BLDC_GH_PIN GPIO_PIN_10
+#define TIMER_BLDC_GH_PORT GPIOA
+#define TIMER_BLDC_GL_PIN GPIO_PIN_15
+#define TIMER_BLDC_GL_PORT GPIOB
+// Channel B
+#define TIMER_BLDC_CHANNEL_B TIMER_CH_1
+#define TIMER_BLDC_BH_PIN GPIO_PIN_9
+#define TIMER_BLDC_BH_PORT GPIOA
+#define TIMER_BLDC_BL_PIN GPIO_PIN_14
+#define TIMER_BLDC_BL_PORT GPIOB
+// Channel Y
+#define TIMER_BLDC_CHANNEL_Y TIMER_CH_0
+#define TIMER_BLDC_YH_PIN GPIO_PIN_8
+#define TIMER_BLDC_YH_PORT GPIOA
+#define TIMER_BLDC_YL_PIN GPIO_PIN_13
+#define TIMER_BLDC_YL_PORT GPIOB
+
+#define USART_STEER_COM USART0
+#define USART_STEER_COM_TX_PIN GPIO_PIN_6
+#define USART_STEER_COM_TX_PORT GPIOB
+#define USART_STEER_COM_RX_PIN GPIO_PIN_7
+#define USART_STEER_COM_RX_PORT GPIOB
+
 
 // Timer BLDC short circuit emergency shutoff define
 //#define TIMER_BLDC_EMERGENCY_SHUTDOWN	TODO_PIN

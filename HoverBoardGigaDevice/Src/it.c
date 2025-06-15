@@ -174,14 +174,16 @@ uint32_t iCounterUsart0 = 0;
 uint32_t iCounter2Usart0 = 0;
 
 #ifdef HAS_USART0
-	// This function handles DMA_Channel1_2_IRQHandler interrupt
 	// Is asynchronously called when USART0 RX finished
-	void DMA_Channel1_2_IRQHandler(void)
+	#ifndef TARGET_DMA_Channel1_2_IRQHandler
+		#error "TARGET_DMA_Channel1_2_IRQHandler not defined for active target in target.h"
+	#endif
+	void TARGET_DMA_Channel1_2_IRQHandler(void)
 	{
 		iCounterUsart0++;
 		//DEBUG_LedSet(	(steerCounter%20) < 10	,0)
 		// USART steer/bluetooth RX
-		if (TARGET_dma_interrupt_flag_get(DMA_CH2, DMA_INT_FLAG_FTF))
+		if (TARGET_dma_interrupt_flag_get(TARGET_DMA_CH2, DMA_INT_FLAG_FTF))
 		{
 			iCounter2Usart0++;
 			//DEBUG_LedSet(	(iCounter2Usart0++%10) < 5	,0)
@@ -192,7 +194,7 @@ uint32_t iCounter2Usart0 = 0;
 					// Update USART bluetooth input mechanism
 					//UpdateUSARTBluetoothInput();
 			#endif
-			TARGET_dma_interrupt_flag_clear(DMA_CH2, DMA_INT_FLAG_FTF);        
+			TARGET_dma_interrupt_flag_clear(TARGET_DMA_CH2, DMA_INT_FLAG_FTF);        
 		}
 	}
 #endif
@@ -223,12 +225,12 @@ uint32_t iCounter2Usart0 = 0;
 
 uint32_t iCounterUsart2 = 0;
 uint32_t iCounter2Usart2 = 0;
-#ifdef HAS_USART2
+#if TARGET==2 && defined(HAS_USART2)
 	//----------------------------------------------------------------------------
 	// This function handles DMA_Channel3_4_IRQHandler interrupt
 	// Is asynchronously called when USART_SLAVE RX finished
 	//----------------------------------------------------------------------------
-	void DMA_Channel3_4_IRQHandler(void)
+	void DMA0_Channel2_IRQHandler(void)		// DMA_Channel3_4_IRQHandler
 	{
 		iCounterUsart2++;
 		//DEBUG_LedSet(	(steerCounter%10) < 5	,0)

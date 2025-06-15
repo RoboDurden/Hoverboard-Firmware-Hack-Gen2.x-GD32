@@ -7,7 +7,8 @@
 
 #ifdef REMOTE_AUTODETECT
 
-
+extern uint32_t iBug;
+uint32_t iBug2 = 0;
 extern uint32_t msTicks;
 
 char asStage[9][10] = {"do all","VBatt","Hold","Button","Led","Hall","HallOrder","CurrentDc","Results"};
@@ -154,6 +155,8 @@ uint32_t iTimeNextTx = 0;
 // Send frame to steer device
 void RemoteUpdate(void)
 {
+	ResetTimeout();	// Reset the pwm timout to avoid stopping motors	
+
 	//speed = (msTicks > 500) ? 200 : msTicks * 2 / 5;
 	steer = 0;
 
@@ -181,6 +184,8 @@ void RemoteUpdate(void)
 	if (!strlen(sMessage) || bMessageWait)
 			return;
 	
+	
+	iBug2 += strlen(sMessage);
 	#ifdef USART_REMOTE
 		SendBuffer(USART_REMOTE, (uint8_t *)sMessage, strlen(sMessage));
 	#endif
@@ -259,13 +264,6 @@ uint32_t HALL_B = TODO_PIN;
 uint32_t HALL_C = TODO_PIN;
 
 
-
-
-
-
-			
-			
-		
 
 
 void AutodetectInit()
@@ -389,7 +387,7 @@ void ScanInit(uint8_t iTestNew)
 		iVBatMinTest = 65535;
 		//pinMode(VBAT, GPIO_MODE_ANALOG);
 		//adc_regular_channel_config(1, ADC_CHANNEL_18, ADC_SAMPLETIME_13POINT5);	// ADC_CHANNEL_18 = VBAT
-		adc_regular_channel_config(0, PIN_TO_CHANNEL(PF4), ADC_SAMPLETIME_13POINT5);
+		TARGET_adc_regular_channel_config(0, PIN_TO_CHANNEL(PF4), ADC_SAMPLETIME_13POINT5);
 		//adc_regular_channel_config(1, PIN_TO_CHANNEL(PF4), ADC_SAMPLETIME_13POINT5);
 		break;
 	default:
@@ -399,7 +397,7 @@ void ScanInit(uint8_t iTestNew)
 			{
 				//gpio_deinit(aoPin[i].i);
 				//pinMode(aoPin[i].i,GPIO_MODE_INPUT);
-				pinModePull(aoPin[i].i,GPIO_MODE_INPUT,GPIO_PUPD_NONE);
+				pinModePull(aoPin[i].i,GPIO_MODE_INPUT,GPIO_PUPD_NONE);	// floating mode, no pull-up and pull-down resistors
 			}
 		}
 	}
@@ -438,7 +436,7 @@ void ScanInit(uint8_t iTestNew)
 		//VBATT = iPinNew;
 		//ADC_init();
 		pinMode(iPinNew, GPIO_MODE_ANALOG);
-		adc_regular_channel_config(0, PIN_TO_CHANNEL(iPinNew), ADC_SAMPLETIME_13POINT5);
+		TARGET_adc_regular_channel_config(0, PIN_TO_CHANNEL(iPinNew), ADC_SAMPLETIME_13POINT5);
 		//adc_regular_channel_config(1, PIN_TO_CHANNEL(iPinNew), ADC_SAMPLETIME_13POINT5);
 		msTicksTestNext = (wStage == AUTODETECT_Stage_VBatt ? 2000 : 4000);
 		iAverage = iRepeat = 0;
@@ -478,12 +476,13 @@ uint8_t bWait4Enter=0;
 
 void AutodetectScan(uint16_t buzzerTimer)
 {
+iBug = 10;
 	if (wStage & (AUTODETECT_Stage_Hall|AUTODETECT_Stage_HallOrder)	)	// AUTODETECT_Stage_Startup|
 		return;
-
+iBug = 11;
 	if (msTicksWait > msTicks)	// wait for last sMessage to be sent
 		return;
-
+iBug = 12;
 	if (wStage == AUTODETECT_Stage_Results)
 	{
 		SetPWM(0);
@@ -498,7 +497,7 @@ void AutodetectScan(uint16_t buzzerTimer)
 		iRepeat++;
 		return;
 	}
-	
+iBug = 13;	
 	if (wStage == AUTODETECT_Stage_Finished)
 	{
 		SetPWM(0);
@@ -506,7 +505,7 @@ void AutodetectScan(uint16_t buzzerTimer)
 		AutoDetectSetStage(AUTODETECT_Stage_Menu);
 		return;
 	}
-
+iBug = 14;
 	SetPWM(0);		// default speed -200
 	
 	uint8_t i;
@@ -585,7 +584,7 @@ void AutodetectScan(uint16_t buzzerTimer)
 			break;
 		}
 	}
-	
+iBug = 15;	
 	if (bWait4Enter)
 	{
 		switch (bWait4Enter)
@@ -602,7 +601,8 @@ void AutodetectScan(uint16_t buzzerTimer)
 		}
 		return;
 	}
-		
+iBug = 16;		
+	
 	if (wStageOld != wStage)
 	{
 		wStageOld = wStage;
@@ -658,13 +658,16 @@ void AutodetectScan(uint16_t buzzerTimer)
 		msTicksWait = msTicks + 300;
 		return;	// to allow sMessage to be sent
 	}
-	
+iBug = 17;	
 	int8_t iFound = -1;
 	uint16_t iTimeCountdown = msTicksTest-msTicks;
 	switch (wStage)
 	{
 	case AUTODETECT_Stage_Startup:
+		iBug = 20;
+		iBug2 += 1000;
 		if (!(buzzerTimer%16000) )	// 16 kHz
+		//if ((buzzerTimer%16000)<10 )	// 16 kHz
 		{
 			if (0 == iRepeat--)
 			{
@@ -1034,10 +1037,14 @@ uint8_t AutodetectBldc(uint8_t posNew,uint16_t buzzerTimer)
 			return posNew;
 		}
 	*/
+
+#if TARGET == 2
+		return posNew;
+}
+		#else
 		if (0 == (wStage & (AUTODETECT_Stage_Startup|AUTODETECT_Stage_Hall
 												|AUTODETECT_Stage_HallOrder|AUTODETECT_Stage_VBatt))	)
 			return posNew;
-
 		//SetPWM(msTicks > 500 ? -200 : (int32_t)msTicks * -2 / 5);
 		//SetPWM(fVBattFound > 30 ? -150 : -200);
 		SetPWM(-120 - 4*(42-(int16_t)fVBattFound));		// lower vbatt needs higher pwm to make motor spin
@@ -1236,5 +1243,6 @@ uint8_t AutodetectBldc(uint8_t posNew,uint16_t buzzerTimer)
 		}
 		return posAuto;
 }
+#endif
 
 #endif

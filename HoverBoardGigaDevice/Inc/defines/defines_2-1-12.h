@@ -1,3 +1,5 @@
+// Gen2.1.12 : https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/36
+
 #ifdef MASTER_OR_SINGLE		// layout 2.2 and 2.7 have buzzer on the slave board.
 	#define HAS_BUZZER
 #endif
@@ -68,12 +70,12 @@
 #define SELF_HOLD	PB2  //todo
 
 // Button defines
-#define BUTTON	 PC15 //todo
+#define BUTTON	 PA5	// thanks to willhess92
 
 #ifdef HAS_BUZZER
 	// Buzzer defins
-	#define BUZZER	PB10		// todo
+	#define BUZZER	PA12	// thanks to willhess92
 #endif
 
-#define CHARGE_STATE	PF0	// todo
+#define CHARGE_STATE	PC15	// thanks to willhess92
 

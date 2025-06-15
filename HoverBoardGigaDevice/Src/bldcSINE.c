@@ -222,7 +222,6 @@ void EXTI4_15_IRQHandler(void){	_HandleEXTI();}
 void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) 	// pos is not used but hall_to_sector mapping :-/
 {
 	pwmGo = -pwm;
-		return;
 	uint32_t safe_hall_time_last,safe_hall_time_step;
 	uint8_t iRetries = 10;
 	do	// Get current sector (0-5) and other interrupt set data

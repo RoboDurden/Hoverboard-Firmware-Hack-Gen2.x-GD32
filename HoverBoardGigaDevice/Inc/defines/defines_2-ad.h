@@ -15,8 +15,12 @@
 #define BLDC_BL PB14		
 #define BLDC_YH PA8			// yellow
 #define BLDC_YL PB13		
-#define TIMER_BLDC_PULLUP	GPIO_PUPD_NONE	// robo: not sure if some boards indeed nned GPIO_PUPD_PULLUP like 2.2 or 2.3
 
+#if TARGET == 2
+	#define TIMER_BLDC_PULLUP	GPIO_MODE_AF_PP	// robo: not sure if some boards indeed nned GPIO_PUPD_PULLUP like 2.2 or 2.3
+#else
+	#define TIMER_BLDC_PULLUP	GPIO_PUPD_NONE	// robo: not sure if some boards indeed nned GPIO_PUPD_PULLUP like 2.2 or 2.3
+#endif
 
 // Timer BLDC short circuit emergency shutoff define
 //#define TIMER_BLDC_EMERGENCY_SHUTDOWN	TODO_PIN
