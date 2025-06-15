@@ -151,13 +151,13 @@
 	#else
 			#if MASTERSLAVE_USART == 1
 				#define HAS_USART1
-				#define USART0_BAUD 115200
+				#define USART1_BAUD 115200
 				#define USART_MASTERSLAVE USART1
 				#define USART_MASTERSLAVE_BUFFER usart1_rx_buf		// defined in setup.c
 			#else
 			 	#if MASTERSLAVE_USART == 2
 				#define HAS_USART2
-				#define USART0_BAUD 115200
+				#define USART2_BAUD 115200
 				#define USART_MASTERSLAVE USART2
 				#define USART_MASTERSLAVE_BUFFER usart2_rx_buf		// defined in setup.c
 			#else

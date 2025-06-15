@@ -1038,7 +1038,7 @@ uint8_t AutodetectBldc(uint8_t posNew,uint16_t buzzerTimer)
 		}
 	*/
 
-#if TARGET == 2
+#if TARGET == 22
 		return posNew;
 }
 		#else
