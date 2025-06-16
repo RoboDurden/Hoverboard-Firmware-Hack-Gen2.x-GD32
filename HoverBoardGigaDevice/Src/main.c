@@ -122,7 +122,7 @@ iBug = 5;
 	// Init GPIOs
 	GPIO_init();
 	#ifndef REMOTE_AUTODETECT
-		DEBUG_LedSet(SET,1)
+		DEBUG_LedSet(SET,0)
 		
 		#ifdef UPPER_LED
 			digitalWrite(UPPER_LED,SET);
@@ -212,7 +212,9 @@ iBug = 10;
 		Delay(10); //debounce to prevent immediate ShutOff (100 is to much with a switch instead of a push button)
 	#endif
 
-	DEBUG_LedSet(RESET,1)
+	uint32_t iCol = LED_GREEN;
+
+	DEBUG_LedSet(RESET,0)
 	#ifdef UPPER_LED
 		digitalWrite(UPPER_LED,RESET);
 	#endif
@@ -224,7 +226,7 @@ iBug = 10;
 		iTimeNextLoop = millis() + DELAY_IN_MAIN_LOOP;
 iBug++;		
 		steerCounter++;		// something like DELAY_IN_MAIN_LOOP = 5 ms
-		//DEBUG_LedSet(	(steerCounter%20) < 10	,0)
+		DEBUG_LedSet(	(steerCounter%20) < 10	,0)
 		
 		
 		#ifdef MOSFET_OUT

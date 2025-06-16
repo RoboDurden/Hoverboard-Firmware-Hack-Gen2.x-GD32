@@ -1,7 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define REMOTE_AUTODETECT
+//#define REMOTE_AUTODETECT
 				// ONLY test with 1-2A constant current power supply !!!! The charger with 1.5A might also do :-)
 				// will drive the motor without hall input to detect the hall pins..
 
@@ -37,9 +37,9 @@
 	#if defined(MASTER) || defined(SINGLE)
 		
 		// choose only one 'remote' to control the motor
-		#define REMOTE_DUMMY
+		//#define REMOTE_DUMMY
 		//#define REMOTE_UART
-		//#define REMOTE_UARTBUS	// ESP32 as master and multiple boards as multiple slaves ESP.tx-Hovers.rx and ESP.rx-Hovers.tx
+		#define REMOTE_UARTBUS	// ESP32 as master and multiple boards as multiple slaves ESP.tx-Hovers.rx and ESP.rx-Hovers.tx
 		//#define REMOTE_CRSF		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/26
 		//#define REMOTE_ADC	// speed is PA2=TX and steer is PA3=RX of the masterslave header. Get 3.3V from the flash header
 												// DO NOT use the 5V/15V pin of the masterslave header for the potentiometers !!!!!!!!!
@@ -76,12 +76,12 @@
 	#endif
 	
 	#if defined(REMOTE_UART) || defined(REMOTE_UARTBUS) || defined(REMOTE_CRSF)
-		#define REMOTE_USART				0 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
+		#define REMOTE_USART				2 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
 																		//	0 is usually PB6/PB7 and the empty header close to the flash-header
 																		//	2 is usually PB10/PB11 on stm32f103 boards
 	#endif
 	
-	//#define DEBUG_LED		// uncomment to activate DEBUG_LedSet(bSet,iColor) macro. iCol: 0=green, 1=organge, 2=red
+	#define DEBUG_LED		// uncomment to activate DEBUG_LedSet(bSet,iColor) macro. iCol: 0=green, 1=organge, 2=red
 	
 #endif
 

@@ -10,10 +10,11 @@
 #define HALL_B		PA0
 #define HALL_C		PA2
 
-/*
+#define LED_GREEN		PB3		// autodetect :-)
 #define LED_RED		PA15
 #define LED_ORANGE		PB4
-#define LED_GREEN		PB3		// autodetect :-)
+
+/*
 #define UPPER_LED		PC13
 #define LOWER_LED		PB5
 //#define ONBOARD_LED		P??

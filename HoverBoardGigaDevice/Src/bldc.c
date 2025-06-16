@@ -208,7 +208,7 @@ void CalculateBLDC(void)
 	{
 			// Invalid position - disable PWM
 			timer_automatic_output_disable(TIMER_BLDC);
-			DEBUG_LedSet(SET,2);	// macro. iCol: 0=green, 1=organge, 2=red
+			//DEBUG_LedSet(SET,2);	// macro. iCol: 0=green, 1=organge, 2=red
 			return;
 	}
 		

@@ -235,7 +235,7 @@ uint32_t iCounter2Usart2 = 0;
 		iCounterUsart2++;
 		//DEBUG_LedSet(	(steerCounter%10) < 5	,0)
 		// USART master slave RX
-		if (TARGET_dma_interrupt_flag_get(DMA_CH4, DMA_INT_FLAG_FTF))
+		if (TARGET_dma_interrupt_flag_get(DMA_CH2, DMA_INT_FLAG_FTF))
 		{
 			iCounter2Usart2++;
 			#if (REMOTE_USART==2) && defined(MASTER_OR_SINGLE)
@@ -246,7 +246,7 @@ uint32_t iCounter2Usart2 = 0;
 					//UpdateUSARTBluetoothInput();
 			#endif
 			
-			TARGET_dma_interrupt_flag_clear(DMA_CH4, DMA_INT_FLAG_FTF);        
+			TARGET_dma_interrupt_flag_clear(DMA_CH2, DMA_INT_FLAG_FTF);        
 		}
 	}
 #endif

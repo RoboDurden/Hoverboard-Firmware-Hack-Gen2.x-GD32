@@ -10,7 +10,7 @@
 
 // #define HOVERBOARD_MM32  // uncomment if a MM32 Hoverboard firmware is connected (and no GD32 or STM32)
 
-//#define REMOTE_UARTBUS  // one serial bus to control them all :-)
+#define REMOTE_UARTBUS  // one serial bus to control them all :-)
 
 #define SEND_MILLIS 100   // send commands to hoverboard every SEND_MILLIS millisesonds
 
@@ -163,7 +163,7 @@ void loop()
 
   if (iNow > iNext)
   {
-    DEBUGN("sending iSpeed",iSpeed)
+    //DEBUGN("sending iSpeed",iSpeed)
     
     #ifdef REMOTE_UARTBUS
       

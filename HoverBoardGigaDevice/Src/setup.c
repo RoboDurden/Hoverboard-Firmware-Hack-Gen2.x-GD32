@@ -817,80 +817,80 @@ void USART1_Init(uint32_t iBaud)
 #endif
 }
 
-void USART2_Init(uint32_t iBaud)
+void USART2_Init(uint32_t iBaud)	// only for target==2 = gd32f103
 {
 #if defined(HAS_USART2) && TARGET==2
-	
-	// Init USART2
-	#if REMOTE_USART==2 && defined(REMOTE_UARTBUS)	// no pullup resistors with multiple boards on the UartBus - Esp32/Arduino (Serial.begin) have to setup pullups
-		#define USART2_PUPD	GPIO_MODE_AF_OD
-	#else
-		#define USART2_PUPD	GPIO_MODE_AF_PP
-	#endif
-	// gpio_init(USART_MASTERSLAVE_TX_PORT, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, USART_MASTERSLAVE_TX_PIN); // JW:
-	// gpio_init(pin&0xffffff00U, pullUpDown, GPIO_OSPEED_50MHZ, BIT(pin&0xfU));
-	pinModePull(USART2_TX, USART2_PUPD, GPIO_OSPEED_50MHZ);	// // GD32F130: GPIO_AF_1 = USART
-	pinModePull(USART2_RX, USART2_PUPD, GPIO_OSPEED_50MHZ);		// deepseek: GPIO_MODE_IN_FLOATING
-	
-	// Enable ADC and DMA clock
-	rcu_periph_clock_enable(RCU_USART2);
-	rcu_periph_clock_enable(RCU_DMA0);
 
+	//JMA enable RCU_AF for alternate functions
+	rcu_periph_clock_enable(RCU_AF);
+
+	#if REMOTE_USART==2 && defined(REMOTE_UARTBUS)	// no pullup resistors with multiple boards on the UartBus - Esp32/Arduino (Serial.begin) have to setup pullups
+		#define USART0_PUPD	GPIO_MODE_AF_OD
+	#else
+		#define USART0_PUPD	GPIO_MODE_AF_PP
+	#endif
+	// JW: Configure USART2 TX (PB10) and RX (PB11) pins
+	//gpio_init(USART_MASTERSLAVE_TX_PORT, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, USART_MASTERSLAVE_TX_PIN); // JW:
+	//gpio_init(USART_MASTERSLAVE_RX_PORT, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ, USART_MASTERSLAVE_RX_PIN); // JW:
+	pinModeSpeed(USART2_TX, USART0_PUPD, GPIO_OSPEED_50MHZ);
+	pinModeSpeed(USART2_RX, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ);	
+
+		// Enable ADC and DMA clock
+	rcu_periph_clock_enable(RCU_USART2); // JW: was RCU_USART1
+	rcu_periph_clock_enable(RCU_DMA0); //JMA was RCU_DMA
 	
 	// Reset USART
-	usart_deinit(USART2);	
+	usart_deinit(USART2); // JW: added
 	
 	// Init USART for 115200 baud, 8N1
 	usart_baudrate_set(USART2, iBaud);
 	usart_parity_config(USART2, USART_PM_NONE);
 	usart_word_length_set(USART2, USART_WL_8BIT);
 	usart_stop_bit_set(USART2, USART_STB_1BIT);
-	
 	usart_hardware_flow_rts_config(USART2, USART_RTS_DISABLE);  // JW: Disable RTS
 	usart_hardware_flow_cts_config(USART2, USART_CTS_DISABLE);  // JW: Disable CTS
-	
-	//JMA no oversampling in F103  TARGET_usart_oversample_config(USART2, USART_OVSMOD_16);
+	//JMA no oversampling in F103 usart_oversample_config(USART2, USART_OVSMOD_16);
 	
 	// Enable both transmitter and receiver
 	usart_transmit_config(USART2, USART_TRANSMIT_ENABLE);
 	usart_receive_config(USART2, USART_RECEIVE_ENABLE);
 	
-	//syscfg_dma_remap_enable(SYSCFG_DMA_REMAP_USART0RX|SYSCFG_DMA_REMAP_USART0TX);
-
 	// Enable USART
 	usart_enable(USART2);
 	
-	// Interrupt channel 3 enable
-	nvic_irq_enable(DMA0_Channel2_IRQn, 2, 0);
-	
-	// Initialize DMA channel 2 for USART_SLAVE RX  user manual:196 : usart2 is on CH1 for tx and CH2 for rx
-	TARGET_dma_deinit(DMA_CH2);
+	// Interrupt channel 3/4 enable
+	//nvic_irq_enable(DMA_Channel3_4_IRQn, 2, 0);
+	//JMA F103 cannel 3 and 4 are separate. Only channel 4 is used so only channel 4 interrupt enabled
+	nvic_irq_enable(DMA0_Channel2_IRQn, 2, 0); // JW: Changed to Channel2 (from Channel4)
+
+// Initialize DMA channel 4 for USART_SLAVE RX
+	dma_deinit(DMA0, DMA_CH2); // JW: Changed to CH2 (from CH4). JMA DMA0 added
 	dma_init_struct_usart.direction = DMA_PERIPHERAL_TO_MEMORY;
 	dma_init_struct_usart.memory_addr = (uint32_t)usart2_rx_buf;
 	dma_init_struct_usart.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
 	dma_init_struct_usart.memory_width = DMA_MEMORY_WIDTH_8BIT;
 	dma_init_struct_usart.number = 1;
-	dma_init_struct_usart.periph_addr = USART1_DATA_RX_ADDRESS;
+	dma_init_struct_usart.periph_addr = (uint32_t)&USART_DATA(USART2); // JW: USART_MASTERSLAVE_DATA_RX_ADDRESS;
 	dma_init_struct_usart.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
 	dma_init_struct_usart.periph_width = DMA_PERIPHERAL_WIDTH_8BIT;
 	dma_init_struct_usart.priority = DMA_PRIORITY_ULTRA_HIGH;
-	TARGET_dma_init(DMA_CH2, &dma_init_struct_usart);
+	dma_init(DMA0, DMA_CH2, &dma_init_struct_usart); // JW: Changed to CH2 (from CH4). JMA DMA0 added & added before dma_init_struct_usart
 	
 	// Configure DMA mode
-	TARGET_dma_circulation_enable(DMA_CH2);
-	TARGET_dma_memory_to_memory_disable(DMA_CH2);
+	dma_circulation_enable(DMA0, DMA_CH2); // JW: Changed to CH2 (from CH4). JMA DMA0 added
+	dma_memory_to_memory_disable(DMA0, DMA_CH2); // JW: Changed to CH2 (from CH4). JMA DMA0 added
 
 	// USART DMA enable for transmission and receive
 	usart_dma_receive_config(USART2, USART_DENR_ENABLE);
 	
 	// Enable DMA transfer complete interrupt
-	TARGET_dma_interrupt_enable(DMA_CH2, DMA_CHXCTL_FTFIE);
+	dma_interrupt_enable(DMA0, DMA_CH2, DMA_CHXCTL_FTFIE); // JW: Changed to CH2 (from CH4). JMA DMA0 added
 	
 	// At least clear number of remaining data to be transferred by the DMA 
-	TARGET_dma_transfer_number_config(DMA_CH2, 1);
+	dma_transfer_number_config(DMA0, DMA_CH2, 1); // JW: Changed to CH2 (from CH4). JMA DMA0 added
 	
 	// Enable dma receive channel
-	TARGET_dma_channel_enable(DMA_CH2);
+	dma_channel_enable(DMA0, DMA_CH2); // JW: Changed to CH2 (from CH4). JMA DMA0 added
 #endif
 }
 
