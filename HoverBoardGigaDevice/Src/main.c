@@ -333,12 +333,14 @@ iBug = 9;
 			{
 				inactivity_timeout_counter++;
 			}
-				
-			// Shut off device after INACTIVITY_TIMEOUT in minutes
-			if (inactivity_timeout_counter > (INACTIVITY_TIMEOUT * 60 * 1000) / (DELAY_IN_MAIN_LOOP + 1))
-			{ 
-				ShutOff();
-			}
+			
+			#ifdef INACTIVITY_TIMEOUT
+				// Shut off device after INACTIVITY_TIMEOUT in minutes
+				if (inactivity_timeout_counter > (INACTIVITY_TIMEOUT * 60 * 1000) / (DELAY_IN_MAIN_LOOP + 1))
+				{ 
+					ShutOff();
+				}
+			#endif
 		#endif	
 
 		#if defined(CHARGE_STATE) && defined(MASTER_OR_SINGLE)

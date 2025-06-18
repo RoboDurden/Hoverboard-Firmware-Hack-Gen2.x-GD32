@@ -237,7 +237,8 @@ void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) 	// pos is not used 
 	
 	angle_deg = sector * 60.0f;	// Calculate base angle for this sector (0-60° range)
 	angle_deg_add = 0;
-	if (ABS(pwmGo) > 100)
+	int16_t iOffset = 0;
+	if (ABS(pwmGo) > 50)
 	{
 		if (sector != sectorLast) 
 		{
@@ -248,16 +249,16 @@ void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) 	// pos is not used 
 		if (	(safe_hall_time_step > 0) && (safe_hall_time_step < (PWM_FREQ/20))	)	// >50ms for one hall change is to slow to interpolate
 		{
 			uint16_t iDT = buzzerTimer>safe_hall_time_last ? buzzerTimer-safe_hall_time_last : buzzerTimer + (0x00010000-safe_hall_time_last);
-			
 			fDT = (float)iDT /safe_hall_time_step;		// at constant speed, fDT == 1 would be right before a new sector gets detected by the hall inputs
 			if (fDT < 1.5)	// not for heavy breaking
-				angle_deg_add = sectorChange * (60.0f  * fDT) ;
+			{
+				angle_deg_add = sectorChange * (60.0f  * fDT);
+				iOffset = sectorChange < 0 ? 390 : 330;		// +-30° +360° to prevent negative angle
+			}
 		}
-		int16_t iOffset = sectorChange < 0 ? 390 : 330;		// +-30° +360° to prevent negative angle
-		angle_deg_final  = angle_deg + angle_deg_add + iOffset;
 	}
-	else
-		angle_deg_final = angle_deg;
+	angle_deg_final  = angle_deg + angle_deg_add + iOffset;
+	
 
 	angle_idx = (uint16_t)angle_deg_final % 360;	// Convert to integer lookup index (0-359)
 	// Calculate phase offsets
