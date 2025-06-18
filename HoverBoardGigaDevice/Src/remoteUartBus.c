@@ -9,8 +9,10 @@
 
 #pragma pack(1)
 
-// Only master communicates with steerin device
+// Only master or single communicates with steerin device
 #ifdef MASTER_OR_SINGLE
+
+extern uint32_t iBug;
 
 extern uint8_t usart0_rx_buf[1];
 extern uint8_t usart1_rx_buf[1];
@@ -123,9 +125,12 @@ void RemoteCallback(void)
 	if (iReceivePos < 0)		// data reading not yet begun
 	{
 		if (cRead == '/')	// Start character is captured, start record
-			iReceivePos = 0;
-		else	
-			return;
+		{
+			//iReceivePos = 0;	// robo: maybe change to ++  to allow -2 if crc fails to skip wrong offset, as added to RemoteUart.c
+			if (0 > ++iReceivePos)	// might have been set to -2 because of failed crc. Static message with additional '/' could lead to wrong reading offset
+				return;
+		}
+		else return;	// wait for start character
 	}
 	
 	aReceiveBuffer[iReceivePos++] = cRead;
@@ -153,9 +158,15 @@ void RemoteCallback(void)
 	
 	//if (1)
 	uint16_t iCRC = (aReceiveBuffer[iReceivePos-1] << 8) | aReceiveBuffer[iReceivePos-2];
-	iReceivePos = -1;
-	if (iCRC == CalcCRC(aReceiveBuffer, iRxDataSize - 2))	//  first bytes except crc
+	
+	if (iCRC != CalcCRC(aReceiveBuffer, iRxDataSize - 2))	//  first bytes except crc
 	{
+		iBug = 42;
+		iReceivePos = -2;		// robo: set it to -2 if crc fails to skip wrong offset, as added to RemoteUart.c	
+	}
+	else
+	{
+		iReceivePos = -1;	
 		if (aReceiveBuffer[2] == SLAVE_ID)
 		{
 			//DEBUG_LedSet(SET,0)

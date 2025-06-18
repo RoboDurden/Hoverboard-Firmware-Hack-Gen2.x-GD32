@@ -54,7 +54,7 @@
 			#define SLAVE_ID	0		// must be unique for all hoverboards connected to the bus
 		#endif
 		#ifdef REMOTE_DUMMY
-			//#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
+			#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
 		#else
 			//#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
 		#endif
@@ -71,17 +71,18 @@
 	#endif
 	
 	#if defined(MASTER) || defined(SLAVE)
-		#define MASTERSLAVE_USART		1 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
-																		//	0 is usually PB6/PB7 and the empty header close to the flash-header
-	#endif
-	
-	#if defined(REMOTE_UART) || defined(REMOTE_UARTBUS) || defined(REMOTE_CRSF)
-		#define REMOTE_USART				2 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
+		#define MASTERSLAVE_USART		2 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
 																		//	0 is usually PB6/PB7 and the empty header close to the flash-header
 																		//	2 is usually PB10/PB11 on stm32f103 boards
 	#endif
 	
-	#define DEBUG_LED		// uncomment to activate DEBUG_LedSet(bSet,iColor) macro. iCol: 0=green, 1=organge, 2=red
+	#if defined(REMOTE_UART) || defined(REMOTE_UARTBUS) || defined(REMOTE_CRSF)
+		#define REMOTE_USART				0 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
+																		//	0 is usually PB6/PB7 and the empty header close to the flash-header
+																		//	2 is usually PB10/PB11 on stm32f103 boards
+	#endif
+	
+	//#define DEBUG_LED		// uncomment to activate DEBUG_LedSet(bSet,iColor) macro. iCol: 0=green, 1=organge, 2=red
 	
 #endif
 
@@ -102,7 +103,9 @@
 #define PWM_FREQ         		16000     // PWM frequency in Hz
 
 
-#define FILTER_SHIFT 12 						// Low-pass filter for pwm, rank k=12
+#define FILTER_SHIFT 13 						// Low-pass filter for pwm, rank k=12
+					// With PWM_FREQ = 1000, 12 will take over 4s to mostly adapt to a sudden change in input. So only 250 ms for 16 kHz !
+					// 19 and 16 kHz would be 32 seconds for the motor to reach 63% of its new target speed (Gemini 2.5pro)
 
 
 #define DELAY_IN_MAIN_LOOP 	5         // Delay in ms

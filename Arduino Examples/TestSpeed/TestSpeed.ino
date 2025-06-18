@@ -135,8 +135,8 @@ void loop()
   int iSteer = 1 * (ABS( (int)((iNow/400+100) % 400) - 200) - 100);   // repeats from +100 to -100 to +100 :-)
   //int iSteer = 0;
   //iSpeed /= 10;
-  //iSpeed = -100;
-  //iSteer = 0;
+  iSpeed = 500;
+  iSteer = 0;
   //iSpeed = iSteer = 0;
 
   if (iNow > iTimeNextState)

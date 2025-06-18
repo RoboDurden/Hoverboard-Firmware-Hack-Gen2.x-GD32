@@ -84,7 +84,7 @@ void TIMEOUT_IrqHandler(void)
 			speed = 0;
 			beepsBackwards = RESET;
 #else
-			SetPWM(0);
+			speed = 0;
 #endif
 		}
 		timedOut = SET;

@@ -133,7 +133,7 @@ iBug = 5;
 			digitalWrite(SELF_HOLD,SET);
 		#endif
 	#endif
-iBug = 7;	
+iBug = 6;	
 	#ifdef USART0_BAUD
 			USART0_Init(USART0_BAUD);
 	#endif
@@ -146,13 +146,13 @@ iBug = 7;
 	
 	// Init ADC
 	ADC_init();
-iBug = 8;	
+iBug = 7;	
 	// Init PWM
 	PWM_init();
-iBug = 9;
+iBug = 8;
 
 	InitBldc();		// virtual function implemented by bldcBC.c and bldcSINE.c
-iBug = 6;
+iBug = 9;
 
 /*
 	// added by deepseek: Apply fixed PWM pattern to lock rotor to known position
@@ -193,7 +193,6 @@ iBug = 6;
 
 	// Startup-Sound
 	BUZZER_MelodyDown()
-iBug = 10;
 	#ifdef BUTTON
 		// Wait until button is released
 		
@@ -224,7 +223,6 @@ iBug = 10;
 		if (millis() < iTimeNextLoop)	
 			continue;
 		iTimeNextLoop = millis() + DELAY_IN_MAIN_LOOP;
-iBug++;		
 		steerCounter++;		// something like DELAY_IN_MAIN_LOOP = 5 ms
 		DEBUG_LedSet(	(steerCounter%20) < 10	,0)
 		

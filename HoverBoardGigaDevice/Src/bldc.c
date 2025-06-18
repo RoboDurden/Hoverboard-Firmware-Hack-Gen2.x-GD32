@@ -35,6 +35,7 @@ uint8_t pos;
 uint8_t lastPos;
 int16_t bldc_outputFilterPwm = 0;
 int32_t filter_reg;
+uint8_t iFILTER_SHIFT = FILTER_SHIFT;
 uint16_t buzzerTimer = 0;	// also used to calculate battery voltage :-/
 int16_t offsetcount = 0;
 int16_t offsetdc = 2000;
@@ -95,8 +96,20 @@ void SetPWM(int16_t setPwm)
 	bldc_inputFilterPwm =  CLAMP(bldc_inputFilterPwm ,-BLDC_TIMER_MID_VALUE, BLDC_TIMER_MID_VALUE); 	
 }
 
+void SetFilter(uint8_t iNew)
+{
+	if (iFILTER_SHIFT != iNew)
+	{
+		iFILTER_SHIFT = iNew;
+		filter_reg = bldc_outputFilterPwm << iFILTER_SHIFT;	// scale filter state to match new low pass
+	}
+}
+
+
 
 extern uint32_t steerCounter;								// Steer counter for setting update rate
+extern uint32_t iBug;
+
 
 // Calculation-Routine for BLDC => calculates with 16kHz
 void CalculateBLDC(void)
@@ -131,6 +144,7 @@ void CalculateBLDC(void)
 		
 	
   buzzerTimer++;	// also used to calculate battery voltage :-/
+		if (!buzzerTimer) iBug = 0;
 #ifdef BUZZER
 	// Create square wave for buzzer
   if (buzzerFreq != 0 && (buzzerTimer / PWM_FREQ) % (buzzerPattern + 1) == 0)
@@ -159,13 +173,18 @@ void CalculateBLDC(void)
 	if (currentDC > DC_CUR_LIMIT  || bldc_enable == RESET  || timedOut == SET)	//		
 	{
 
-		timer_automatic_output_disable(TIMER_BLDC);		
+		SetPWM(0);
+		SetFilter(FILTER_SHIFT + 2);	// soft brake
+		if (ABS(bldc_outputFilterPwm)<100)
+		{
+			timer_automatic_output_disable(TIMER_BLDC);		
+		}
 		//DEBUG_LedSet((steerCounter%20) > 10,2);	// macro. iCol: 0=green, 1=organge, 2=red
-		return;	// added by deepseek
   }
 	else
 	{
 		timer_automatic_output_enable(TIMER_BLDC);
+		SetFilter(FILTER_SHIFT);
 		//DEBUG_LedSet(hall_c == 0,0)
   }
 
@@ -213,8 +232,8 @@ void CalculateBLDC(void)
 	}
 		
 	// Calculate low-pass filter for pwm value
-	filter_reg = filter_reg - (filter_reg >> FILTER_SHIFT) + bldc_inputFilterPwm;
-	bldc_outputFilterPwm = filter_reg >> FILTER_SHIFT;
+	filter_reg = filter_reg - (filter_reg >> iFILTER_SHIFT) + bldc_inputFilterPwm;
+	bldc_outputFilterPwm = filter_reg >> iFILTER_SHIFT;
 
 	// Update PWM channels based on position y(ellow), b(lue), g(reen)
 	//blockPWM(bldc_outputFilterPwm, pos, &y, &b, &g);

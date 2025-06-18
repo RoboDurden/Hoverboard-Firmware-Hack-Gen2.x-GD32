@@ -21,7 +21,7 @@ extern uint8_t usart2_rx_buf[1];
 //static uint8_t aReceiveBuffer[USART_STEER_RX_BYTES];
 
 
-static int16_t iReceivePos = 0;	
+static int16_t iReceivePos = -1;	
 
 extern int32_t steer;
 extern int32_t speed;
@@ -87,7 +87,7 @@ void RemoteUpdate(void)
 	oData.iVolt = (uint16_t)	(batteryVoltage * 100);
 	oData.iAmpL = (int16_t) 	(currentDC * 100);
 	oData.iSpeedL = (int16_t) (realSpeed * 100);
-	//oData.iSpeedL = (int16_t) speed;		// for testing that uart received 
+	oData.iSpeedL = (int16_t) speed;		// for testing that uart received 
 	oData.iOdomL = (int32_t) iOdom;
 	
 	#ifdef MASTER_OR_SLAVE
@@ -136,9 +136,9 @@ void RemoteCallback(void)
 	uint8_t cRead = USART_REMOTE_BUFFER[0];
 	//DEBUG_LedSet(SET,0)
 	//DEBUG_LedSet((steerCounter%20) < 10,0)	// 	
-	if (cRead == '/')	// Start character is captured, start record
+	if (	(iReceivePos<0) && (cRead == '/'))	// Start character is captured, start record
 	{
-		iReceivePos = 0;
+		iReceivePos++;
 	}
 
 	if (iReceivePos >= 0)		// data reading has begun
@@ -146,17 +146,12 @@ void RemoteCallback(void)
 		aReceiveBuffer[iReceivePos++] = cRead;
 		if (iReceivePos == sizeof(SerialServer2Hover))
 		{
-			iReceivePos = -1;
 			SerialServer2Hover* pData = (SerialServer2Hover*) aReceiveBuffer;
-				
 			//memcpy(aDebug,aReceiveBuffer,sizeof(SerialServer2Hover));
-			
 			//if (1)
 			if (pData->checksum == CalcCRC(aReceiveBuffer, sizeof(SerialServer2Hover) - 2))	//  first bytes except crc
 			{
 				iTimeLastRx = millis();
-				//DEBUG_LedSet(SET,0) // 		(steerCounter%2) < 1
-				//DEBUG_LedSet(SET,0)
 				speed = pData->iSpeed;
 				steer = pData->iSteer;
 				wState = pData->wStateMaster;
@@ -164,7 +159,10 @@ void RemoteCallback(void)
 				//if (speed > 300) speed = 300;	else if (speed < -300) speed = -300;		// for testing this function
 
 				ResetTimeout();	// Reset the pwm timout to avoid stopping motors
+				iReceivePos = -1;
 			}
+			else
+				iReceivePos = -2;	// skip next start character in case there was another such char in message
 		}
 	}
 }

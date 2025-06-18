@@ -90,12 +90,13 @@
 	#endif
 #endif
 
+/*
 #if defined(MASTERSLAVE_USART) && defined(REMOTE_USART)
 	#if !defined(USART0_TX) || !defined(USART1_TX)
 		error"you board only has one USART. Choose between MASTERSLAVE_USART and REMOTE_USART"
 	#endif
 #endif
-
+*/
 
 #if defined(MASTER) || defined(SLAVE)
 	#define MASTER_OR_SLAVE
