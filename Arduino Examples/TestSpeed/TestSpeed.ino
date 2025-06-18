@@ -10,7 +10,7 @@
 
 // #define HOVERBOARD_MM32  // uncomment if a MM32 Hoverboard firmware is connected (and no GD32 or STM32)
 
-#define REMOTE_UARTBUS  // one serial bus to control them all :-)
+//#define REMOTE_UARTBUS  // one serial bus to control them all :-)
 
 #define SEND_MILLIS 100   // send commands to hoverboard every SEND_MILLIS millisesonds
 
@@ -131,12 +131,11 @@ void loop()
   //digitalWrite(39, (iNow%500) < 250);
   //digitalWrite(37, (iNow%500) < 100);
 
-  int iSpeed = 3 * (ABS( (int)((iNow/20+100) % 400) - 200) - 100);   // repeats from +300 to -300 to +300 :-)
+  int iSpeed = 5 * (ABS( (int)((iNow/20+100) % 400) - 200) - 100);   // repeats from +300 to -300 to +300 :-)
   int iSteer = 1 * (ABS( (int)((iNow/400+100) % 400) - 200) - 100);   // repeats from +100 to -100 to +100 :-)
   //int iSteer = 0;
   //iSpeed /= 10;
-  iSpeed = 500;
-  iSteer = 0;
+  //iSpeed = 500; iSteer = 0;
   //iSpeed = iSteer = 0;
 
   if (iNow > iTimeNextState)
