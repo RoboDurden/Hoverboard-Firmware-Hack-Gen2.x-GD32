@@ -137,7 +137,7 @@
 				#define USART_REMOTE USART2
 				#define USART_REMOTE_BUFFER usart2_rx_buf		// defined in setup.c
 			#else
-				#error "no REMOTE_USART choosen (0, 1 or 2)
+				#error "no REMOTE_USART choosen (0, 1 or 2)"
 			#endif
 		#endif
 	#endif

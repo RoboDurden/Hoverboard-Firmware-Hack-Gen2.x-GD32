@@ -123,7 +123,7 @@
 	{\
 		gpio_init(pin&0xffffff00U, mode, GPIO_OSPEED_50MHZ, BIT(pin&0xfU));\
 	}
-		//	gpio_init(pin&0xffffff00U, mode, GPIO_OSPEED_10MHZ, BIT(pin&0xfU))\
+		//	gpio_init(pin&0xffffff00U, mode, GPIO_OSPEED_10MHZ, BIT(pin&0xfU))
 
 	#define pinModeSpeed(pin,mode,speed) \
 	{\

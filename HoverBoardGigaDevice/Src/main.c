@@ -211,8 +211,6 @@ iBug = 9;
 		Delay(10); //debounce to prevent immediate ShutOff (100 is to much with a switch instead of a push button)
 	#endif
 
-	uint32_t iCol = LED_GREEN;
-
 	DEBUG_LedSet(RESET,0)
 	#ifdef UPPER_LED
 		digitalWrite(UPPER_LED,RESET);
