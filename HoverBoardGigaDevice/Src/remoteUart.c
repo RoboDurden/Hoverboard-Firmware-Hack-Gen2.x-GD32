@@ -87,7 +87,7 @@ void RemoteUpdate(void)
 	oData.iVolt = (uint16_t)	(batteryVoltage * 100);
 	oData.iAmpL = (int16_t) 	(currentDC * 100);
 	oData.iSpeedL = (int16_t) (realSpeed * 100);
-	oData.iSpeedL = (int16_t) speed;		// for testing that uart received 
+	//oData.iSpeedL = (int16_t) speed;		// for testing that uart received 
 	oData.iOdomL = (int32_t) iOdom;
 	
 	#ifdef MASTER_OR_SLAVE

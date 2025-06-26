@@ -15,21 +15,21 @@
 #define LED_ORANGE		PB4
 
 /*
+*/
 #define UPPER_LED		PC13
 #define LOWER_LED		PB5
 //#define ONBOARD_LED		P??
-#define BUZZER		PA11
+#define BUZZER		PB1
 
-#define SELF_HOLD		PA3
-//#define BUTTON		P??
-#define BUTTON_PU		PA4
-*/
+#define SELF_HOLD		PA4
+#define BUTTON		PA3
+//#define BUTTON_PU		PA3
 
 #define VBATT		PA5
 #define CURRENT_DC		PA7
 
 
-#define ADC_BATTERY_VOLT      0.025392524927  	//	robo, calibrated with 27V power supply
+#define ADC_BATTERY_VOLT      0.0121565132741  	//	robo, calibrated with 27V power supply
 #define MOTOR_AMP_CONV_DC_AMP 0.0201465201465		//	robo,  only a very quick comparison to multimeter
 
 

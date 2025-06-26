@@ -825,14 +825,14 @@ void USART2_Init(uint32_t iBaud)	// only for target==2 = gd32f103
 	rcu_periph_clock_enable(RCU_AF);
 
 	#if REMOTE_USART==2 && defined(REMOTE_UARTBUS)	// no pullup resistors with multiple boards on the UartBus - Esp32/Arduino (Serial.begin) have to setup pullups
-		#define USART0_PUPD	GPIO_MODE_AF_OD
+		#define USART2_PUPD	GPIO_MODE_AF_OD
 	#else
-		#define USART0_PUPD	GPIO_MODE_AF_PP
+		#define USART2_PUPD	GPIO_MODE_AF_PP
 	#endif
 	// JW: Configure USART2 TX (PB10) and RX (PB11) pins
 	//gpio_init(USART_MASTERSLAVE_TX_PORT, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, USART_MASTERSLAVE_TX_PIN); // JW:
 	//gpio_init(USART_MASTERSLAVE_RX_PORT, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ, USART_MASTERSLAVE_RX_PIN); // JW:
-	pinModeSpeed(USART2_TX, USART0_PUPD, GPIO_OSPEED_50MHZ);
+	pinModeSpeed(USART2_TX, USART2_PUPD, GPIO_OSPEED_50MHZ);
 	pinModeSpeed(USART2_RX, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ);	
 
 		// Enable ADC and DMA clock
