@@ -602,11 +602,11 @@ nd=.\objects\startup_gd32f10x_hd.d -o.\objects\startup_gd32f10x_hd.o -I.\RTE\_G
 D32F103 -I"C:\Users\PAN CF-LX6\AppData\Local\Arm\Packs\ARM\CMSIS\6.0.0\CMSIS\Co
 re\Include" -I"C:\Users\PAN CF-LX6\AppData\Local\Arm\Packs\GigaDevice\GD32F10x_
 DFP\2.0.1\Device\Firmware\Peripherals\inc" -I"C:\Users\PAN CF-LX6\AppData\Local
-\Arm\Packs\GigaDevice\GD32F10x_DFP\2.0.1\Device\Include" --predefine="__EVAL SE
-TA 1" --predefine="__MICROLIB SETA 1" --predefine="__UVISION_VERSION SETA 538" 
---predefine="_RTE_ SETA 1" --predefine="GD32F10X_MD SETA 1" --predefine="USE_ST
-DPERIPH_DRIVER SETA 1" --predefine="_RTE_ SETA 1" --list=.\listings\startup_gd3
-2f10x_hd.lst RTE/Device/GD32F103C8/startup_gd32f10x_hd.s
+\Arm\Packs\GigaDevice\GD32F10x_DFP\2.0.1\Device\Include" --predefine="__MICROLI
+B SETA 1" --predefine="__UVISION_VERSION SETA 542" --predefine="GD32F10X_MD SET
+A 1" --predefine="USE_STDPERIPH_DRIVER SETA 1" --predefine="_RTE_ SETA 1" --lis
+t=.\listings\startup_gd32f10x_hd.lst RTE/Device/GD32F103C8/startup_gd32f10x_hd.
+s
 
 
 
@@ -1478,4 +1478,4 @@ Symbol: __main
       At line 163 in file RTE/Device/GD32F103C8/startup_gd32f10x_hd.s
 Comment: __main used once
 2 symbols
-425 symbols in table
+424 symbols in table

@@ -1,7 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-//#define REMOTE_AUTODETECT
+#define REMOTE_AUTODETECT
 				// ONLY test with 1-2A constant current power supply !!!! The charger with 1.5A might also do :-)
 				// will drive the motor without hall input to detect the hall pins..
 
@@ -63,7 +63,7 @@
 		#define SPEED_COEFFICIENT   -1
 		#define STEER_COEFFICIENT   1
 		
-		//#define DISABLE_BUTTON	// this is the opposite of former CHECK_BUTTON define.
+		#define DISABLE_BUTTON	// this is the opposite of former CHECK_BUTTON define.
 															// remove '//' if you use a slave board as master 
 															// or if you turn the boards on/off by injecting a postive voltage into the input pin of the 2pin BUTTON header
 

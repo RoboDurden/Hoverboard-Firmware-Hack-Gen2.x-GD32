@@ -1041,14 +1041,12 @@ uint8_t AutodetectBldc(uint8_t posNew,uint16_t buzzerTimer)
 #if TARGET == 22
 		return posNew;
 }
-		#else
+#else
 		if (0 == (wStage & (AUTODETECT_Stage_Startup|AUTODETECT_Stage_Hall
 												|AUTODETECT_Stage_HallOrder|AUTODETECT_Stage_VBatt))	)
 			return posNew;
-		//SetPWM(msTicks > 500 ? -200 : (int32_t)msTicks * -2 / 5);
-		//SetPWM(fVBattFound > 30 ? -150 : -200);
-		SetPWM(-120 - 4*(42-(int16_t)fVBattFound));		// lower vbatt needs higher pwm to make motor spin
 
+		// force motor rotation without hall inputs
 		if (msTicks - msTicksAuto >= 15)
 		{
 			posAuto++;
@@ -1057,9 +1055,17 @@ uint8_t AutodetectBldc(uint8_t posNew,uint16_t buzzerTimer)
 			msTicksAuto = msTicks;
 		}
 
+
+		if (wStage == AUTODETECT_Stage_VBatt)
+				return posAuto;
+
+		//SetPWM(msTicks > 500 ? -200 : (int32_t)msTicks * -2 / 5);
+		//SetPWM(fVBattFound > 30 ? -150 : -200);
+		SetPWM(-120 - 4*(42-(int16_t)fVBattFound));		// lower vbatt needs higher pwm to make motor spin
+		//SetPWM(0);
+		
 		if (msTicksWait > msTicks)	// wait for last sMessage to be sent
 			return posAuto;
-
 		
 		// AUTODETECT_Stage_Hall
 		if (wStage == AUTODETECT_Stage_Hall)		// find the three hall pins :-)
