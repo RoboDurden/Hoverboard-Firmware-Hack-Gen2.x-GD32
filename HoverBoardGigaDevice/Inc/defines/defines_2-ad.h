@@ -34,5 +34,9 @@
 #define USART1_TX		PA2
 #define USART1_RX		PA3
 
+// master-slave header on gd32f103 boards
+#define USART2_TX	PB10
+#define USART2_RX	PB11
+
 
 #endif

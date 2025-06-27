@@ -6,9 +6,22 @@
 	#define TARGET_ADC_RDATA ADC_RDATA
 	
 	#define TARGET_fwdgt_window_value_config(a) fwdgt_window_value_config(a)
+
+		// it.c
+	#define TARGET_DMA_Channel1_2_IRQn DMA_Channel1_2_IRQn	
+	#define TARGET_TIMER0_BRK_UP_TRG_COM_IRQHandler TIMER0_BRK_UP_TRG_COM_IRQHandler
+	#define TARGET_adc_software_trigger_enable(a) adc_software_trigger_enable(a)		
+	#define TARGET_DMA_Channel0_IRQHandler DMA_Channel0_IRQHandler	
+	#define TARGET_DMA_Channel1_2_IRQHandler DMA_Channel1_2_IRQHandler
 	
+	#define TARGET_DMA_CH2 DMA_CH2
+	#define TARGET_DMA_Channel1_2_IRQHandler DMA_Channel1_2_IRQHandler
+
+	// setup.c
 	
-	
+	#define TARGET_usart_oversample_config(a,b)	usart_oversample_config(a,b)
+	#define TARGET_dma_interrupt_flag_get(a,b) dma_interrupt_flag_get(a,b)
+	#define TARGET_dma_interrupt_flag_clear(a,b) dma_interrupt_flag_clear(a,b)
 	#define TARGET_ADC_RDATA ADC_RDATA
 	#define TARGET_adc_dma_mode_enable()	adc_dma_mode_enable()
 	#define TARGET_dma_deinit(a) dma_deinit(a)

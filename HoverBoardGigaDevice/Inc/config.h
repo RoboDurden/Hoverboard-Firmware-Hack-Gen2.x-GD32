@@ -8,6 +8,8 @@
 #ifdef REMOTE_AUTODETECT
 	#define REMOTE_USART				0 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
 																	//	0 is usually PB6/PB7 and the empty header close to the flash-header
+																	//	2 is usually PB10/PB11 on stm32f103 boards
+																	
 #else
 
 	// choose your target in the dropdown list to the top-right of the Keil IDE
