@@ -950,20 +950,25 @@ void flashReadBuffer(uint32_t address, uint32_t pbuffer, uint8_t len) {
 # define FLASH_ADRESS 0x08000000
 
 
-#define EEPROM_VERSION 1
 //#define STATE_InverterOn  1
 ConfigData oConfig;
+
 
 void ConfigReset(void) 
 {
 	oConfig.iVersion = EEPROM_VERSION;
 	oConfig.wState = 0;
-	oConfig.iSpeedNeutral = 2048;
-	oConfig.iSteerNeutral = 2048;
-	oConfig.iSpeedMax = 4096;
-	oConfig.iSpeedMin = 0;
-	oConfig.iSteerMax = 4096;
-	oConfig.iSteerMin = 0;
+	
+	#ifdef REMOTE_AUTODETECT
+		int8_t i=0; for(;i<PINS_DETECT;i++)	oConfig.aiPinScan[i] = -1;	// -1 = not set
+	#else	
+		oConfig.iSpeedNeutral = 2048;
+		oConfig.iSteerNeutral = 2048;
+		oConfig.iSpeedMax = 4096;
+		oConfig.iSpeedMin = 0;
+		oConfig.iSteerMax = 4096;
+		oConfig.iSteerMin = 0;
+	#endif
 }
 
 

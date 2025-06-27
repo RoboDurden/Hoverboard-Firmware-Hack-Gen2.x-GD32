@@ -11,7 +11,7 @@
 #define HALL_C		PA2
 
 #define LED_GREEN		PB3		// autodetect :-)
-#define LED_RED		PA15
+#define LED_RED			PA15
 #define LED_ORANGE		PB4
 
 /*

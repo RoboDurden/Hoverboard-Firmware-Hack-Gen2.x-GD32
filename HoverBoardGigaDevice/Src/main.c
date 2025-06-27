@@ -123,7 +123,9 @@ iBug = 5;
 	GPIO_init();
 	#ifndef REMOTE_AUTODETECT
 		DEBUG_LedSet(SET,0)
-		
+		//pinMode(LED_GREEN,	GPIO_MODE_IPU);		// input_pullup turns led on with target 2
+		//digitalWrite(LED_GREEN,0);	// not working for taget 2
+	
 		#ifdef UPPER_LED
 			digitalWrite(UPPER_LED,SET);
 		#endif
@@ -212,6 +214,9 @@ iBug = 9;
 	#endif
 
 	DEBUG_LedSet(RESET,0)
+	//pinMode(LED_GREEN,	GPIO_MODE_OUT_PP);	//turns off led on target 2
+	//digitalWrite(LED_GREEN,1);	// not working for target 2
+
 	#ifdef UPPER_LED
 		digitalWrite(UPPER_LED,RESET);
 	#endif

@@ -546,14 +546,14 @@ ARM Macro Assembler    Page 9
               00000000 
 Command Line: --debug --xref --diag_suppress=9931,A1950W --cpu=Cortex-M3 --depe
 nd=.\objects\startup_gd32f1x0.d -o.\objects\startup_gd32f1x0.o -I.\RTE\_GD32F13
-0 -I"C:\Users\PAN CF-LX6\AppData\Local\Arm\Packs\ARM\CMSIS\6.0.0\CMSIS\Core\Inc
+0 -I"C:\Users\PAN CF-LX6\AppData\Local\Arm\Packs\ARM\CMSIS\6.1.0\CMSIS\Core\Inc
 lude" -I"C:\Users\PAN CF-LX6\AppData\Local\Arm\Packs\GigaDevice\GD32F1x0_DFP\3.
 2.1\Device\Firmware\Peripherals\inc" -I"C:\Users\PAN CF-LX6\AppData\Local\Arm\P
-acks\GigaDevice\GD32F1x0_DFP\3.2.1\Device\Include" --predefine="__EVAL SETA 1" 
---predefine="__MICROLIB SETA 1" --predefine="__UVISION_VERSION SETA 538" --pred
-efine="_RTE_ SETA 1" --predefine="GD32F1x0 SETA 1" --predefine="GD32F130_150 SE
-TA 1" --predefine="USE_STDPERIPH_DRIVER SETA 1" --predefine="_RTE_ SETA 1" --li
-st=.\listings\startup_gd32f1x0.lst RTE/Device/GD32F130C8/startup_gd32f1x0.s
+acks\GigaDevice\GD32F1x0_DFP\3.2.1\Device\Include" --predefine="__MICROLIB SETA
+ 1" --predefine="__UVISION_VERSION SETA 542" --predefine="GD32F1x0 SETA 1" --pr
+edefine="GD32F130_150 SETA 1" --predefine="USE_STDPERIPH_DRIVER SETA 1" --prede
+fine="_RTE_ SETA 1" --list=.\listings\startup_gd32f1x0.lst RTE/Device/GD32F130C
+8/startup_gd32f1x0.s
 
 
 
@@ -1296,4 +1296,4 @@ Symbol: __main
       At line 175 in file RTE/Device/GD32F130C8/startup_gd32f1x0.s
 Comment: __main used once
 2 symbols
-413 symbols in table
+412 symbols in table

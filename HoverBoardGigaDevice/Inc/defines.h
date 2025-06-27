@@ -228,19 +228,36 @@ typedef struct
 
 
 
-#pragma pack(push, 1)
-typedef struct
-{
-  uint32_t iVersion;
-  uint16_t wState;
-  uint16_t iSpeedNeutral;		// = 2048 REMOTE_ADC
-  uint16_t iSteerNeutral;		// = 2048 REMOTE_ADC
-  uint16_t iSpeedMax;				// = 4096 REMOTE_ADC
-  uint16_t iSpeedMin;				// = 0		REMOTE_ADC
-  uint16_t iSteerMax;				// = 4096	REMOTE_ADC
-  uint16_t iSteerMin;				// = 0		REMOTE_ADC
-} ConfigData;
-#pragma pack(pop)
+	
+#ifdef REMOTE_AUTODETECT
+	#define PINS_DETECT 18
+		
+	#define EEPROM_VERSION 1000
+	#pragma pack(push, 1)
+	typedef struct
+	{
+		uint32_t iVersion;
+		uint16_t wState;
+		int8_t aiPinScan[PINS_DETECT];		// lists NOT the uint32_t PA7 but the index of PA7 in PinAD aoPin[COUNT_PinDigital]
+	} ConfigData;
+	#pragma pack(pop)
+#else	
+	#define EEPROM_VERSION 1
+
+	#pragma pack(push, 1)
+	typedef struct
+	{
+		uint32_t iVersion;
+		uint16_t wState;
+		uint16_t iSpeedNeutral;		// = 2048 REMOTE_ADC
+		uint16_t iSteerNeutral;		// = 2048 REMOTE_ADC
+		uint16_t iSpeedMax;				// = 4096 REMOTE_ADC
+		uint16_t iSpeedMin;				// = 0		REMOTE_ADC
+		uint16_t iSteerMax;				// = 4096	REMOTE_ADC
+		uint16_t iSteerMin;				// = 0		REMOTE_ADC
+	} ConfigData;
+	#pragma pack(pop)
+#endif
 
 
 

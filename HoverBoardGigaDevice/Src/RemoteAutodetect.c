@@ -5,7 +5,11 @@
 #include "stdio.h"
 #include "string.h"
 
+uint16_t i;
+
 #ifdef REMOTE_AUTODETECT
+
+extern ConfigData oConfig;
 
 extern uint32_t iBug;
 uint32_t iBug2 = 0;
@@ -90,9 +94,36 @@ typedef struct {
 #endif
 
 
-#define PINS_DETECT 18
 const char* asScan[PINS_DETECT] = {"HALL_A","HALL_B","HALL_C","PHASE_A","PHASE_B","PHASE_C","LED_RED","LED_ORANGE","LED_GREEN","UPPER_LED","LOWER_LED","ONBOARD_LED","BUZZER","VBATT","CURRENT_DC","SELF_HOLD","BUTTON","BUTTON_PU"};
 uint32_t aiPinScan[PINS_DETECT] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};		// the found pins
+
+void ConfigWriteAD(int8_t iPinScan,uint32_t iPinPort)
+{
+	if (iPinPort)	aiPinScan[iPinScan] = iPinPort;
+	int8_t i=0; for(;i<PINS_DETECT;i++)	
+	{
+		oConfig.aiPinScan[i] = -1;	// not set
+		int8_t j=0;	for(;j<COUNT_PinDigital;j++)	
+		{
+			if (aiPinScan[i] == aoPin[j].i)
+			{
+				oConfig.aiPinScan[i] = j;	// only save the uint8 index to later retrieve uint32 pin|port
+				break;
+			}
+		}
+	}
+	ConfigWrite();
+}
+void ConfigReadAD()
+{
+	ConfigRead();
+	int8_t i=0; for(;i<PINS_DETECT;i++)	
+	{
+		aiPinScan[i] = (oConfig.aiPinScan[i] < 0) ? 0 : aoPin[oConfig.aiPinScan[i]].i;
+		aoPin[oConfig.aiPinScan[i]].wState |= STATE_HIDE;
+	}
+}
+
 
 uint8_t HidePinDigital(uint32_t iValue )
 {
@@ -135,7 +166,7 @@ void ListFound(uint8_t iFrom, uint8_t iTo)
 	bMessageWait = 0;
 }
 
-	
+/*	
 typedef struct {			// ´#pragma pack(1)´ needed to get correct sizeof()
   uint8_t cStart;		//  = '/';
 	uint8_t wCmd;
@@ -143,7 +174,7 @@ typedef struct {			// ´#pragma pack(1)´ needed to get correct sizeof()
 
 enum{	DATA_None=0, DATA_Request=1, DATA_Save=2};
 HeaderData oDataHeader = {0x01,DATA_Request};	// wenn autodetect.ino receives 0x01 it stores the incoming data or returns it's storage
-
+*/
 
 uint8_t bMessageWait = 0;
 char sMessage[512];
@@ -167,6 +198,7 @@ void RemoteUpdate(void)
 	sprintf(sMessage, "speed: %i\t%.3f V\t%.3f A\r\n",speed,batteryVoltage,currentDC);
 	
 */
+	/*
 	if (oDataHeader.wCmd)
 	{
 		#ifdef USART_REMOTE
@@ -180,7 +212,7 @@ void RemoteUpdate(void)
 		oDataHeader.wCmd = DATA_None;
 		return;
 	}
-	
+*/	
 	if (!strlen(sMessage) || bMessageWait)
 			return;
 	
@@ -196,9 +228,11 @@ void RemoteUpdate(void)
 char cCommand = 0;
 char cRxLast = ' ';
 
+/*
 HeaderData oHeaderRx;
 uint8_t aBufferData[sizeof(oHeaderRx)+sizeof(aiPinScan)];
 uint8_t iBufferData = 0;
+*/
 
 void AutoDetectHallOrderInit(uint8_t iTestSet);
 
@@ -206,6 +240,7 @@ void AutoDetectHallOrderInit(uint8_t iTestSet);
 void RemoteCallback(void)
 {
 	uint8_t cRead = USART_REMOTE_BUFFER[0];
+	/*
 	if (iBufferData>0)
 	{
 		aBufferData[iBufferData++] = cRead;
@@ -216,7 +251,7 @@ void RemoteCallback(void)
 			
 			if (aiPinScan[SCAN_SELF_HOLD])
 			{
-				wMenuStage |= AUTODETECT_Stage_Button;
+				//wMenuStage |= AUTODETECT_Stage_Button;
 				ListFound(SCAN_SELF_HOLD,SCAN_SELF_HOLD+1);
 			}
 			if (aiPinScan[SCAN_HALL_A] && aiPinScan[SCAN_HALL_B] && aiPinScan[SCAN_HALL_C])
@@ -225,7 +260,7 @@ void RemoteCallback(void)
 				AutoDetectHallOrderInit(0);				
 			}
 			uint8_t i;
-			for (i=0; i<=SCAN_BUTTON_PULLUP; i++)
+			for (i=0; i<SCAN_SIZE; i++)
 			{
 				if (aiPinScan[i])
 				{
@@ -243,7 +278,7 @@ void RemoteCallback(void)
 		iBufferData = 1;	   // 0x01 at 0 already read
 		return;
 	}
-	
+	*/
 	
 	if (	(cRead == 13) || (cRead == 10) )
 	{
@@ -354,9 +389,14 @@ void ScanInit(uint8_t iTestNew)
 	{
 	case AUTODETECT_Stage_Button:
 
-		pinModePull(aiPinScan[SCAN_SELF_HOLD],GPIO_MODE_INPUT,GPIO_PUPD_PULLUP);
-		//pinMode(aiPinScan[SCAN_SELF_HOLD],GPIO_MODE_OUTPUT);
-		//digitalWrite(aiPinScan[SCAN_SELF_HOLD],1);	// SELF_HOLD pin to high
+		#if TARGET == 2	// mode input_pullup did not work for 2.1.1
+			pinMode(aiPinScan[SCAN_SELF_HOLD],GPIO_MODE_OUTPUT);
+			digitalWrite(aiPinScan[SCAN_SELF_HOLD],1);	// SELF_HOLD pin to high
+		#else
+			pinModePull(aiPinScan[SCAN_SELF_HOLD],GPIO_MODE_INPUT,GPIO_PUPD_PULLUP);
+		#endif
+	
+	
 		for (i=0;i<COUNT_PinDigital; i++)	
 		{
 			if (!(aoPin[i].wState & STATE_HIDE))
@@ -370,8 +410,9 @@ void ScanInit(uint8_t iTestNew)
 	case AUTODETECT_Stage_Hold:
 		if (iHoldAutofind == 3000)
 		{
-			aiPinScan[SCAN_SELF_HOLD] = aoPin[iTestNew].i;
-			oDataHeader.wCmd = DATA_Save;
+			//aiPinScan[SCAN_SELF_HOLD] = aoPin[iTestNew].i;
+			//ConfigWriteAD(SCAN_SELF_HOLD,aoPin[iTestNew].i);
+			//oDataHeader.wCmd = DATA_Save;
 			msTicksWait = msTicks + 100;		// to let sMessage send via serial
 		}
 		for (i=0;i<COUNT_PinDigital; i++)	
@@ -379,9 +420,12 @@ void ScanInit(uint8_t iTestNew)
 			if (!(aoPin[i].wState & STATE_HIDE))
 			{
 				//gpio_deinit(aoPin[i].i);
-				pinModePull(aoPin[i].i,GPIO_MODE_INPUT,GPIO_PUPD_PULLUP);
-				//pinMode(aoPin[i].i,GPIO_MODE_OUTPUT);
-				//digitalWrite(aoPin[iTest].i,1);	// every remaining io pin might be the SELF_HOLD pin
+				#if TARGET == 2	// mode input_pullup did not work for 2.1.1
+					pinMode(aoPin[i].i,GPIO_MODE_OUTPUT);
+					digitalWrite(aoPin[iTest].i,1);	// every remaining io pin might be the SELF_HOLD pin
+				#else
+					pinModePull(aoPin[i].i,GPIO_MODE_INPUT,GPIO_PUPD_PULLUP);
+				#endif
 			}
 		}
 		iVBatMinTest = 65535;
@@ -514,6 +558,7 @@ iBug = 14;
 	switch (wStage)
 	{
 		case AUTODETECT_Stage_Startup: 		iFrom = 0; iTo = 0; break;
+		case AUTODETECT_Stage_Menu: 			iFrom = 0; iTo = SCAN_SIZE; break;		// 'c' will clear everything
 		case AUTODETECT_Stage_Led: 				iFrom = SCAN_LED_RED; iTo = SCAN_VBATT; break;
 		case AUTODETECT_Stage_VBatt: 			iFrom = SCAN_VBATT; iTo = SCAN_CURRENT_DC; break;
 		case AUTODETECT_Stage_CurrentDC: 	iFrom = SCAN_CURRENT_DC; iTo = SCAN_SELF_HOLD; bNeverLeave=0;	break;
@@ -521,7 +566,7 @@ iBug = 14;
 			iFrom = SCAN_SELF_HOLD; iTo = SCAN_BUTTON; 
 			if (iHoldAutofind) bNeverLeave=0;
 			break;
-		case AUTODETECT_Stage_Button: 		iFrom = SCAN_BUTTON; iTo = SCAN_BUTTON_PULLUP+1; bNeverLeave=0;	break;
+		case AUTODETECT_Stage_Button: 		iFrom = SCAN_BUTTON; iTo = SCAN_SIZE; bNeverLeave=0;	break;
 	}
 	//if (!(wStage & (AUTODETECT_Stage_CurrentDC|AUTODETECT_Stage_Button))	)	//AUTODETECT_Stage_Hold|
 	if (bNeverLeave)
@@ -552,6 +597,7 @@ iBug = 14;
 			break;
 		case 'c': 
 			for (i=iFrom;i<iTo;i++)	aiPinScan[i] = 0; 
+			ConfigWriteAD(0,0);
 			wMenuStage = MENU_INIT;
 			ScanInit(0);
 			msTicksTest = msTicks + msTicksTestNext;
@@ -621,12 +667,29 @@ iBug = 16;
 		switch (wStage)
 		{
 			case AUTODETECT_Stage_Startup:
+				ConfigReadAD();
+				if (aiPinScan[SCAN_HALL_A] && aiPinScan[SCAN_HALL_B] && aiPinScan[SCAN_HALL_C])
+				{
+					wMenuStage |= AUTODETECT_Stage_HallOrder|AUTODETECT_Stage_CurrentDC;
+					AutoDetectHallOrderInit(0);				
+				}
+				uint8_t i=0;	for (; i<SCAN_SIZE; i++)
+					if (aiPinScan[i])
+						HidePinDigital(aiPinScan[i]);
+			
 				//oDataHeader.wCmd = DATA_Request;
 				sprintf(sMessage,"hit ENTER:\r\n"); 
 				//oDataHeader.wCmd = DATA_Request;
 				break;
 			case AUTODETECT_Stage_Menu:
-				sprintf(sMessage,"autodetect menu:\r\n"); 
+				
+				if (aiPinScan[SCAN_SELF_HOLD])
+				{
+					wMenuStage |= AUTODETECT_Stage_Button;
+					//ListFound(SCAN_SELF_HOLD,SCAN_SELF_HOLD+1);
+				}
+			
+				sprintf(sMessage,"autodetect menu ('c'=reset):\r\n"); 
 				uint16_t iStage;
 				for (iStage=0; iStage < 9; iStage++)
 				{
@@ -783,26 +846,37 @@ iBug = 17;
 		}
 		break;
 	case AUTODETECT_Stage_Hold:
+	{
 		//digitalWrite(aoPin[iTest].i,(buzzerTimer%3000) < 100 ? 0 : 1);	// relase SELF_HOLD for a short time
 		//pinMode(aoPin[iTest].i,GPIO_MODE_INPUT);
+
+		uint8_t iMode = GPIO_PUPD_PULLDOWN;
 		if (iHoldAutofind) 
 		{
 			if (iVBatMinTest > adc_buffer.v_batt)		// try to detect the "(buzzerTimer%100) < 3000 " voltage dip 
 				iVBatMinTest = adc_buffer.v_batt;
-			pinModePull(aoPin[iTest].i,GPIO_MODE_INPUT,(buzzerTimer%3000) < iHoldAutofind ? GPIO_PUPD_PULLDOWN : GPIO_PUPD_PULLUP);			
+			//pinModePull(aoPin[iTest].i,GPIO_MODE_INPUT,(buzzerTimer%3000) < iHoldAutofind ? GPIO_PUPD_PULLDOWN : GPIO_PUPD_PULLUP);			
+			if ((buzzerTimer%3000) >= iHoldAutofind)	iMode = GPIO_PUPD_PULLUP;
 		}
-		else	pinModePull(aoPin[iTest].i,GPIO_MODE_INPUT,GPIO_PUPD_PULLDOWN);
-			
+		//else	pinModePull(aoPin[iTest].i,GPIO_MODE_INPUT,GPIO_PUPD_PULLDOWN);
+
+		if (aiPinScan[SCAN_SELF_HOLD] != aoPin[iTest].i)	// shutting down a new pin
+		{
+			//aiPinScan[SCAN_SELF_HOLD] = aoPin[iTest].i;		// this might be the SELF_HOLD
+			ConfigWriteAD(SCAN_SELF_HOLD,aoPin[iTest].i);
+		}
+		pinModePull(aoPin[iTest].i,GPIO_MODE_INPUT,iMode);
+		
 		switch(cCmd)
 		{
 			case 'f': 
 				iFound = SCAN_SELF_HOLD; msTicksTest = 0; 
-				wMenuStage |= AUTODETECT_Stage_Button;
+				//wMenuStage |= AUTODETECT_Stage_Button;
 				break;
 		}
 		
 		break;
-		
+	}	
 	case AUTODETECT_Stage_Button:
 		SetPWM(0);
 		uint8_t bOn = digitalRead(aoPin[iTest].i);
@@ -824,12 +898,13 @@ iBug = 17;
 	
 	if (iFound >= 0)
 	{
-		aiPinScan[iFound] = aoPin[iTest].i;
-		for (i=iFrom;i<iTo;i++)	HidePinDigital(aiPinScan[i]); 
 		
 		sprintf(sMessage, "%s = %s\r\n",	asScan[iFound],GetPinName(aoPin[iTest].i)	);
 		msTicksTest = 0; // skip this test interval
-		oDataHeader.wCmd = DATA_Save;
+		//oDataHeader.wCmd = DATA_Save;
+		ConfigWriteAD(iFound,aoPin[iTest].i);
+		//aiPinScan[iFound] = aoPin[iTest].i;
+		for (i=iFrom;i<iTo;i++)	HidePinDigital(aiPinScan[i]); 
 	}
 	if (msTicks > msTicksTest)
 	{
@@ -890,9 +965,10 @@ iBug = 17;
 						}
 						if (iMax)
 						{
-							aiPinScan[SCAN_SELF_HOLD] = aoPin[iTestPin].i;
-							oDataHeader.wCmd = DATA_Save;
-							wMenuStage |= AUTODETECT_Stage_Button;
+							//aiPinScan[SCAN_SELF_HOLD] = aoPin[iTestPin].i;
+							//oDataHeader.wCmd = DATA_Save;
+							ConfigWriteAD(SCAN_SELF_HOLD,aoPin[iTestPin].i);
+							//wMenuStage |= AUTODETECT_Stage_Button;
 							sprintf(sMessage,"%s\r\nSELF_HOLD P%s //%i\r\nbridge OnOff button",sMessage,GetPinName(aiPinScan[SCAN_SELF_HOLD]),iMax);
 						}
 						else
@@ -919,8 +995,9 @@ iBug = 17;
 				if (iTest == iTestStart)	// a complete cycle of available adc pins
 				{
 					sprintf(sMessage," : %i\r\nCURRENT_DC = %s //%i\r\nnow %s",iAverage,aoPin[iTestPin].s,iAverageMax,aoPin[iTest].s);
-					aiPinScan[SCAN_CURRENT_DC] = aoPin[iTestPin].i;
-					oDataHeader.wCmd = DATA_Save;
+					//aiPinScan[SCAN_CURRENT_DC] = aoPin[iTestPin].i;
+					//oDataHeader.wCmd = DATA_Save;
+					ConfigWriteAD(SCAN_CURRENT_DC,aoPin[iTestPin].i);
 					iTestPin = iAverage = 0;	// reset for next cycle
 					iAverageMax =-32767;
 				}
@@ -946,8 +1023,9 @@ iBug = 17;
 									iScanPin = SCAN_BUTTON_PULLUP;
 								if (iScanPin >= 0)
 								{
-									aiPinScan[iScanPin] = aoPin[i].i;
-									oDataHeader.wCmd = DATA_Save;
+									//aiPinScan[iScanPin] = aoPin[i].i;
+									//oDataHeader.wCmd = DATA_Save;
+									ConfigWriteAD(iScanPin,aoPin[i].i);
 									sprintf(sMessage,"\r\n%s%s\t%s",sMessage,asScan[iScanPin],aoPin[i].s);
 									iFound++;
 								}
@@ -1216,7 +1294,8 @@ uint8_t AutodetectBldc(uint8_t posNew,uint16_t buzzerTimer)
 						aiPinScan[SCAN_HALL_A] = HALL_A;
 						aiPinScan[SCAN_HALL_B] = HALL_B;
 						aiPinScan[SCAN_HALL_C] = HALL_C;
-						oDataHeader.wCmd = DATA_Save;
+						//oDataHeader.wCmd = DATA_Save;
+						ConfigWriteAD(0,0);
 						
 						ListFound(0,6);
 
