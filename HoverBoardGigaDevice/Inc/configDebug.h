@@ -1,7 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define REMOTE_AUTODETECT
+//#define REMOTE_AUTODETECT
 				// ONLY test with 1-2A constant current power supply !!!! The charger with 1.5A might also do :-)
 				// will drive the motor without hall input to detect the hall pins..
 
@@ -24,11 +24,12 @@
 	#elif MM32SPIN05	// TARGET = 4
 		#define LAYOUT 1
 	#endif
+	
 	//#define BLDC_BC			// old block commutation bldc control
 	#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden. 
 													// not yet for target 2  = Gen2.2.x
 	
-	#define BAT_CELLS         	10        // battery number of cells. Normal Hoverboard battery: 10s
+	#define BAT_CELLS         	7        // battery number of cells. Normal Hoverboard battery: 10s
 	//#define BATTERY_LOW_SHUTOFF		// will shut off the board below BAT_LOW_DEAD = BAT_CELLS * CELL_LOW_DEAD, 
 
 	//#define MASTER		// uncomment for MASTER firmware.
@@ -38,8 +39,8 @@
 	#if defined(MASTER) || defined(SINGLE)
 		
 		// choose only one 'remote' to control the motor
-		//#define REMOTE_DUMMY
-		#define REMOTE_UART
+		#define REMOTE_DUMMY
+		//#define REMOTE_UART
 		//#define REMOTE_UARTBUS	// ESP32 as master and multiple boards as multiple slaves ESP.tx-Hovers.rx and ESP.rx-Hovers.tx
 		//#define REMOTE_CRSF		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/26
 		//#define REMOTE_ADC	// speed is PA2=TX and steer is PA3=RX of the masterslave header. Get 3.3V from the flash header
@@ -64,7 +65,7 @@
 		#define SPEED_COEFFICIENT   -1
 		#define STEER_COEFFICIENT   1
 		
-		//#define DISABLE_BUTTON	// this is the opposite of former CHECK_BUTTON define.
+		#define DISABLE_BUTTON	// this is the opposite of former CHECK_BUTTON define.
 															// remove '//' if you use a slave board as master 
 															// or if you turn the boards on/off by injecting a postive voltage into the input pin of the 2pin BUTTON header
 

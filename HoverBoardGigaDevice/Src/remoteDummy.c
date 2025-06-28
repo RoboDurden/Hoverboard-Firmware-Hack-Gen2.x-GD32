@@ -9,7 +9,7 @@ extern int32_t steer;
 extern int32_t speed;
 extern uint32_t msTicks;
 
-#define MAX_SPEED 1000		// can range from 0 to 1000
+#define MAX_SPEED 500		// can range from 0 to 1000
 
 void RemoteUpdate(void)
 {

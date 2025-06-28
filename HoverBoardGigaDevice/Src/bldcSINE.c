@@ -87,7 +87,7 @@ float angle_deg_final = 0;
 uint16_t angle_idx = 0;
 int pwmGo = 0;
 
-#if TARGET == 2
+#if TARGET == 22
 
 #include "gd32f10x.h"
 #include "gd32f10x_gpio.h"
@@ -165,6 +165,101 @@ void EXTI4_IRQHandler(void) { _HandleEXTI(4); }
 // Grouped EXTI handlers
 void EXTI5_9_IRQHandler(void)   { _HandleEXTI(5); }
 void EXTI10_15_IRQHandler(void) { _HandleEXTI(10); }
+#endif
+
+#if TARGET == 2
+
+uint32_t iExti = 0;
+uint16_t iExti0 = 0;
+uint16_t iExti1 = 0;
+uint16_t iExti2 = 0;
+
+
+void GPIO_Config(void)
+{
+	// Enable GPIO clocks
+	//rcu_periph_clock_enable(RCU_GPIOB);
+	rcu_periph_clock_enable(RCU_GPIOA);
+
+	// Configure PB3 (LED) as push-pull output
+	//gpio_init(GPIOB, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_3);
+
+	// Configure PA1 (EXTI source) as input with pull-down
+	gpio_init(GPIOA, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ, GPIO_PIN_0);
+	gpio_init(GPIOA, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ, GPIO_PIN_1);
+	gpio_init(GPIOA, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ, GPIO_PIN_2);
+}
+
+void EXTI_Config(void)
+{
+	// Connect EXTI1 line to PA1
+	gpio_exti_source_select(GPIO_PORT_SOURCE_GPIOA, GPIO_PIN_SOURCE_0);
+	gpio_exti_source_select(GPIO_PORT_SOURCE_GPIOA, GPIO_PIN_SOURCE_1);
+	gpio_exti_source_select(GPIO_PORT_SOURCE_GPIOA, GPIO_PIN_SOURCE_2);
+
+	// Configure EXTI for PA1 (both edges)
+	exti_init(EXTI_0, EXTI_INTERRUPT, EXTI_TRIG_BOTH);
+	exti_interrupt_flag_clear(EXTI_0);  // Clear pending bit
+	exti_init(EXTI_1, EXTI_INTERRUPT, EXTI_TRIG_BOTH);
+	exti_interrupt_flag_clear(EXTI_1);  // Clear pending bit
+	exti_init(EXTI_2, EXTI_INTERRUPT, EXTI_TRIG_BOTH);
+	exti_interrupt_flag_clear(EXTI_2);  // Clear pending bit
+}
+
+void NVIC_Config(void)
+{
+	// Enable EXTI1 interrupt
+	nvic_irq_enable(EXTI0_IRQn, 1, 0);
+	nvic_irq_enable(EXTI1_IRQn, 1, 1);
+	nvic_irq_enable(EXTI2_IRQn, 1, 2);
+}
+
+void _HandleEXTI()
+{
+	bInterrupt = 1;
+	hall_time_step = buzzerTimer>hall_time_last ? buzzerTimer-hall_time_last : buzzerTimer + (0x00010000-hall_time_last);
+	hall_time_last = buzzerTimer;  // PWM_FREQ (16 kHz)
+	hall_last = hall;
+	hall = digitalRead(HALL_A) + digitalRead(HALL_B)*2 + digitalRead(HALL_C)*4;		
+}
+
+
+void EXTI0_IRQHandler(void)	// EXTI0 Interrupt Service Routine
+{
+	if(RESET != exti_interrupt_flag_get(EXTI_0)) 
+	{
+		iExti0++;
+		_HandleEXTI();
+		exti_interrupt_flag_clear(EXTI_0);
+	}
+}
+void EXTI1_IRQHandler(void)	// EXTI1 Interrupt Service Routine
+{
+	if(RESET != exti_interrupt_flag_get(EXTI_1)) 
+	{
+		iExti1++;
+		_HandleEXTI();
+		exti_interrupt_flag_clear(EXTI_1);
+	}
+}
+void EXTI2_IRQHandler(void)	// EXTI2 Interrupt Service Routine
+{
+	if(RESET != exti_interrupt_flag_get(EXTI_2)) 
+	{
+		iExti2++;
+		_HandleEXTI();
+		exti_interrupt_flag_clear(EXTI_2);
+	}
+}
+
+void InitBldc()
+{
+	// System configuration
+	rcu_periph_clock_enable(RCU_AF);
+	GPIO_Config();
+	EXTI_Config();
+	NVIC_Config();
+}
 
 
 #else
