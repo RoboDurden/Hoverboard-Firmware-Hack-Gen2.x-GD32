@@ -313,6 +313,7 @@ void EXTI4_15_IRQHandler(void){	_HandleEXTI();}
 
 #endif
 
+uint32_t hall_time_step_LPR,hall_time_step_LP;
 
 void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) 	// pos is not used but hall_to_sector mapping :-/
 {
@@ -333,6 +334,11 @@ void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) 	// pos is not used 
 	angle_deg = sector * 60.0f;	// Calculate base angle for this sector (0-60° range)
 	angle_deg_add = 0;
 	int16_t iOffset = 0;
+	
+	// Calculate low-pass filter for pwm value
+	#define RANK_hts 9
+	hall_time_step_LPR = hall_time_step_LPR - (hall_time_step_LPR >> RANK_hts) + safe_hall_time_step;
+	
 	if (ABS(pwmGo) > 50)
 	{
 		if (sector != sectorLast) 
@@ -343,8 +349,11 @@ void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) 	// pos is not used 
 		
 		if (	(safe_hall_time_step > 0) && (safe_hall_time_step < (PWM_FREQ/20))	)	// >50ms for one hall change is to slow to interpolate
 		{
+			hall_time_step_LP = hall_time_step_LPR >> RANK_hts;
+			
 			uint16_t iDT = buzzerTimer>safe_hall_time_last ? buzzerTimer-safe_hall_time_last : buzzerTimer + (0x00010000-safe_hall_time_last);
-			fDT = (float)iDT /safe_hall_time_step;		// at constant speed, fDT == 1 would be right before a new sector gets detected by the hall inputs
+			fDT = (float)iDT /hall_time_step_LP;		// at constant speed, fDT == 1 would be right before a new sector gets detected by the hall inputs
+			//fDT = (float)iDT /safe_hall_time_step;		// at constant speed, fDT == 1 would be right before a new sector gets detected by the hall inputs
 			if (fDT < 1.5)	// not for heavy breaking
 			{
 				angle_deg_add = sectorChange * (60.0f  * fDT);
