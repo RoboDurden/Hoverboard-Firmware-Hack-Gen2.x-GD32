@@ -18,7 +18,7 @@
 		#define LAYOUT 4
 		#define LAYOUT_SUB 1	// Layout 2.1.7 exisits as 2.1.7.0 and 2.1.7.1
 	#elif GD32F103		// TARGET = 2
-		#define LAYOUT 1
+		#define LAYOUT 6
 	#elif GD32E230		// TARGET = 3
 		#define LAYOUT 1
 	#elif MM32SPIN05	// TARGET = 4
