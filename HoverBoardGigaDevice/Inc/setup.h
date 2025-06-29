@@ -98,6 +98,13 @@ void USART_MasterSlave_init(void);
 //----------------------------------------------------------------------------
 void USART_Steer_COM_init(void);
 
+//----------------------------------------------------------------------------
+// Initializes the I2C
+//----------------------------------------------------------------------------
+#ifdef I2C_ENABLE
+void i2c_config(void);
+#endif
+
 
 void ConfigReset(void);
 void ConfigWrite(void);
