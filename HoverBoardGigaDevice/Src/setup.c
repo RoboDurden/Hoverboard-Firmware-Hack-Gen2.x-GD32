@@ -133,7 +133,7 @@ void TimeoutTimer_init(void)
 	timer_init(TIMER_TIMEOUT, &timeoutTimer_paramter_struct);
 	
 	// Enable TIMER_INT_UP interrupt and set priority
-	TARGET_nvic_irq_enable(TIMER_TIMEOUT_IRQn, 0, 0);
+	TARGET_nvic_irq_enable(TIMER_TIMEOUT_IRQn, 3, 0);		// can not interrupt 0 (hall_irq) or 1 (CalculateBLDC) or 2 (Usart)
 	timer_interrupt_enable(TIMER_TIMEOUT, TIMER_INT_UP);
 	
 	// Enable timer
@@ -258,7 +258,7 @@ void GPIO_init(void)
 
 
 
-
+/*
 //----------------------------------------------------------------------------
 // Initializes the PWM
 //----------------------------------------------------------------------------
@@ -295,15 +295,14 @@ void PWM_initOld(void)
 	timer_channel_output_shadow_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, TIMER_OC_SHADOW_DISABLE);
 	
 	// Set output channel PWM type to PWM1
-	/*
-	CH0COMCTL[2:0]
-	110: PWM mode0.
-	When counting up, OxCPRE is high when the counter is smaller than TIMER0_CHxCV, and low otherwise.
-	When counting down, OxCPRE is low when the counter is larger than TIMER0_CHxCV, and high otherwise.
-	111: PWM mode1.
-	When counting up, OxCPRE is low when the counter is smaller than TIMER0_CHxCV, and high otherwise.
-	When counting down, OxCPRE is high when the counter is larger than TIMER0_CHxCV, and low otherwise.
-	*/
+
+	// CH0COMCTL[2:0]
+	// 110: PWM mode0.
+	// When counting up, OxCPRE is high when the counter is smaller than TIMER0_CHxCV, and low otherwise.
+	// When counting down, OxCPRE is low when the counter is larger than TIMER0_CHxCV, and high otherwise.
+	// 111: PWM mode1.
+	// When counting up, OxCPRE is low when the counter is smaller than TIMER0_CHxCV, and high otherwise.
+	// When counting down, OxCPRE is high when the counter is larger than TIMER0_CHxCV, and low otherwise.
 	timer_channel_output_mode_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_G, TIMER_OC_MODE_PWM1);
 	timer_channel_output_mode_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_B, TIMER_OC_MODE_PWM1);
 	timer_channel_output_mode_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, TIMER_OC_MODE_PWM1);
@@ -360,13 +359,13 @@ void PWM_initOld(void)
 	timer_channel_complementary_output_state_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, TIMER_CCXN_ENABLE);
 	
 	// Enable TIMER_INT_UP interrupt and set priority
-	TARGET_nvic_irq_enable(TIMER0_BRK_UP_TRG_COM_IRQn, 0, 0);
+	TARGET_nvic_irq_enable(TIMER0_BRK_UP_TRG_COM_IRQn, 0, 0);		// can interrupt everything, but wait for hall-irq to finish
 	timer_interrupt_enable(TIMER_BLDC, TIMER_INT_UP);
 	
 	// Enable the timer and start PWM
 	timer_enable(TIMER_BLDC);
 }
-
+*/
 
 void PWM_init(void)
 {
@@ -455,7 +454,7 @@ void PWM_init(void)
 	timer_channel_complementary_output_state_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, TIMER_CCXN_ENABLE);
 	
 	// Enable TIMER_INT_UP interrupt and set priority
-	TARGET_nvic_irq_enable(TIMER0_BRK_UP_TRG_COM_IRQn, 0, 0);
+	TARGET_nvic_irq_enable(TIMER0_BRK_UP_TRG_COM_IRQn, 0, 0); // can interrupt everything, but wait for hall-irq (also 0) to finish
 	timer_interrupt_enable(TIMER_BLDC, TIMER_INT_UP);
 	
 	// Enable the timer and start PWM
@@ -567,7 +566,7 @@ void ADC_init(void)
 	rcu_adc_clock_config(RCU_ADCCK_APB2_DIV6);
 	
 	// Interrupt channel 0 enable
-	TARGET_nvic_irq_enable(DMA_Channel0_IRQn, 2, 0);
+	TARGET_nvic_irq_enable(DMA_Channel0_IRQn, 2, 0);	// will trigger CalculateBldc(); Can interrupt 2+ = Timeout/Usart but not bldc or hall-irqs
 	
 	// Initialize DMA channel 0 for ADC
 	TARGET_dma_deinit(DMA_CH0);
@@ -707,7 +706,7 @@ void USART0_Init(uint32_t iBaud)
 
 
 	// Interrupt channel 1/2 enable
-	TARGET_nvic_irq_enable(TARGET_DMA_Channel1_2_IRQn, 1, 0);
+	TARGET_nvic_irq_enable(TARGET_DMA_Channel1_2_IRQn, 1, 0);		// usart irqs can not interrupt 0=bldc/hall or 1=adc/CalculateBldc
 
 
 	// Initialize DMA channel 2 for USART0 RX (CH4 for gd32f103)
@@ -784,7 +783,7 @@ void USART1_Init(uint32_t iBaud)
 	usart_enable(USART1);
 	
 	// Interrupt channel 3/4 enable
-	TARGET_nvic_irq_enable(DMA_Channel3_4_IRQn, 1, 0);
+	TARGET_nvic_irq_enable(DMA_Channel3_4_IRQn, 1, 0);		// usart irqs can not interrupt 0=bldc/hall or 1=adc/CalculateBldc
 	
 	// Initialize DMA channel 4 for USART_SLAVE RX
 	dma_deinit(DMA_CH4);
@@ -859,6 +858,7 @@ void USART2_Init(uint32_t iBaud)	// only for target==2 = gd32f103
 	usart_enable(USART2);
 	
 	// Interrupt channel 3/4 enable
+	// usart irqs set to Pre-priority 2 can not interrupt 0=bldc/hall or 1=adc/CalculateBldc
 	//nvic_irq_enable(DMA_Channel3_4_IRQn, 1, 0);
 	//JMA F103 cannel 3 and 4 are separate. Only channel 4 is used so only channel 4 interrupt enabled
 	nvic_irq_enable(DMA0_Channel2_IRQn, 1, 0); // JW: Changed to Channel2 (from Channel4)

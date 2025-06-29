@@ -32,9 +32,9 @@
 	#define BAT_CELLS         	7        // battery number of cells. Normal Hoverboard battery: 10s
 	//#define BATTERY_LOW_SHUTOFF		// will shut off the board below BAT_LOW_DEAD = BAT_CELLS * CELL_LOW_DEAD, 
 
-	//#define MASTER		// uncomment for MASTER firmware.
+	#define MASTER		// uncomment for MASTER firmware.
 	//#define SLAVE			// uncomment for SLAVE firmware.
-	#define SINGLE			// uncomment if firmware is for single board and no master-slave dual board setup
+	//#define SINGLE			// uncomment if firmware is for single board and no master-slave dual board setup
 
 	#if defined(MASTER) || defined(SINGLE)
 		
