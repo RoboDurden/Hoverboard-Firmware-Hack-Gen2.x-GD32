@@ -131,7 +131,7 @@ void loop()
   //digitalWrite(39, (iNow%500) < 250);
   //digitalWrite(37, (iNow%500) < 100);
 
-  int iSpeed = 5 * (ABS( (int)((iNow/20+100) % 400) - 200) - 100);   // repeats from +300 to -300 to +300 :-)
+  int iSpeed = CLAMP(5 * (ABS( (int)((iNow/20+100) % 400) - 200) - 100),-1000,1000);   // repeats from +300 to -300 to +300 :-)
   int iSteer = 1 * (ABS( (int)((iNow/400+100) % 400) - 200) - 100);   // repeats from +100 to -100 to +100 :-)
   //int iSteer = 0;
   //iSpeed /= 10;

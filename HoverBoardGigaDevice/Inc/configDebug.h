@@ -18,7 +18,7 @@
 		#define LAYOUT 4
 		#define LAYOUT_SUB 1	// Layout 2.1.7 exisits as 2.1.7.0 and 2.1.7.1
 	#elif GD32F103		// TARGET = 2
-		#define LAYOUT 6
+		#define LAYOUT 1
 	#elif GD32E230		// TARGET = 3
 		#define LAYOUT 1
 	#elif MM32SPIN05	// TARGET = 4
@@ -39,8 +39,8 @@
 	#if defined(MASTER) || defined(SINGLE)
 		
 		// choose only one 'remote' to control the motor
-		#define REMOTE_DUMMY
-		//#define REMOTE_UART
+		//#define REMOTE_DUMMY
+		#define REMOTE_UART
 		//#define REMOTE_UARTBUS	// ESP32 as master and multiple boards as multiple slaves ESP.tx-Hovers.rx and ESP.rx-Hovers.tx
 		//#define REMOTE_CRSF		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/26
 		//#define REMOTE_ADC	// speed is PA2=TX and steer is PA3=RX of the masterslave header. Get 3.3V from the flash header
@@ -73,7 +73,7 @@
 	#endif
 	
 	#if defined(MASTER) || defined(SLAVE)
-		#define MASTERSLAVE_USART		1 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
+		#define MASTERSLAVE_USART		2 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
 																		//	0 is usually PB6/PB7 and the empty header close to the flash-header
 																		//	2 is usually PB10/PB11 on stm32f103 boards
 	#endif

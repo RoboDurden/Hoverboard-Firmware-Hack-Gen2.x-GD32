@@ -94,7 +94,7 @@ int pwmGo = 0;
 #include "gd32f10x_exti.h"
 #include "gd32f10x_rcu.h"
 
-uint32_t InitEXTI(uint32_t iPinArduino,uint8_t iPrePriority) 
+uint32_t InitEXTI(uint32_t iPinArduino) 
 {
     uint8_t  iPin  = iPinArduino & 0xFF;
     uint32_t iPort = iPinArduino & 0xFFFFFF00; 
@@ -110,13 +110,13 @@ uint32_t InitEXTI(uint32_t iPinArduino,uint8_t iPrePriority)
     exti_flag_clear(iPinEXTI);
     
     // Configure NVIC with highest priority (0)
-    if (iPin == 0)       nvic_irq_enable(EXTI0_IRQn, iPrePriority, 0);
-    else if (iPin == 1)  nvic_irq_enable(EXTI1_IRQn, iPrePriority, 0);
-    else if (iPin == 2)  nvic_irq_enable(EXTI2_IRQn, iPrePriority, 0);
-    else if (iPin == 3)  nvic_irq_enable(EXTI3_IRQn, iPrePriority, 0);
-    else if (iPin == 4)  nvic_irq_enable(EXTI4_IRQn, iPrePriority, 0);
-    else if (iPin < 10)  nvic_irq_enable(EXTI5_9_IRQn, iPrePriority, 0);
-    else                 nvic_irq_enable(EXTI10_15_IRQn, iPrePriority, 0);    
+    if (iPin == 0)       nvic_irq_enable(EXTI0_IRQn, 0, 1);
+    else if (iPin == 1)  nvic_irq_enable(EXTI1_IRQn, 0, 1);
+    else if (iPin == 2)  nvic_irq_enable(EXTI2_IRQn, 0, 1);
+    else if (iPin == 3)  nvic_irq_enable(EXTI3_IRQn, 0, 1);
+    else if (iPin == 4)  nvic_irq_enable(EXTI4_IRQn, 0, 1);
+    else if (iPin < 10)  nvic_irq_enable(EXTI5_9_IRQn, 0, 1);
+    else                 nvic_irq_enable(EXTI10_15_IRQn, 0, 1);    
    return iPinEXTI;
 }
 
@@ -129,9 +129,9 @@ void InitBldc() {
     rcu_periph_clock_enable(RCU_AF); // Required for EXTI configuration
 	
 	
-    aHallEXTI[0] = InitEXTI(HALL_A,0);
-    aHallEXTI[1] = InitEXTI(HALL_B,1);
-    aHallEXTI[2] = InitEXTI(HALL_C,2);
+    aHallEXTI[0] = InitEXTI(HALL_A);
+    aHallEXTI[1] = InitEXTI(HALL_B);
+    aHallEXTI[2] = InitEXTI(HALL_C);
 }
 
 int8_t iIrqLast = -1;
@@ -209,9 +209,9 @@ void EXTI_Config(void)
 void NVIC_Config(void)
 {
 	// Enable EXTI1 interrupt
-	nvic_irq_enable(EXTI0_IRQn, 1, 0);
-	nvic_irq_enable(EXTI1_IRQn, 1, 1);
-	nvic_irq_enable(EXTI2_IRQn, 1, 2);
+	nvic_irq_enable(EXTI0_IRQn, 0, 1);	// first 0 = can interrupt other 1+ interrupts but not bldc=(0,0) which also comes first if both are pending
+	nvic_irq_enable(EXTI1_IRQn, 0, 1);
+	nvic_irq_enable(EXTI2_IRQn, 0, 1);
 }
 
 void _HandleEXTI()
@@ -278,9 +278,9 @@ uint32_t InitEXTI(uint32_t iPinArduino)		// init EXTernal Interrupt
 	exti_flag_clear(iPinEXTI);
 	
 	// Configure NVIC with highest priority (0)
-	if 			(iPin<2)	TARGET_nvic_irq_enable(EXTI0_1_IRQn, 0, 0)      // PF1 for example
-	else if	(iPin<4)	TARGET_nvic_irq_enable(EXTI2_3_IRQn, 0, 0)      // PB2 for example
-	else 	TARGET_nvic_irq_enable(EXTI4_15_IRQn, 0, 0)      // PC14 for example
+	if 			(iPin<2)	TARGET_nvic_irq_enable(EXTI0_1_IRQn, 0, 1)      // PF1 for example
+	else if	(iPin<4)	TARGET_nvic_irq_enable(EXTI2_3_IRQn, 0, 1)      // PB2 for example
+	else 	TARGET_nvic_irq_enable(EXTI4_15_IRQn, 0, 1)      // PC14 for example
 	
 	return iPinEXTI;
 }
@@ -314,6 +314,8 @@ void EXTI4_15_IRQHandler(void){	_HandleEXTI();}
 #endif
 
 uint32_t hall_time_step_LPR,hall_time_step_LP;
+float fGradient = 0, fGradientX = 0;
+uint16_t iDT = 0;
 
 void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) 	// pos is not used but hall_to_sector mapping :-/
 {
@@ -351,8 +353,10 @@ void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) 	// pos is not used 
 		{
 			hall_time_step_LP = hall_time_step_LPR >> RANK_hts;
 			
-			uint16_t iDT = buzzerTimer>safe_hall_time_last ? buzzerTimer-safe_hall_time_last : buzzerTimer + (0x00010000-safe_hall_time_last);
-			fDT = (float)iDT /hall_time_step_LP;		// at constant speed, fDT == 1 would be right before a new sector gets detected by the hall inputs
+			iDT = buzzerTimer>safe_hall_time_last ? buzzerTimer-safe_hall_time_last : buzzerTimer + (0x00010000-safe_hall_time_last);
+			fGradient = 1.0/hall_time_step_LP;
+			fGradientX = fGradient * 40000;
+			fDT = (float)iDT * fGradient;		// at constant speed, fDT == 1 would be right before a new sector gets detected by the hall inputs
 			//fDT = (float)iDT /safe_hall_time_step;		// at constant speed, fDT == 1 would be right before a new sector gets detected by the hall inputs
 			if (fDT < 1.5)	// not for heavy breaking
 			{

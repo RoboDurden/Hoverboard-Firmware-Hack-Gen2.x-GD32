@@ -36,7 +36,7 @@
 
 //#include "../Inc/commsSteering.h"
 
-#include "../Inc/commsBluetooth.h"
+//#include "../Inc/commsBluetooth.h"
 
 uint32_t msTicks;
 uint32_t timeoutCounter_ms = 0;

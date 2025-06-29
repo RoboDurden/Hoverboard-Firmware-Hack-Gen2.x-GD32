@@ -9,7 +9,7 @@
 
 //#include "../Inc/commsSteering.h"
 
-#include "../Inc/commsBluetooth.h"
+//#include "../Inc/commsBluetooth.h"
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
@@ -86,6 +86,9 @@ uint32_t iTimeNextLoop = 0;
 //----------------------------------------------------------------------------
 // MAIN function
 //----------------------------------------------------------------------------
+#if defined(PLATFORMIO) && TARGET==2
+	uint32_t SystemCoreClock = 72000000;  // Define the missing symbol
+#endif
 int main (void)
 {
 	iBug = 1;
