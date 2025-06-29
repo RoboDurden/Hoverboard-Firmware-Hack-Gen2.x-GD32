@@ -50,9 +50,15 @@ typedef struct {			// �#pragma pack(1)� needed to get correct sizeof()
 
 static uint8_t aReceiveBuffer[sizeof(SerialServer2Hover)];
 
-#define START_FRAME         0xABCD       // [-] Start frme definition for reliable serial communication
+#define START_FRAME         0xCD
+#define STATS_FRAME         0xAB
+#ifdef SEND_IMU_DATA
+#define IMU_FRAME           0xEF
+#endif
+
 typedef struct{				// �#pragma pack(1)� needed to get correct sizeof()
-   uint16_t cStart;
+   uint8_t cStart;
+   uint8_t cType;
    int16_t iSpeedL;		// 100* km/h
    int16_t iSpeedR;		// 100* km/h
    uint16_t iVolt;		// 100* V
@@ -60,7 +66,13 @@ typedef struct{				// �#pragma pack(1)� needed to get correct sizeof()
    int16_t iAmpR;		// 100* A
    int32_t iOdomL;		// hall steps
    int32_t iOdomR;		// hall steps
+   uint16_t checksum;
+} SerialHover2ServerStats;
+
 #ifdef SEND_IMU_DATA
+typedef struct{		
+    uint8_t cStart;
+    uint8_t cType;
 	int16_t     iGyroX;
 	int16_t     iGyroY;
 	int16_t     iGyroZ; 
@@ -68,20 +80,33 @@ typedef struct{				// �#pragma pack(1)� needed to get correct sizeof()
 	int16_t     iAccelY;
 	int16_t     iAccelZ;
 	int16_t     iTemperature;
-#endif
    uint16_t checksum;
-} SerialHover2Server;
+} SerialHover2ServerImu;
+#endif
 
 int16_t aiDebug[7];
 
-
-
 //static uint8_t aDebug[sizeof(SerialServer2Hover)];
-
 
 uint32_t iTimeLastRx = 0;
 uint32_t iTimeNextTx = 0;
 
+#ifdef SEND_IMU_DATA
+void RemoteUpdateIMU() {
+	SerialHover2ServerImu oData;
+	oData.cStart = START_FRAME;
+	oData.cType = IMU_FRAME;
+	oData.iGyroX = mpuData.gyro.x;
+	oData.iGyroY = mpuData.gyro.y;
+	oData.iGyroZ = mpuData.gyro.z;
+	oData.iAccelX = mpuData.accel.x;
+	oData.iAccelY = mpuData.accel.y;
+	oData.iAccelZ = mpuData.accel.z;
+	oData.iTemperature = mpuData.temperature;
+	oData.checksum = CalcCRC((uint8_t*) &oData, sizeof(oData) - 2);	// (first bytes except crc)
+	SendBuffer(USART_REMOTE, (uint8_t*) &oData, sizeof(oData));
+}
+#endif
 // Send frame to steer device
 void RemoteUpdate(void)
 {
@@ -95,8 +120,9 @@ void RemoteUpdate(void)
 	iTimeNextTx = millis() + SEND_INTERVAL_MS;
 	
 	// Ask for steer input
-	SerialHover2Server oData;
+	SerialHover2ServerStats oData;
 	oData.cStart = START_FRAME;
+	oData.cType = STATS_FRAME;
 	oData.iVolt = (uint16_t)	(batteryVoltage * 100);
 	oData.iAmpL = (int16_t) 	(currentDC * 100);
 	oData.iSpeedL = (int16_t) (realSpeed * 100);
@@ -113,42 +139,12 @@ void RemoteUpdate(void)
 		oData.iOdomR = 0;
 	#endif
 
-	#ifdef SEND_IMU_DATA
-		oData.iGyroX = mpuData.gyro.x;
-		oData.iGyroY = mpuData.gyro.y;
-		oData.iGyroZ = mpuData.gyro.z;
-		oData.iAccelX = mpuData.accel.x;
-		oData.iAccelY = mpuData.accel.y;
-		oData.iAccelZ = mpuData.accel.z;
-		oData.iTemperature = mpuData.temperature;
-	#endif
-	
-/*	
-	oData.iVolt = aDebug[0];
-	oData.iAmpL = aDebug[1];
-	oData.iAmpR = aDebug[2];
-	oData.iSpeedL = aDebug[3];
-	oData.iSpeedR = (int16_t) sizeof(SerialServer2Hover);	// speed
-*/
-
-/*
-	oData.iVolt = aiDebug[0];
-	oData.iAmpL = aiDebug[1];
-	oData.iAmpR = aiDebug[2];
-	oData.iSpeedL = aiDebug[3];
-	oData.iSpeedR = aiDebug[4];
-	oData.iOdomL = aiDebug[5];
-	oData.iOdomR = aiDebug[6];
-*/
-
-	// oDataSlave.wState;
-
 	oData.checksum = 	CalcCRC((uint8_t*) &oData, sizeof(oData) - 2);	// (first bytes except crc)
 	SendBuffer(USART_REMOTE, (uint8_t*) &oData, sizeof(oData));
-
-
-	//oDataSlave.wState = 11;
 }
+
+
+// Send frame to steer device
 
 extern uint32_t steerCounter;								// Steer counter for setting update rate
 

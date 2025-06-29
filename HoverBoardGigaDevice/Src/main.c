@@ -227,9 +227,6 @@ iBug = 9;
 
 	while(1)
 	{
-
-
-
 		if (millis() < iTimeNextLoop)	
 			continue;
 		iTimeNextLoop = millis() + DELAY_IN_MAIN_LOOP;
@@ -237,7 +234,11 @@ iBug = 9;
 		DEBUG_LedSet(	(steerCounter%20) < 10	,0)
 		
 		#ifdef MPU_6050
-			mpu_read_all();
+			if (mpu_read_all() == SUCCESS) {
+				#ifdef SEND_IMU_DATA
+					RemoteUpdateIMU();		// Send IMU data to remote
+				#endif
+			}
 		#endif
 
 		
