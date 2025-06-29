@@ -34,7 +34,11 @@ extern DataSlave oDataSlave;
 extern uint8_t  wStateSlave;
 extern uint8_t  wState;
 
-typedef struct {			// ´#pragma pack(1)´ needed to get correct sizeof()
+#ifdef SEND_IMU_DATA
+extern MPU_Data mpuData;	
+#endif
+
+typedef struct {			// ï¿½#pragma pack(1)ï¿½ needed to get correct sizeof()
    uint8_t cStart;		//  = '/';
    //uint16_t cStart;		//  = #define START_FRAME         0xABCD
    int16_t  iSpeed;
@@ -47,15 +51,24 @@ typedef struct {			// ´#pragma pack(1)´ needed to get correct sizeof()
 static uint8_t aReceiveBuffer[sizeof(SerialServer2Hover)];
 
 #define START_FRAME         0xABCD       // [-] Start frme definition for reliable serial communication
-typedef struct{				// ´#pragma pack(1)´ needed to get correct sizeof()
+typedef struct{				// ï¿½#pragma pack(1)ï¿½ needed to get correct sizeof()
    uint16_t cStart;
    int16_t iSpeedL;		// 100* km/h
    int16_t iSpeedR;		// 100* km/h
    uint16_t iVolt;		// 100* V
-   int16_t iAmpL;			// 100* A
-   int16_t iAmpR;			// 100* A
+   int16_t iAmpL;		// 100* A
+   int16_t iAmpR;		// 100* A
    int32_t iOdomL;		// hall steps
    int32_t iOdomR;		// hall steps
+#ifdef SEND_IMU_DATA
+	int16_t     iGyroX;
+	int16_t     iGyroY;
+	int16_t     iGyroZ; 
+	int16_t     iAccelX;
+	int16_t     iAccelY;
+	int16_t     iAccelZ;
+	int16_t     iTemperature;
+#endif
    uint16_t checksum;
 } SerialHover2Server;
 
@@ -99,6 +112,17 @@ void RemoteUpdate(void)
 		oData.iSpeedR = 0;
 		oData.iOdomR = 0;
 	#endif
+
+	#ifdef SEND_IMU_DATA
+		oData.iGyroX = mpuData.gyro.x;
+		oData.iGyroY = mpuData.gyro.y;
+		oData.iGyroZ = mpuData.gyro.z;
+		oData.iAccelX = mpuData.accel.x;
+		oData.iAccelY = mpuData.accel.y;
+		oData.iAccelZ = mpuData.accel.z;
+		oData.iTemperature = mpuData.temperature;
+	#endif
+	
 /*	
 	oData.iVolt = aDebug[0];
 	oData.iAmpL = aDebug[1];

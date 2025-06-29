@@ -195,6 +195,51 @@
 #endif
 
 
+
+#ifdef MPU_6050
+    #define I2C_ENABLE
+
+	#define MPU_I2C                     I2C_PERIPH
+
+	typedef struct{
+		int16_t     x;
+		int16_t     y;
+		int16_t     z; 
+	} Gyro;
+
+	typedef struct{
+		int16_t     x;
+		int16_t     y;
+		int16_t     z; 
+	} Accel;
+
+	typedef struct {
+		Gyro        gyro;
+		Accel       accel;
+		int16_t     temperature;
+	} MPU_Data;
+
+#endif
+
+#ifdef I2C_ENABLE
+	#define I2C_OWN_ADDRESS7            0x24
+
+	#define I2C_TIMEOUT  10000
+	#define I2C_ACK_ENABLE  1
+	#define I2C_ACK_DISABLE 0
+
+	#define MPU_RCU_I2C                 RCU_I2C0
+	#define MPU_SCL_GPIO_Port           GPIOB
+	#define MPU_SCL_PIN                 GPIO_PIN_6
+	#define MPU_SDA_GPIO_Port           GPIOB
+	#define MPU_SDA_PIN                 GPIO_PIN_7
+
+	// return values
+	#define I2C_OK    0
+	#define I2C_ERR  -1
+#endif
+
+
 // Useful math function defines
 #define ABS(a) (((a) < 0.0) ? -(a) : (a))
 #define CLAMP(x, low, high) (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))

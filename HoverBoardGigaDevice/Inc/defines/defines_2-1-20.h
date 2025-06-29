@@ -29,8 +29,8 @@
 #define TIMER_BLDC_PULLUP	GPIO_PUPD_NONE	// robo: not sure if some boards indeed nned GPIO_PUPD_PULLUP like 2.2 or 2.3
 
 // GD32F130 USART0 TX/RX:	(PA9/PA10)AF1	, (PB6/PB7)AF0 , 	(PA2/PA3)AF1 , (PA14/PA15)AF1 GD32F130x4 only!
-#define USART0_TX	PB6	// you have to solder to the tiny IMU: https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/90#issuecomment-2949589576
-#define USART0_RX	PB7	// you have to solder to the tiny IMU: https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/90#issuecomment-2949589576
+//#define USART0_TX	PB6	// you have to solder to the tiny IMU: https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/90#issuecomment-2949589576
+//#define USART0_RX	PB7	// you have to solder to the tiny IMU: https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/90#issuecomment-2949589576
 
 // GD32F130 USART1 GD32F130 TX/RX: (PA14/PA15)AF1 , (PA2,PA3)AF1	, (PA8/PB0)AlternateFunction4
 #define USART1_TX		PA2

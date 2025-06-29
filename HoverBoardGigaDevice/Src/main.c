@@ -6,7 +6,8 @@
 #include "../Inc/it.h"
 #include "../Inc/bldc.h"
 #include "../Inc/commsMasterSlave.h"
-
+#include "../Inc/i2c.h"
+#include "../Inc/mpu6050.h"
 //#include "../Inc/commsSteering.h"
 
 #include "../Inc/commsBluetooth.h"
@@ -83,6 +84,8 @@ void ShowBatteryState(int8_t iLevel);
 	
 
 uint32_t iTimeNextLoop = 0;
+
+
 //----------------------------------------------------------------------------
 // MAIN function
 //----------------------------------------------------------------------------
@@ -144,6 +147,12 @@ iBug = 6;
 			USART2_Init(USART2_BAUD);
 	#endif
 	
+#ifdef I2C_ENABLE
+	i2c_config();
+#endif 
+#ifdef MPU_6050
+	mpu_init();
+#endif
 	// Init ADC
 	ADC_init();
 iBug = 7;	
@@ -218,12 +227,19 @@ iBug = 9;
 
 	while(1)
 	{
+
+
+
 		if (millis() < iTimeNextLoop)	
 			continue;
 		iTimeNextLoop = millis() + DELAY_IN_MAIN_LOOP;
 		steerCounter++;		// something like DELAY_IN_MAIN_LOOP = 5 ms
 		DEBUG_LedSet(	(steerCounter%20) < 10	,0)
 		
+		#ifdef MPU_6050
+			mpu_read_all();
+		#endif
+
 		
 		#ifdef MOSFET_OUT
 			digitalWrite(MOSFET_OUT,	(steerCounter%200) < 100	);	// onboard led blinking :-)

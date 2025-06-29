@@ -27,8 +27,10 @@
 	//#define BLDC_BC			// old block commutation bldc control
 	#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden. 
 													// not yet for target 2  = Gen2.2.x
-	
+
 #define BAT_CELLS         	10        // battery number of cells. Normal Hoverboard battery: 10s
+#define MPU_6050
+
 //#define BATTERY_LOW_SHUTOFF		// will shut off the board below BAT_LOW_DEAD = BAT_CELLS * CELL_LOW_DEAD, 
 
 	//#define MASTER		// uncomment for MASTER firmware.
@@ -38,8 +40,11 @@
 	#if defined(MASTER) || defined(SINGLE)
 		
 		// choose only one 'remote' to control the motor
-		#define REMOTE_DUMMY
-		//#define REMOTE_UART
+		#define HAS_USART1
+		#define USART1_BAUD 19200		// baudrate for remote control	
+		//#define REMOTE_DUMMY
+		#define REMOTE_UART
+
 		//#define REMOTE_UARTBUS	// ESP32 as master and multiple boards as multiple slaves ESP.tx-Hovers.rx and ESP.rx-Hovers.tx
 		//#define REMOTE_CRSF		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/26
 		//#define REMOTE_ADC	// speed is PA2=TX and steer is PA3=RX of the masterslave header. Get 3.3V from the flash header
@@ -50,7 +55,14 @@
 												// When the melody returns for 2 seconds, push speed to max.
 												// After another 5 seconds + 2 seconds melody: push speed to min. Then steer to max. Finally steer to min
 		
-		
+		#ifdef REMOTE_UART
+			#define SEND_IMU_DATA // send the IMU data to the remote control
+			#ifdef SEND_IMU_DATA
+				#ifndef MPU_6050
+					#error "You have to define MPU_6050 to use SEND_IMU_DATA"
+				#endif 
+			#endif
+		#endif
 		#ifdef REMOTE_UARTBUS
 			#define SLAVE_ID	0		// must be unique for all hoverboards connected to the bus
 		#endif
@@ -109,5 +121,14 @@
 #define DELAY_IN_MAIN_LOOP 	5         // Delay in ms
 
 #define TIMEOUT_MS          2000      // Time in milliseconds without steering commands before pwm emergency off
+
+#ifdef MPU_6050
+#define I2C_ENABLE
+#endif 
+
+#ifdef I2C_ENABLE
+	#define I2C_SPEED             400000      // [bit/s] Define I2C speed for communicating with the MPU6050
+	#define I2C_PERIPH I2C0
+#endif
 
 #endif		// CONFIG_H
