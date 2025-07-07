@@ -228,7 +228,6 @@ typedef struct
 
 
 
-	
 #ifdef REMOTE_AUTODETECT
 	#define PINS_DETECT 18
 		
@@ -239,22 +238,23 @@ typedef struct
 		uint32_t iVersion;
 		uint16_t wState;
 		int8_t aiPinScan[PINS_DETECT];		// lists NOT the uint32_t PA7 but the index of PA7 in PinAD aoPin[COUNT_PinDigital]
+		uint8_t padding[1];  // Pad to x*4 bytes for word alignment.
 	} ConfigData;
 	#pragma pack(pop)
 #else	
-	#define EEPROM_VERSION 1
+	#define EEPROM_VERSION 2
 
 	#pragma pack(push, 1)
-	typedef struct
-	{
-		uint32_t iVersion;
-		uint16_t wState;
-		uint16_t iSpeedNeutral;		// = 2048 REMOTE_ADC
-		uint16_t iSteerNeutral;		// = 2048 REMOTE_ADC
-		uint16_t iSpeedMax;				// = 4096 REMOTE_ADC
-		uint16_t iSpeedMin;				// = 0		REMOTE_ADC
-		uint16_t iSteerMax;				// = 4096	REMOTE_ADC
-		uint16_t iSteerMin;				// = 0		REMOTE_ADC
+	typedef struct {
+			uint32_t iVersion;
+			uint16_t wState;
+			uint16_t iSpeedNeutral;		// = 2048 REMOTE_ADC
+			uint16_t iSteerNeutral;		// = 2048 REMOTE_ADC
+			uint16_t iSpeedMax;				// = 4096 REMOTE_ADC
+			uint16_t iSpeedMin;				// = 0		REMOTE_ADC
+			uint16_t iSteerMax;				// = 4096	REMOTE_ADC
+			uint16_t iSteerMin;				// = 0		REMOTE_ADC
+			uint8_t padding[2];  // Pad to 20 bytes for word alignment. added by Deepseek
 	} ConfigData;
 	#pragma pack(pop)
 #endif

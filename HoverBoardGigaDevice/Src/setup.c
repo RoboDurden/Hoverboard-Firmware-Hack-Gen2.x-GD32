@@ -900,67 +900,66 @@ void USART2_Init(uint32_t iBaud)	// only for target==2 = gd32f103
 # define TRUE												0x01
 # define FALSE												0x00
 
-/* Clears a page of microprocessor memory */
-void flashErase(uint32_t address) {
+static uint32_t get_flash_size(void) 	// Helper functions for flash configuration by Deepseek
+{
+	return (*(volatile uint16_t *)(0x1FFFF7E0)) * 1024; // Flash size in bytes
+}
+static uint32_t get_page_size(uint32_t flash_size)
+{
+	return (flash_size <= 65536) ? 1024 : 2048; // JW: 1KB page for <=64KB, 2KB for >64KB
+}
+
+void flashErase(uint32_t address) // Clears a page of microprocessor memory. JW: Requires page erase before write (bits can only be changed from 1 to 0).
+{
 	fmc_unlock();
 	fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_WPERR);
 	fmc_page_erase(address);
 	fmc_lock();
 }
-
-/* Reads 4 bytes from microprocessor memory */
-uint32_t flashRead(uint32_t address) {
+uint32_t flashRead(uint32_t address) // Reads 4 bytes from microprocessor memory
+{
 	return *(uint32_t*)address;
 }
-
-/* Writes 4 bytes to microprocessor memory */
-uint8_t flashWrite(uint32_t address, uint32_t data) {
+uint8_t flashWrite(uint32_t address, uint32_t data)	// Writes 4 bytes to microprocessor memory
+{
 	uint8_t fflash = FALSE;
 	fmc_unlock();
-	fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_WPERR); 
-	if (fmc_word_program(address, data) == FMC_READY) fflash = TRUE; 
-	fmc_lock(); 
-	return fflash;
-}
-
-/* Write a memory buffer to the microprocessor memory */
-void flashWriteBuffer(uint32_t address, uint32_t pbuffer, uint8_t len) { 
-	int16_t icount = 0; 
-	while (1) { 
-		if (flashWrite(address+icount, *(uint32_t*)(pbuffer + icount)) == TRUE) { 
-		if (icount > len) break; 
-		icount = icount + 4; 
+	fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_WPERR);
+	if (fmc_halfword_program(address, (uint16_t) data)== FMC_READY) { // JW: STM32F103 can only write 16 bits at a time.
+		if (fmc_halfword_program((address+2), (uint16_t) (data>>16))== FMC_READY) {
+			fflash = TRUE;
 		}
 	}
+	fmc_lock();
+	return fflash;
 }
-
-/* Read into the microprocessor memory buffer */
-void flashReadBuffer(uint32_t address, uint32_t pbuffer, uint8_t len) {
-	int16_t icount = 0;
-	while (1) {
-		*(uint32_t*)(pbuffer + icount) = *(uint32_t*)(address+icount);
-		if (icount > len) break;
-		icount = icount + 4;
+void flashWriteBuffer(uint32_t address, uint8_t *pbuffer, uint16_t len) 	// Write buffer (word-aligned) by Deepseek
+{
+	for (uint16_t i = 0; i < len; i += 4)
+	{
+		uint32_t val = *((uint32_t*)(pbuffer + i));
+		flashWrite(address + i, val);
 	}
 }
-
-/* Number of Flash Memory */
-# define FLASH_MAX 0xFA00
-/* Start Address of Flash Memory */
-# define FLASH_ADRESS 0x08000000
+void flashReadBuffer(uint32_t address, uint8_t *pbuffer, uint16_t len) 	// Read buffer (word-aligned) by Deepseek
+{
+	for (uint16_t i = 0; i < len; i += 4)
+	{
+			*((uint32_t*)(pbuffer + i)) = flashRead(address + i);
+	}
+}
 
 
 //#define STATE_InverterOn  1
 ConfigData oConfig;
 
-
 void ConfigReset(void) 
 {
 	oConfig.iVersion = EEPROM_VERSION;
 	oConfig.wState = 0;
-	
+	int8_t i=0;
 	#ifdef REMOTE_AUTODETECT
-		int8_t i=0; for(;i<PINS_DETECT;i++)	oConfig.aiPinScan[i] = -1;	// -1 = not set
+		for(;i<PINS_DETECT;i++)	oConfig.aiPinScan[i] = -1;	// -1 = not set
 	#else	
 		oConfig.iSpeedNeutral = 2048;
 		oConfig.iSteerNeutral = 2048;
@@ -969,23 +968,34 @@ void ConfigReset(void)
 		oConfig.iSteerMax = 4096;
 		oConfig.iSteerMin = 0;
 	#endif
+	for(i=0;i<sizeof(oConfig.padding);i++)	oConfig.padding[i]=0;	// Clear padding
 }
 
-
-void ConfigWrite(void) 
+void ConfigWrite(void) 	// made compatible for 32kB and 64kB mcu versions by Deepseek
 {
-	flashErase((FLASH_ADRESS + FLASH_MAX) - (sizeof(oConfig) + 4));
-	flashWriteBuffer((FLASH_ADRESS + FLASH_MAX) - (sizeof(oConfig) + 4), (uint32_t)&oConfig, sizeof(oConfig) - 4);
+	uint32_t flash_size = get_flash_size();
+	uint32_t page_size = get_page_size(flash_size);
+	uint32_t last_page_start = 0x08000000 + flash_size - page_size;
+
+	flashErase(last_page_start);
+	flashWriteBuffer(last_page_start, (uint8_t*)&oConfig, sizeof(oConfig));
 }
 
-void ConfigRead(void) 
+void ConfigRead(void)  	// made compatible for 32kB and 64kB mcu versions by Deepseek
 {
-	if (flashRead((FLASH_ADRESS + FLASH_MAX) - (sizeof(oConfig) + 4)) == 0xFFFFFFFF) 
+	uint32_t flash_size = get_flash_size();
+	uint32_t page_size = get_page_size(flash_size);
+	uint32_t last_page_start = 0x08000000 + flash_size - page_size;
+
+	if (flashRead(last_page_start) == 0xFFFFFFFF)
 	{
 		ConfigReset();
 		ConfigWrite();
+		return;
 	}
-	flashReadBuffer((FLASH_ADRESS + FLASH_MAX) - (sizeof(oConfig) + 4), (uint32_t)&oConfig, sizeof(oConfig) - 4);
+
+	flashReadBuffer(last_page_start, (uint8_t*)&oConfig, sizeof(oConfig));
+
 	if (oConfig.iVersion != EEPROM_VERSION)
 	{
 		ConfigReset();
@@ -993,8 +1003,4 @@ void ConfigRead(void)
 	}
 }
 
-void confErase(void) 
-{
-	flashErase((FLASH_ADRESS + FLASH_MAX) - (sizeof(oConfig) + 4));
-}
 

@@ -1,4 +1,5 @@
 // Gen2.2.3  https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/84
+// a.k.a. SMART-L-V2.0 (used in Andersson 3.1 and Andersson 3.2 with 10 inch wheels)
 
 #ifdef MASTER_OR_SINGLE		// layout 2.2 and 2.7 have buzzer on the slave board.
 	#define HAS_BUZZER
@@ -8,19 +9,20 @@
 #define HALL_B		PA2
 #define HALL_C		PA1
 
-/*
-#define LED_RED			PB3
-#define LED_ORANGE	PA15
-#define LED_GREEN		PA12
-#define UPPER_LED		PA11
+
+//#define LED_RED			PB3
+//#define LED_ORANGE	PA15
+//#define LED_GREEN		PA12 // JW: PB3 in defines_2-2-1.h
+//#define UPPER_LED		PA11 // robo according to "Hoverboard JC2015.7.31.pdf" PA11
 //#define LOWER_LED		P??
 //#define ONBOARD_LED		P??
+//#define CHARGE_STATE PF0 // JW: Charger port is directly connected to battery cable, so probably not possible to detect charger state.
 #define BUZZER		PB1
 
 #define SELF_HOLD		PA4
 #define BUTTON		PA3
 //#define BUTTON_PU		PA3
-*/
+
 
 #define VBATT		PA5
 #define CURRENT_DC		PA7
