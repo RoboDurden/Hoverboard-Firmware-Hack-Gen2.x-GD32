@@ -117,11 +117,22 @@ void ConfigWriteAD(int8_t iPinScan,uint32_t iPinPort)
 void ConfigReadAD()
 {
 	ConfigRead();
-	int8_t i=0; for(;i<PINS_DETECT;i++)	
+	int8_t i; 
+	for(i=0; i<COUNT_PinDigital; i++)	aoPin[i].wState &= ~STATE_HIDE;
+	for(i=0;i<PINS_DETECT;i++)	
 	{
-		aiPinScan[i] = (oConfig.aiPinScan[i] < 0) ? 0 : aoPin[oConfig.aiPinScan[i]].i;
-		aoPin[oConfig.aiPinScan[i]].wState |= STATE_HIDE;
+		int8_t iPinScan = oConfig.aiPinScan[i];
+		if (iPinScan < 0)
+		{
+			aiPinScan[i]=0	;
+		}
+		else
+		{
+			aiPinScan[i] = aoPin[iPinScan].i;
+			aoPin[iPinScan].wState |= STATE_HIDE;
+		}
 	}
+	AutodetectInit();	// hide rx and tx pins
 }
 
 
@@ -217,7 +228,7 @@ void RemoteUpdate(void)
 			return;
 	
 	
-	iBug2 += strlen(sMessage);
+	//iBug2 += strlen(sMessage);
 	#ifdef USART_REMOTE
 		SendBuffer(USART_REMOTE, (uint8_t *)sMessage, strlen(sMessage));
 	#endif
@@ -380,6 +391,7 @@ uint16_t iVBatMinTest = 65535;
 float fVBattOld,fVBattFound=26.0;	// fVBattVar,
 uint16_t iHoldAutofind = 100;		// time interval (100 = 100 * 1/16000 seconds) to turn off a pin. 0 = manual mode
 uint8_t bCurrentManualMode = 0;
+uint8_t bLedOutputMode = 0;
 
 void ScanInit(uint8_t iTestNew)
 {
@@ -387,6 +399,7 @@ void ScanInit(uint8_t iTestNew)
 	uint8_t i;
 	switch (wStage)
 	{
+	case AUTODETECT_Stage_Startup: return;
 	case AUTODETECT_Stage_Button:
 
 		#if TARGET == 2	// mode input_pullup did not work for 2.1.1
@@ -451,8 +464,11 @@ void ScanInit(uint8_t iTestNew)
 	switch(wStage)
 	{
 	case AUTODETECT_Stage_Led:
-		//gpio_deinit(iPinNew);
-		//pinMode(iPinNew,GPIO_MODE_OUTPUT);
+		if (bLedOutputMode)
+		{
+			gpio_deinit(iPinNew);
+			pinMode(iPinNew,GPIO_MODE_OUTPUT);
+		}
 		break;
 	case AUTODETECT_Stage_Hold:
 		//iTestPin = iTest;
@@ -520,13 +536,10 @@ uint8_t bWait4Enter=0;
 
 void AutodetectScan(uint16_t buzzerTimer)
 {
-iBug = 10;
 	if (wStage & (AUTODETECT_Stage_Hall|AUTODETECT_Stage_HallOrder)	)	// AUTODETECT_Stage_Startup|
 		return;
-iBug = 11;
 	if (msTicksWait > msTicks)	// wait for last sMessage to be sent
 		return;
-iBug = 12;
 	if (wStage == AUTODETECT_Stage_Results)
 	{
 		SetPWM(0);
@@ -541,7 +554,6 @@ iBug = 12;
 		iRepeat++;
 		return;
 	}
-iBug = 13;	
 	if (wStage == AUTODETECT_Stage_Finished)
 	{
 		SetPWM(0);
@@ -549,7 +561,6 @@ iBug = 13;
 		AutoDetectSetStage(AUTODETECT_Stage_Menu);
 		return;
 	}
-iBug = 14;
 	SetPWM(0);		// default speed -200
 	
 	uint8_t i;
@@ -597,6 +608,9 @@ iBug = 14;
 			break;
 		case 'c': 
 			for (i=iFrom;i<iTo;i++)	aiPinScan[i] = 0; 
+			for (i=0; i<COUNT_PinDigital; i++)	aoPin[i].wState &= ~STATE_HIDE;
+			AutodetectInit();	// hide rx and tx pins
+			
 			ConfigWriteAD(0,0);
 			wMenuStage = MENU_INIT;
 			ScanInit(0);
@@ -616,8 +630,20 @@ iBug = 14;
 				//oDataHeader.wCmd = DATA_Request;		// only for testing ?
 				return;
 		case 't': 
-			iHoldAutofind = iHoldAutofind ? 0 : 100;
-			sprintf(sMessage, "auto find: %i\r\n",iHoldAutofind);
+			if(wStage == AUTODETECT_Stage_Hold)
+			{
+				iHoldAutofind = iHoldAutofind ? 0 : 100;
+				sprintf(sMessage, "auto find: %i\r\n",iHoldAutofind);
+			}
+			else
+			{
+				bLedOutputMode = !bLedOutputMode; 
+				sprintf(sMessage,bLedOutputMode ? "OUTPUT\r\n" : "INPUT_PULLUP\r\n");	
+				iTest--;
+				msTicksTest = 0; // skip this test interval
+			}
+		
+			break;
 		case 'm': 
 			if (bCurrentManualMode)
 			{
@@ -630,7 +656,6 @@ iBug = 14;
 			break;
 		}
 	}
-iBug = 15;	
 	if (bWait4Enter)
 	{
 		switch (bWait4Enter)
@@ -647,7 +672,6 @@ iBug = 15;
 		}
 		return;
 	}
-iBug = 16;		
 	
 	if (wStageOld != wStage)
 	{
@@ -658,7 +682,7 @@ iBug = 16;
 		ScanInit(0);
 		switch (wStage)
 		{
-			case AUTODETECT_Stage_Led: sprintf(sMessage,"'r'=red,\t'o'=orange,\t'g'=green,\t'u'=up,\t'd'=down,\t'p'=pcb led,\t'b'=buzzer"); break;
+			case AUTODETECT_Stage_Led: sprintf(sMessage,"'r'=red,\t'o'=orange,\t'g'=green,\t'u'=up,\t'd'=down,\t'p'=pcb led,\t'b'=buzzer\r\n't' toggle output mode"); break;
 			case AUTODETECT_Stage_VBatt: 
 				sprintf(sMessage,"'f'=battery voltage"); 
 				bWait4Enter = 1;
@@ -673,9 +697,6 @@ iBug = 16;
 					wMenuStage |= AUTODETECT_Stage_HallOrder|AUTODETECT_Stage_CurrentDC;
 					AutoDetectHallOrderInit(0);				
 				}
-				uint8_t i=0;	for (; i<SCAN_SIZE; i++)
-					if (aiPinScan[i])
-						HidePinDigital(aiPinScan[i]);
 			
 				//oDataHeader.wCmd = DATA_Request;
 				sprintf(sMessage,"hit ENTER:\r\n"); 
@@ -712,7 +733,7 @@ iBug = 16;
 				bWait4Enter = 1;
 				break;
 			default:	
-				sprintf(sMessage,"%s\r\n'x'=delete pin\t'l'=list,\t'c'=reset and 's'=next stage, 'q' for menu\r\nENTER for next pin\r\nnow %s",sMessage,aoPin[iTest].s);
+				sprintf(sMessage,"%s\r\n'x'=delete pin\t'l'=list,\t'c'=reset and 's'=next stage, 'q' for menu\r\nENTER for next pin\r\nnow %s\r\n",sMessage,aoPin[iTest].s);
 		}
 		if (!bWait4Enter)
 			msTicksTest = msTicks + msTicksTestNext;
@@ -721,17 +742,15 @@ iBug = 16;
 		msTicksWait = msTicks + 300;
 		return;	// to allow sMessage to be sent
 	}
-iBug = 17;	
 	int8_t iFound = -1;
 	uint16_t iTimeCountdown = msTicksTest-msTicks;
 	switch (wStage)
 	{
 	case AUTODETECT_Stage_Startup:
-		iBug = 20;
-		iBug2 += 1000;
 		if (!(buzzerTimer%16000) )	// 16 kHz
 		//if ((buzzerTimer%16000)<10 )	// 16 kHz
 		{
+			//iBug++;
 			if (0 == iRepeat--)
 			{
 				iRepeat = 20;
@@ -760,8 +779,10 @@ iBug = 17;
 		}
 		return;	// no further function for menu
 	case AUTODETECT_Stage_Led:
-		//digitalWrite(aoPin[iTest].i,(msTicks%4)>0 ? 1 : 0);	// 250 Hz 75% pwm ratio
-		pinModePull(aoPin[iTest].i,GPIO_MODE_INPUT,(msTicks%4)>0  ? GPIO_PUPD_PULLDOWN : GPIO_PUPD_PULLUP);
+		if (bLedOutputMode)
+			digitalWrite(aoPin[iTest].i,(msTicks%4)>0 ? 1 : 0);	// 250 Hz 75% pwm ratio
+		else
+			pinModePull(aoPin[iTest].i,GPIO_MODE_INPUT,(msTicks%4)>0  ? GPIO_PUPD_PULLDOWN : GPIO_PUPD_PULLUP);
 	
 		switch(cCmd)
 		{
@@ -1045,7 +1066,7 @@ iBug = 17;
 				else sprintf(sMessage, " %s",aoPin[iTest].s);
 				break;
 			default:
-				sprintf(sMessage, "try %s\r\n",aoPin[iTest].s);
+				sprintf(sMessage, "%stry %s\r\n",sMessage,aoPin[iTest].s);
 			}		
 			
 			ScanInit(iTest);

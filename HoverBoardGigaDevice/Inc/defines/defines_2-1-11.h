@@ -54,4 +54,4 @@
 	
 #define ADC_BATTERY_VOLT      0.0258320368	// robo newly gaged
 
-#define CHARGE_STATE	PF0
+#define CHARGE_STATE	PF0			// motors will stop if charger is pluged in. disable if you use the charger to power the board

@@ -94,10 +94,6 @@ int main (void)
 	iBug = 1;
 	ConfigRead();		// reads oConfig defined in defines.h from flash
 	
-	#ifdef REMOTE_AUTODETECT
-		AutodetectInit();
-	#endif
-	
 	#ifdef MASTER_OR_SINGLE
 		FlagStatus chargeStateLowActive = SET;
 		int16_t pwmMaster = 0;
