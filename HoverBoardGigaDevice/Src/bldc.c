@@ -144,7 +144,6 @@ void CalculateBLDC(void)
 		
 	
   buzzerTimer++;	// also used to calculate battery voltage :-/
-		if (!buzzerTimer) iBug = 0;
 #ifdef BUZZER
 	// Create square wave for buzzer
   if (buzzerFreq != 0 && (buzzerTimer / PWM_FREQ) % (buzzerPattern + 1) == 0)
