@@ -70,6 +70,8 @@
 															// remove '//' if you use a slave board as master 
 															// or if you turn the boards on/off by injecting a postive voltage into the input pin of the 2pin BUTTON header
 
+		//#define DISABLE_CHARGESTATE	//active this if you test with the charger plugged in as the power supply with max 1.5A
+
 		#define MASTER_OR_SINGLE
 	#endif
 	

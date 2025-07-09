@@ -41,6 +41,10 @@
 	#undef SELF_HOLD
 #endif
 
+#ifdef DISABLE_CHARGESTATE
+	#undef CHARGE_STATE
+#endif
+
 #ifdef BLDC_SINE
 	#if PWM_FREQ > 12000
 		#undef PWM_FREQ
