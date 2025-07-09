@@ -80,7 +80,6 @@ static int8_t sectorLast = 0;
 int8_t sectorChange = 0;
 int8_t sector = 0;
 int8_t sector10x = 0;
-//float fDT = 0;
 uint16_t angle_deg = 0;
 int16_t angle_deg_add = 0;
 uint16_t angle_deg_final = 0;
@@ -333,9 +332,13 @@ void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) 	// pos is not used 
 
 	sector10x = 10* sector;		// for debugging with StmStudio
 	
-	angle_deg = sector * 60.0f;	// Calculate base angle for this sector (0-60° range), made global for StmStudio to debug at realtime
+	angle_deg = sector * 60u;	// Calculate base angle for this sector (0-60° range), made global for StmStudio to debug at realtime
 	angle_deg_add = 0;	// , made global for StmStudio to debug at realtime
 	int16_t iOffset = 0;
+	
+	// Calculate low-pass filter for pwm value
+	#define RANK_hts 9	// Calculate low-pass filter for pwm value
+	hall_time_step_LPR = hall_time_step_LPR - (hall_time_step_LPR >> RANK_hts) + safe_hall_time_step;	// update low-pass register
 	
 	if (ABS(pwmGo) > 50)
 	{
@@ -345,38 +348,20 @@ void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) 	// pos is not used 
 			if (sectorChange > 3) sectorChange -= 6;  // Handle reverse direction
 		}
 		
-		if (	(safe_hall_time_step > 0) && (safe_hall_time_step < (PWM_FREQ/20))	)	// >50ms for one hall change is to slow to interpolate
+		hall_time_step_LP = hall_time_step_LPR >> RANK_hts;	// calculate low pass
+		if (	(hall_time_step_LP > 0) && (hall_time_step_LP < (PWM_FREQ/20))	)	// >50ms for one hall change is to slow to interpolate
+		//if (	(safe_hall_time_step > 0) && (safe_hall_time_step < (PWM_FREQ/20))	)	// >50ms for one hall change is to slow to interpolate
 		{
-			#define RANK_hts 9	// Calculate low-pass filter for pwm value
-			if (!hall_time_step_LPR)	hall_time_step_LPR = safe_hall_time_step << RANK_hts;	// reset Low-pass register
-			hall_time_step_LPR = hall_time_step_LPR - (hall_time_step_LPR >> RANK_hts) + safe_hall_time_step;	// update low-pass register
-			hall_time_step_LP = hall_time_step_LPR >> RANK_hts;	// calculate low pass
-			
 			iDT = buzzerTimer>safe_hall_time_last ? buzzerTimer-safe_hall_time_last : buzzerTimer + (0x00010000-safe_hall_time_last);		// overflow did not work :-/
-
-			angle_deg_add = ((60u * iDT) + (hall_time_step_LP/2)) / hall_time_step_LP;	// will be 60° for constant speed as iDT takes exactly hall_time_step. hall_time_step/2 implements rounding to integer
-			if (angle_deg_add < 90)	// not for heavy breaking when the next hall step takes longer than expected
+			uint16_t iAdd = ((60u * iDT) + (hall_time_step_LP/2)) / hall_time_step_LP;	// will be 60° for constant speed as iDT takes exactly hall_time_step. hall_time_step/2 implements rounding to integer
+			if (iAdd < 90)	// not for heavy breaking when the next hall step takes longer than expected
 			{
-				angle_deg_add *= sectorChange;
+				angle_deg_add = sectorChange * iAdd;
 				iOffset = sectorChange < 0 ? 390 : 330;		// +-30° +360° to prevent negative angle
 			}
-			/* old float calculation replaced by faster integer multiplication and division
-			fGradient = 1.0/hall_time_step_LP;
-			fGradientX = fGradient * 40000;
-			fDT = (float)iDT * fGradient;		// at constant speed, fDT == 1 would be right before a new sector gets detected by the hall inputs
-			//fDT = (float)iDT /safe_hall_time_step;		// at constant speed, fDT == 1 would be right before a new sector gets detected by the hall inputs
-			if (fDT < 1.5)	// not for heavy breaking
-			{
-				angle_deg_add = sectorChange * (60.0f  * fDT);
-				iOffset = sectorChange < 0 ? 390 : 330;		// +-30° +360° to prevent negative angle
-			}
-			*/
 		}
-		else hall_time_step_LPR = 0;
 	}
-	else hall_time_step_LPR = 0;
-	
-	angle_deg_final  = (angle_deg + iOffset) + angle_deg_add;
+	angle_deg_final  = angle_deg + angle_deg_add + iOffset;
 	
 
 	angle_idx = (uint16_t)angle_deg_final % 360;	// Convert to integer lookup index (0-359)
