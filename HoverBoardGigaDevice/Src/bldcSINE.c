@@ -86,26 +86,28 @@ uint16_t angle_deg_final = 0;
 uint16_t angle_idx = 0;
 int pwmGo = 0;
 
-#if TARGET == 22
-
-#include "gd32f10x.h"
-#include "gd32f10x_gpio.h"
-#include "gd32f10x_exti.h"
-#include "gd32f10x_rcu.h"
+#if TARGET == 2
 
 uint32_t InitEXTI(uint32_t iPinArduino) 
 {
     uint8_t  iPin  = iPinArduino & 0xFF;
     uint32_t iPort = iPinArduino & 0xFFFFFF00; 
+    uint32_t iPinEXTI = BIT(iPin);
     
 	  // Configure GPIO pin as input with pull-up
-    gpio_init(iPort, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ, BIT(iPin));	// GPIO_MODE_IPU
+    gpio_init(iPort, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ, iPinEXTI);	// GPIO_MODE_IPU
 	
-    uint32_t iPinEXTI = BIT(iPin);
-    uint8_t iPortEXTI_SOURCE = (iPort & 0xFFFF) / 0x400; // EXTI_SOURCE_GPIOA=0, GPIOB=1, etc.
+    uint8_t iPortEXTI_SOURCE = ((iPort & 0xFFFFU)-0x0800U) / 0x400U; // EXTI_SOURCE_GPIOA=0, GPIOB=1, etc.
+			//  #define GPIOA                      (GPIO_BASE + 0x00000000U)
+			//  #define GPIOB                      (GPIO_BASE + 0x00000400U)
+			//  #define GPIOC                      (GPIO_BASE + 0x00000800U)
+			//  	#define GPIO_BASE             (APB2_BUS_BASE + 0x00000800U)  /*!< GPIO base address                */
+			//			#define APB2_BUS_BASE         ((uint32_t)0x40010000U)        /*!< apb2 base address                */
     
     gpio_exti_source_select(iPortEXTI_SOURCE, iPin); // Changed function
-    exti_init(iPinEXTI, EXTI_INTERRUPT, EXTI_TRIG_BOTH);
+		gpio_exti_source_select(GPIO_PORT_SOURCE_GPIOA, GPIO_PIN_SOURCE_0);
+
+		exti_init(iPinEXTI, EXTI_INTERRUPT, EXTI_TRIG_BOTH);
     exti_flag_clear(iPinEXTI);
     
     // Configure NVIC with highest priority (0)
@@ -120,18 +122,18 @@ uint32_t InitEXTI(uint32_t iPinArduino)
 }
 
 uint32_t aHallEXTI[3];
-uint32_t aHallCountEXTI[3] = {0,0,0};
+//uint32_t aHallCountEXTI[3] = {0,0,0};
 
-
-void InitBldc() {
-    //rcu_periph_clock_enable(RCU_GPIOA);	allready done in GPIO_init()
-    rcu_periph_clock_enable(RCU_AF); // Required for EXTI configuration
-	
-	
-    aHallEXTI[0] = InitEXTI(HALL_A);
-    aHallEXTI[1] = InitEXTI(HALL_B);
-    aHallEXTI[2] = InitEXTI(HALL_C);
+void InitBldc() 
+{
+	//rcu_periph_clock_enable(RCU_GPIOA);	allready done in GPIO_init()
+	rcu_periph_clock_enable(RCU_AF); // Required for EXTI configuration
+	aHallEXTI[0] = InitEXTI(HALL_A);
+	aHallEXTI[1] = InitEXTI(HALL_B);
+	aHallEXTI[2] = InitEXTI(HALL_C);
 }
+
+
 
 int8_t iIrqLast = -1;
 uint32_t iIrqCount = 0;
@@ -149,9 +151,8 @@ void _HandleEXTI(int8_t iIrq)
 		hall_time_last = buzzerTimer;  // PWM_FREQ (16 kHz)
 		hall_last = hall;
 		hall = digitalRead(HALL_A) + digitalRead(HALL_B)*2 + digitalRead(HALL_C)*4;		
-		aHallCountEXTI[i]++;
+		//aHallCountEXTI[i]++;
 		exti_interrupt_flag_clear(aHallEXTI[i]);
-		//exti_flag_clear(aHallEXTI[i]);
 	}
 }
 
@@ -164,9 +165,8 @@ void EXTI4_IRQHandler(void) { _HandleEXTI(4); }
 // Grouped EXTI handlers
 void EXTI5_9_IRQHandler(void)   { _HandleEXTI(5); }
 void EXTI10_15_IRQHandler(void) { _HandleEXTI(10); }
-#endif
 
-#if TARGET == 2
+/*
 
 uint32_t iExti = 0;
 uint16_t iExti0 = 0;
@@ -259,8 +259,7 @@ void InitBldc()
 	EXTI_Config();
 	NVIC_Config();
 }
-
-
+*/
 #else
 
 uint32_t InitEXTI(uint32_t iPinArduino)		// init EXTernal Interrupt
@@ -315,6 +314,7 @@ void EXTI4_15_IRQHandler(void){	_HandleEXTI();}
 uint32_t hall_time_step_LPR,hall_time_step_LP;
 float fGradient = 0, fGradientX = 0;
 uint16_t iDT = 0;
+uint16_t iAdd = 0;
 
 void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) 	// pos is not used but hall_to_sector mapping :-/
 {
@@ -353,7 +353,7 @@ void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) 	// pos is not used 
 		//if (	(safe_hall_time_step > 0) && (safe_hall_time_step < (PWM_FREQ/20))	)	// >50ms for one hall change is to slow to interpolate
 		{
 			iDT = buzzerTimer>safe_hall_time_last ? buzzerTimer-safe_hall_time_last : buzzerTimer + (0x00010000-safe_hall_time_last);		// overflow did not work :-/
-			uint16_t iAdd = ((60u * iDT) + (hall_time_step_LP/2)) / hall_time_step_LP;	// will be 60° for constant speed as iDT takes exactly hall_time_step. hall_time_step/2 implements rounding to integer
+			iAdd = ((60u * iDT) + (hall_time_step_LP/2)) / hall_time_step_LP;	// will be 60° for constant speed as iDT takes exactly hall_time_step. hall_time_step/2 implements rounding to integer
 			if (iAdd < 90)	// not for heavy breaking when the next hall step takes longer than expected
 			{
 				angle_deg_add = sectorChange * iAdd;

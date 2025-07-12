@@ -21,7 +21,6 @@
 	A0 A1 A2 A3 A4 A5 A6 A7 B0 B1 	
 */
 
-
 // LED defines, colors probably mismatch !
 #define LED_GREEN 			PA5
 #define LED_ORANGE 			PA14
@@ -30,11 +29,7 @@
 #define UPPER_LED 	PB4
 #define LOWER_LED 	PB5
 
-
-// Mosfet output
-// seems to be an ordinary LED output ?
-// led.c:91	gpio_bit_write(MOSFET_OUT_PORT, MOSFET_OUT, counter_Blue >= setValue_Blue ? RESET : SET); 
-//#define MOSFET_OUT TODO_PIN		// TODO
+//#define MOSFET_OUT TODO_PIN		// onboard led on some boards
 
 // Brushless Control DC (BLDC) defines
 #define TIMER_BLDC_PULLUP	GPIO_PUPD_PULLUP	// robo, based on Herleybob:defines.h
@@ -55,35 +50,27 @@
 
 // Hall sensor defines
 // mateuszfcg tested with PA1,PA2,PA0 
-#define HALL_A	PB0	// robo from front+back-photo
-#define HALL_B	PB1	// robo from front+back-photo
-#define HALL_C	PA5	// robo from front+back-photo
+//#define HALL_A	PB0	// robo from front+back-photo
+//#define HALL_B	PB1	// robo from front+back-photo
+//#define HALL_C	PA5	// robo from front+back-photo
+#define HALL_A	PB11	// rhody, swapped with B by robo to keep the 6 bldc output pins as usual
+#define HALL_B	PA1		// rhody
+#define HALL_C	PA0		// rhody, swapped with B by robo to keep the 6 bldc output pins as usual
 
 // GD32F130 USART0 TX/RX:	(PA9/PA10)AF1	, (PB6/PB7)AF0 , 	(PA2/PA3)AF1 , (PA14/PA15)AF1 GD32F130x4 only!
 // GD32F130 USART1 GD32F130 TX/RX: (PA14/PA15)AF1 , (PA2,PA3)AF1	, (PA8/PB0)AlternateFunction4
 #define USART1_TX		PA2
 #define USART1_RX		PA3
 
-// ADC defines
-//#define VBATT	TODO_PIN		// uncomment this line when you have verified the pin/port
-//#define CURRENT_DC	TODO_PIN	// uncomment this line when you have verified the pin/port
+#define VBATT	PA4		//maybe 
+#define CURRENT_DC	PA6		//maybe 
 
-// Self hold defines
-// important pin keeps the mosfet open after the on/off button got pushed !
-// main.c:306: gpio_bit_write(SELF_HOLD_PORT, SELF_HOLD, SET); 
-// and turns off power on Shutdown:
-// main.c:513:	 gpio_bit_write(SELF_HOLD_PORT, SELF_HOLD, RESET); 
-//#define SELF_HOLD		TODO_PIN
+#define SELF_HOLD	PB2		// rhody tested
+#define BUTTON		PC14 	// rhody tested
 
-// Button defines
-// on/off (POW) push-button. So also a connection (i guess with some smd resistor in between) to a MCU pin.
-// main.c:457: if (gpio_input_bit_get(BUTTON_PORT, BUTTON)) 
-//#define BUTTON	TODO_PIN
-
-
-#ifdef BUZZER
+#ifdef HAS_BUZZER
 	// Buzzer defines
-	//#define BUZZER	TODO_PIN
+	#define BUZZER	PB9 // rhody tested
 #endif
 
 //#define CHARGE_STATE TODO_PIN

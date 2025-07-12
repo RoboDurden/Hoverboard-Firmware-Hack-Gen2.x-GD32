@@ -651,7 +651,6 @@ void USART0_Init(uint32_t iBaud)
 {
 #ifdef HAS_USART0
 	
-	// Init USART0
 	#if TARGET == 2
 
 		rcu_periph_clock_enable(RCU_AF);        // Alternate Function clock
@@ -745,15 +744,27 @@ void USART0_Init(uint32_t iBaud)
 void USART1_Init(uint32_t iBaud)
 {
 #ifdef HAS_USART1
+
+	#if TARGET == 2
+		//rcu_periph_clock_enable(RCU_AF);        // Alternate Function clock
+		//gpio_pin_remap_config(GPIO_USART0_REMAP, ENABLE); // JW: Remap USART0 to PB6 and PB7
 	
-	// Init USART1
-	#if REMOTE_USART==1 && defined(REMOTE_UARTBUS)	// no pullup resistors with multiple boards on the UartBus - Esp32/Arduino (Serial.begin) have to setup pullups
-		#define USART1_PUPD	GPIO_PUPD_NONE
+		#if REMOTE_USART==1 && defined(REMOTE_UARTBUS)	// no pullup resistors with multiple boards on the UartBus - Esp32/Arduino (Serial.begin) have to setup pullups
+			#define USART1_PUPD	GPIO_MODE_AF_OD
+		#else
+			#define USART1_PUPD	GPIO_MODE_AF_PP
+		#endif
+		pinModeSpeed(USART1_TX, USART1_PUPD, GPIO_OSPEED_50MHZ);	// // GD32F130: GPIO_AF_1 = USART
+		pinModeSpeed(USART1_RX, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ);	
 	#else
-		#define USART1_PUPD	GPIO_PUPD_PULLUP
+		#if REMOTE_USART==1 && defined(REMOTE_UARTBUS)	// no pullup resistors with multiple boards on the UartBus - Esp32/Arduino (Serial.begin) have to setup pullups
+			#define USART1_PUPD	GPIO_PUPD_NONE
+		#else
+			#define USART1_PUPD	GPIO_PUPD_PULLUP
+		#endif
+		pinModeAF(USART1_TX, AF_USART1_TX, USART1_PUPD, GPIO_OSPEED_50MHZ);	// // GD32F130: GPIO_AF_1 = USART
+		pinModeAF(USART1_RX, AF_USART1_RX, USART1_PUPD, GPIO_OSPEED_50MHZ);	
 	#endif
-	pinModeAF(USART1_TX, AF_USART1_TX, USART1_PUPD, GPIO_OSPEED_50MHZ);	// // GD32F130: GPIO_AF_1 = USART
-	pinModeAF(USART1_RX, AF_USART1_RX, USART1_PUPD, GPIO_OSPEED_50MHZ);	
 	//gpio_mode_set(USART1_TX_PORT , GPIO_MODE_AF, GPIO_PUPD_PULLUP, USART1_TX_PIN);	
 	//gpio_mode_set(USART1_RX_PORT , GPIO_MODE_AF, GPIO_PUPD_PULLUP, USART1_RX_PIN);
 	//gpio_output_options_set(USART1_TX_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, USART1_TX_PIN);
@@ -771,7 +782,12 @@ void USART1_Init(uint32_t iBaud)
 	usart_parity_config(USART1, USART_PM_NONE);
 	usart_word_length_set(USART1, USART_WL_8BIT);
 	usart_stop_bit_set(USART1, USART_STB_1BIT);
-	usart_oversample_config(USART1, USART_OVSMOD_16);
+	#if TARGET == 2	// robo: 2 NOT_NEEDED
+		usart_hardware_flow_rts_config(USART1, USART_RTS_DISABLE);  // JW: Disable RTS
+		usart_hardware_flow_cts_config(USART1, USART_CTS_DISABLE);  // JW: Disable CTS
+	#else
+		TARGET_usart_oversample_config(USART1, USART_OVSMOD_16);
+	#endif
 	
 	// Enable both transmitter and receiver
 	usart_transmit_config(USART1, USART_TRANSMIT_ENABLE);
@@ -783,10 +799,10 @@ void USART1_Init(uint32_t iBaud)
 	usart_enable(USART1);
 	
 	// Interrupt channel 3/4 enable
-	TARGET_nvic_irq_enable(DMA_Channel3_4_IRQn, 1, 0);		// usart irqs can not interrupt 0=bldc/hall or 1=adc/CalculateBldc
+	TARGET_nvic_irq_enable(TARGET_DMA_Channel3_4_IRQn, 1, 0);		// usart irqs can not interrupt 0=bldc/hall or 1=adc/CalculateBldc
 	
 	// Initialize DMA channel 4 for USART_SLAVE RX
-	dma_deinit(DMA_CH4);
+	TARGET_dma_deinit(TARGET_DMA_CH4);
 	dma_init_struct_usart.direction = DMA_PERIPHERAL_TO_MEMORY;
 	dma_init_struct_usart.memory_addr = (uint32_t)usart1_rx_buf;
 	dma_init_struct_usart.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
@@ -796,23 +812,23 @@ void USART1_Init(uint32_t iBaud)
 	dma_init_struct_usart.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
 	dma_init_struct_usart.periph_width = DMA_PERIPHERAL_WIDTH_8BIT;
 	dma_init_struct_usart.priority = DMA_PRIORITY_ULTRA_HIGH;
-	dma_init(DMA_CH4, &dma_init_struct_usart);
+	TARGET_dma_init(TARGET_DMA_CH4, &dma_init_struct_usart);
 	
 	// Configure DMA mode
-	dma_circulation_enable(DMA_CH4);
-	dma_memory_to_memory_disable(DMA_CH4);
+	TARGET_dma_circulation_enable(TARGET_DMA_CH4);
+	TARGET_dma_memory_to_memory_disable(TARGET_DMA_CH4);
 
 	// USART DMA enable for transmission and receive
 	usart_dma_receive_config(USART1, USART_DENR_ENABLE);
 	
 	// Enable DMA transfer complete interrupt
-	dma_interrupt_enable(DMA_CH4, DMA_CHXCTL_FTFIE);
+	TARGET_dma_interrupt_enable(TARGET_DMA_CH4, DMA_CHXCTL_FTFIE);
 	
 	// At least clear number of remaining data to be transferred by the DMA 
-	dma_transfer_number_config(DMA_CH4, 1);
+	TARGET_dma_transfer_number_config(TARGET_DMA_CH4, 1);
 	
 	// Enable dma receive channel
-	dma_channel_enable(DMA_CH4);
+	TARGET_dma_channel_enable(TARGET_DMA_CH4);
 #endif
 }
 
@@ -925,11 +941,17 @@ uint8_t flashWrite(uint32_t address, uint32_t data)	// Writes 4 bytes to micropr
 	uint8_t fflash = FALSE;
 	fmc_unlock();
 	fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_WPERR);
-	if (fmc_halfword_program(address, (uint16_t) data)== FMC_READY) { // JW: STM32F103 can only write 16 bits at a time.
-		if (fmc_halfword_program((address+2), (uint16_t) (data>>16))== FMC_READY) {
-			fflash = TRUE;
+
+	
+
+	#if TARGET == 2
+		if (fmc_halfword_program(address, (uint16_t) data)== FMC_READY) 	// JW: STM32F103 can only write 16 bits at a time.
+		{ 
+			if (fmc_halfword_program((address+2), (uint16_t) (data>>16))== FMC_READY) fflash = TRUE;
 		}
-	}
+	#else
+		if (fmc_word_program(address, data) == FMC_READY) fflash = TRUE; 
+	#endif
 	fmc_lock();
 	return fflash;
 }

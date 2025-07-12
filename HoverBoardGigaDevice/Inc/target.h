@@ -8,12 +8,15 @@
 	#define TARGET_fwdgt_window_value_config(a) fwdgt_window_value_config(a)
 
 		// it.c
+	#define TARGET_DMA_Channel3_4_IRQHandler DMA_Channel3_4_IRQHandler
 	#define TARGET_DMA_Channel1_2_IRQn DMA_Channel1_2_IRQn	
 	#define TARGET_TIMER0_BRK_UP_TRG_COM_IRQHandler TIMER0_BRK_UP_TRG_COM_IRQHandler
 	#define TARGET_adc_software_trigger_enable(a) adc_software_trigger_enable(a)		
 	#define TARGET_DMA_Channel0_IRQHandler DMA_Channel0_IRQHandler	
 	#define TARGET_DMA_Channel1_2_IRQHandler DMA_Channel1_2_IRQHandler
 	
+	#define TARGET_DMA_CH4 DMA_CH4
+	#define TARGET_DMA_Channel3_4_IRQn	DMA_Channel3_4_IRQn
 	#define TARGET_DMA_CH2 DMA_CH2
 	#define TARGET_DMA_Channel1_2_IRQHandler DMA_Channel1_2_IRQHandler
 
@@ -41,9 +44,10 @@
 	#define TARGET_adc_calibration_enable()	adc_calibration_enable()
 	#define TARGET_adc_special_function_config(a,b)	adc_special_function_config(a,b)
 
-	#define USART0_DATA_RX_ADDRESS ((uint32_t)0x40013824)
-	#define USART1_DATA_RX_ADDRESS ((uint32_t)0x40004424)
-	#define USART2_DATA_RX_ADDRESS ((uint32_t)0x40004424)		//robo: should be different for USART2 on gd32f103 ?
+	#define USART0_DATA_RX_ADDRESS (uint32_t)&USART_RDATA(USART0)
+	#define USART1_DATA_RX_ADDRESS (uint32_t)&USART_RDATA(USART1)
+	//#define USART0_DATA_RX_ADDRESS ((uint32_t)0x40013824)
+	//#define USART1_DATA_RX_ADDRESS ((uint32_t)0x40004424)
 
 #elif defined MM32SPIN05	
 	#include "mm32_device.h"
@@ -185,7 +189,12 @@
 	
 	#define TARGET_usart_oversample_config(a,b)	//JMA no oversampling in F103 usart_oversample_config(USART_STEER_COM, USART_OVSMOD_16);
 	#define DMA_Channel1_2_IRQn DMA0_Channel2_IRQn
+	#define TARGET_DMA_Channel3_4_IRQn	DMA0_Channel5_IRQn
+	#define TARGET_DMA_CH4 DMA_CH5
+	#define USART1_DATA_RX_ADDRESS (uint32_t)&USART_DATA(USART1)
 	
+	
+
 	//setup.c::Adc_init()
 	#define RCU_ADC RCU_ADC0
 	#define RCU_DMA RCU_DMA0
@@ -225,6 +234,7 @@
 	
 	
 	// it.c
+	#define TARGET_DMA_Channel3_4_IRQHandler	DMA0_Channel5_IRQHandler
 	#define TARGET_DMA_Channel1_2_IRQHandler DMA0_Channel4_IRQHandler
 	#define TARGET_DMA_Channel0_IRQHandler DMA0_Channel0_IRQHandler
 	#define TARGET_TIMER0_BRK_UP_TRG_COM_IRQHandler TIMER0_UP_IRQHandler
@@ -279,9 +289,15 @@
 	#define TARGET_DMA_CH2 DMA_CH2
 	#define TARGET_DMA_Channel1_2_IRQHandler DMA_Channel1_2_IRQHandler
 
-	#define USART0_DATA_RX_ADDRESS ((uint32_t)0x40013824)
-	#define USART1_DATA_RX_ADDRESS ((uint32_t)0x40004424)
-	#define USART2_DATA_RX_ADDRESS ((uint32_t)0x40004424)		//robo: should be different for USART2 on gd32f103 ?
+	// usart1
+	#define TARGET_DMA_Channel3_4_IRQn	DMA_Channel3_4_IRQn
+	#define TARGET_DMA_CH4	DMA_CH4
+	#define TARGET_DMA_Channel3_4_IRQHandler	DMA_Channel3_4_IRQHandler
+
+	#define USART0_DATA_RX_ADDRESS (uint32_t)&USART_RDATA(USART0)
+	#define USART1_DATA_RX_ADDRESS (uint32_t)&USART_RDATA(USART1)
+	//#define USART0_DATA_RX_ADDRESS ((uint32_t)0x40013824)
+	//#define USART1_DATA_RX_ADDRESS ((uint32_t)0x40004424)
 
 	
 #endif
@@ -337,6 +353,7 @@
 	#define AF_USART0_RX(pin)	(pin==PB7 ? GPIO_AF_0 : GPIO_AF_1)			// GD32F130: AF0 = PB7 , AF1 = PA3 or PA15 
 	#define AF_USART1_TX(pin)	(pin==PA8 ? GPIO_AF_4 : GPIO_AF_1)		// GD32F130: AF4 = PA8 , AF1 = PA2 or PA14
 	#define AF_USART1_RX(pin)	(pin==PB0 ? GPIO_AF_4 : GPIO_AF_1)		// GD32F130: AF4 = PB0 , AF1 = PA3 or PA15
+	// usart1 and 1 same for GD32F230: GD32E230xxDatasheet_Rev2.0.pdf page 33ff
 
 	#define digitalWrite(pin,set) gpio_bit_write(pin&0xffffff00U,  (BIT(pin&0xfU) ), set)
 	#define digitalRead(pin) 			gpio_input_bit_get(pin&0xffffff00U, BIT(pin&0xfU))
@@ -388,6 +405,19 @@
 	#define PC15	( (uint32_t)GPIOC | 15 )
 	#define PC14	( (uint32_t)GPIOC | 14 )
 	#define PC13	( (uint32_t)GPIOC | 13 )
+	#define PC12	( (uint32_t)GPIOC | 12 )
+	#define PC11	( (uint32_t)GPIOC | 11 )
+	#define PC10	( (uint32_t)GPIOC | 10 )
+	#define PC9	( (uint32_t)GPIOC | 9 )
+	#define PC8	( (uint32_t)GPIOC | 8 )
+	#define PC7	( (uint32_t)GPIOC | 7 )
+	#define PC6	( (uint32_t)GPIOC | 6 )
+	#define PC5	( (uint32_t)GPIOC | 5 )
+	#define PC4	( (uint32_t)GPIOC | 4 )
+	#define PC3	( (uint32_t)GPIOC | 3 )
+	#define PC2	( (uint32_t)GPIOC | 2 )
+	#define PC1	( (uint32_t)GPIOC | 1 )
+	#define PC0	( (uint32_t)GPIOC | 0 )
 
 	#define PF7	( GPIOF | 7 )
 	#define PF6	( GPIOF | 6 )

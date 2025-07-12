@@ -161,7 +161,6 @@ void RemoteCallback(void)
 	
 	if (iCRC != CalcCRC(aReceiveBuffer, iRxDataSize - 2))	//  first bytes except crc
 	{
-		iBug = 42;
 		iReceivePos = -2;		// robo: set it to -2 if crc fails to skip wrong offset, as added to RemoteUart.c	
 	}
 	else

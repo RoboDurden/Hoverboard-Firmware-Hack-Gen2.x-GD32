@@ -16,7 +16,11 @@
 	#define SPEED_COEFFICIENT   -1
 	#define STEER_COEFFICIENT   1
 	#define BLDC_BC
-	
+
+	#ifndef PIN_PACKAGE
+		#define PIN_PACKAGE 48
+	#endif
+
 #else
 	#define STRINGIZE_AUX(a) #a
 	#define STRINGIZE(a) STRINGIZE_AUX(a)
@@ -170,7 +174,6 @@
 		#endif
 	#endif
 #endif
-
 
 	
 // ADC value conversion defines

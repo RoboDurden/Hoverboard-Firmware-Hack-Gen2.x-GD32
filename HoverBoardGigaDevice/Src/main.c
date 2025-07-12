@@ -116,7 +116,7 @@ iBug = 3;
 	Interrupt_init();
 iBug = 4;	
 	// Init timeout timer
-	TimeoutTimer_init();
+	//TimeoutTimer_init();
 iBug = 5;
 	// Init GPIOs
 	GPIO_init();
@@ -219,6 +219,7 @@ iBug = 9;
 	#ifdef UPPER_LED
 		digitalWrite(UPPER_LED,RESET);
 	#endif
+iBug = 10;
 
 	while(1)
 	{
@@ -227,6 +228,8 @@ iBug = 9;
 		iTimeNextLoop = millis() + DELAY_IN_MAIN_LOOP;
 		steerCounter++;		// something like DELAY_IN_MAIN_LOOP = 5 ms
 		DEBUG_LedSet(	(steerCounter%20) < 10	,0)
+		//DEBUG_LedSet(	digitalRead(BUTTON)	,1)		
+		//iBug = digitalRead(BUTTON);
 		
 		
 		#ifdef MOSFET_OUT
