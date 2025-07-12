@@ -6,6 +6,9 @@
 	void RemoteCallback(void);		// must be implemented by all remotes
 	void RemoteUpdate(void);			// must be implemented by all remotes
 
+	#ifdef SEND_IMU_DATA
+		void RemoteUpdateIMU();	// Send IMU data
+	#endif
 
 	#if defined(REMOTE_UART)
 		#include "../Inc/remoteUart.h"

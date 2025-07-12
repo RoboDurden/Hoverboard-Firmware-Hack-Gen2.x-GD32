@@ -150,6 +150,21 @@ void GPIO_init(void)
 	rcu_periph_clock_enable(RCU_GPIOB);
 	rcu_periph_clock_enable(RCU_GPIOC);
 	rcu_periph_clock_enable(RCU_GPIOF);
+
+	#ifdef I2C_ENABLE
+		// TODO use pinModeAF 
+		rcu_periph_clock_enable(MPU_RCU_I2C);
+
+		 /* connect PB6 to I2C_SCL and PB7 to I2C_SDA */
+		gpio_af_set(MPU_SCL_GPIO_Port, GPIO_AF_1, MPU_SCL_PIN);
+		gpio_af_set(MPU_SDA_GPIO_Port, GPIO_AF_1, MPU_SDA_PIN);
+
+		/* configure GPIO port */
+		gpio_mode_set(MPU_SCL_GPIO_Port, GPIO_MODE_AF, GPIO_PUPD_PULLUP, MPU_SCL_PIN);
+		gpio_output_options_set(MPU_SCL_GPIO_Port, GPIO_OTYPE_OD, GPIO_OSPEED_50MHZ, MPU_SCL_PIN);	
+		gpio_mode_set(MPU_SDA_GPIO_Port, GPIO_MODE_AF, GPIO_PUPD_PULLUP, MPU_SDA_PIN);
+		gpio_output_options_set(MPU_SDA_GPIO_Port, GPIO_OTYPE_OD, GPIO_OSPEED_50MHZ, MPU_SDA_PIN);
+	#endif 
 	
 	#ifdef TIMER_BLDC_EMERGENCY_SHUTDOWN
 		// Init emergency shutdown pin
@@ -894,8 +909,18 @@ void USART2_Init(uint32_t iBaud)	// only for target==2 = gd32f103
 #endif
 }
 
-
-
+#ifdef I2C_ENABLE
+void i2c_config(void) {
+    /* I2C clock configure */
+     i2c_clock_config(I2C_PERIPH, I2C_SPEED, I2C_DTCY_16_9);            // I2C duty cycle in fast mode plus
+    /* I2C address configure */
+    i2c_mode_addr_config(I2C_PERIPH, I2C_I2CMODE_ENABLE, I2C_ADDFORMAT_7BITS, I2C_OWN_ADDRESS7);
+    /* enable I2C */
+    i2c_enable(I2C_PERIPH);
+    /* enable acknowledge */
+    i2c_ack_config(I2C_PERIPH, I2C_ACK_ENABLE);
+}
+#endif
 
 # define TRUE												0x01
 # define FALSE												0x00
