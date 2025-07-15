@@ -115,8 +115,10 @@ iBug = 3;
 	// Init Interrupts
 	Interrupt_init();
 iBug = 4;	
-	// Init timeout timer
-	//TimeoutTimer_init();
+	#if TARGET != 3	// did not work for gd32e230 :-/
+		// Init timeout timer
+		TimeoutTimer_init();
+	#endif
 iBug = 5;
 	// Init GPIOs
 	GPIO_init();
