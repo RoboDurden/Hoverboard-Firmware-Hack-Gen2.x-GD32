@@ -44,6 +44,7 @@
 		//#define REMOTE_UART
 		//#define REMOTE_UARTBUS	// ESP32 as master and multiple boards as multiple slaves ESP.tx-Hovers.rx and ESP.rx-Hovers.tx
 		//#define REMOTE_CRSF		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/26
+		//#define REMOTE_ROS2		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/122
 		//#define REMOTE_ADC	// speed is PA2=TX and steer is PA3=RX of the masterslave header. Get 3.3V from the flash header
 												// DO NOT use the 5V/15V pin of the masterslave header for the potentiometers !!!!!!!!!
 												// SLAVE board has to be connected to the additional UART header, but 5V/15V coming from the masters masterslave header
@@ -60,6 +61,11 @@
 			//#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
 		#else
 			//#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
+		#endif
+		#ifdef REMOTE_ROS2
+		  #ifndef STAND_STILL_THRESHOLD
+		    #define STAND_STILL_THRESHOLD 10
+		  #endif
 		#endif
 		
 
@@ -80,7 +86,7 @@
 																		//	0 is usually PB6/PB7 and the empty header close to the flash-header
 	#endif
 	
-	#if defined(REMOTE_UART) || defined(REMOTE_UARTBUS) || defined(REMOTE_CRSF)
+	#if defined(REMOTE_UART) || defined(REMOTE_UARTBUS) || defined(REMOTE_CRSF) || defined(REMOTE_ROS2)
 		#define REMOTE_USART				0 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
 																		//	0 is usually PB6/PB7 and the empty header close to the flash-header
 																		//	2 is usually PB10/PB11 on stm32f103 boards

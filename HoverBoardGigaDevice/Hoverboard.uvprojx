@@ -459,6 +459,11 @@
               <FileType>1</FileType>
               <FilePath>.\Src\RemoteAutodetect.c</FilePath>
             </File>
+            <File>
+              <FileName>RemoteROS2.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\RemoteROS2.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -548,6 +553,11 @@
               <FileName>remoteAutodetect.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\remoteAutodetect.h</FilePath>
+            </File>
+            <File>
+              <FileName>RemoteROS2.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\RemoteROS2.h</FilePath>
             </File>
             <File>
               <FileName>comms.h</FileName>
@@ -1162,6 +1172,11 @@
               <FileType>1</FileType>
               <FilePath>.\Src\RemoteAutodetect.c</FilePath>
             </File>
+            <File>
+              <FileName>RemoteROS2.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\RemoteROS2.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1251,6 +1266,11 @@
               <FileName>remoteAutodetect.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\remoteAutodetect.h</FilePath>
+            </File>
+            <File>
+              <FileName>RemoteROS2.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\RemoteROS2.h</FilePath>
             </File>
             <File>
               <FileName>comms.h</FileName>
@@ -1865,6 +1885,11 @@
               <FileType>1</FileType>
               <FilePath>.\Src\RemoteAutodetect.c</FilePath>
             </File>
+            <File>
+              <FileName>RemoteROS2.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\RemoteROS2.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1954,6 +1979,11 @@
               <FileName>remoteAutodetect.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\remoteAutodetect.h</FilePath>
+            </File>
+            <File>
+              <FileName>RemoteROS2.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\RemoteROS2.h</FilePath>
             </File>
             <File>
               <FileName>comms.h</FileName>
@@ -2568,6 +2598,11 @@
               <FileType>1</FileType>
               <FilePath>.\Src\RemoteAutodetect.c</FilePath>
             </File>
+            <File>
+              <FileName>RemoteROS2.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\RemoteROS2.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -2657,6 +2692,11 @@
               <FileName>remoteAutodetect.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\remoteAutodetect.h</FilePath>
+            </File>
+            <File>
+              <FileName>RemoteROS2.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\RemoteROS2.h</FilePath>
             </File>
             <File>
               <FileName>comms.h</FileName>
