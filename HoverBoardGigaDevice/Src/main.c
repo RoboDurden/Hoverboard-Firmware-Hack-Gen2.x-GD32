@@ -22,6 +22,10 @@
 #endif
 
 
+#ifndef STAND_STILL_THRESHOLD // Posible to override in config.h or define_*.h
+#define STAND_STILL_THRESHOLD 50
+#endif
+
 uint32_t iBug = 0;
 uint32_t steerCounter = 0;								// Steer counter for setting update rate
 int32_t speed = 0; 												// global variable for speed.    -1000 to 1000
@@ -252,10 +256,10 @@ iBug = 10;
 			// Calculate expo rate for less steering with higher speeds
 			expo = MAP((float)ABS(speed), 0, 1000, 1, 0.5);
 			
-			// Each speedvalue or steervalue between 50 and -50 means absolutely no pwm
+			// Each speedvalue or steervalue between 50 and -50 (STAND_STILL_THRESHOLD) means absolutely no pwm
 			// -> to get the device calm 'around zero speed'
-			scaledSpeed = speed < 50 && speed > -50 ? 0 : CLAMP(speed, -speedLimit, speedLimit) * SPEED_COEFFICIENT;
-			scaledSteer = steer < 50 && steer > -50 ? 0 : CLAMP(steer, -speedLimit, speedLimit) * STEER_COEFFICIENT * expo;
+			scaledSpeed = speed < STAND_STILL_THRESHOLD && speed > -STAND_STILL_THRESHOLD ? 0 : CLAMP(speed, -speedLimit, speedLimit) * SPEED_COEFFICIENT;
+			scaledSteer = steer < STAND_STILL_THRESHOLD && steer > -STAND_STILL_THRESHOLD ? 0 : CLAMP(steer, -speedLimit, speedLimit) * STEER_COEFFICIENT * expo;
 			
 			// Map to an angle of 180 degress to 0 degrees for array access (means angle -90 to 90 degrees)
 			steerAngle = MAP((float)scaledSteer, -1000, 1000, 180, 0);

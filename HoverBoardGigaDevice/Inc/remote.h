@@ -19,6 +19,8 @@
 		#include "../Inc/remoteAutodetect.h"
 	#elif defined(REMOTE_ADC)
 		#include "../Inc/remoteAdc.h"
+	#elif defined(REMOTE_ROS2)
+		#include "../Inc/RemoteROS2.h"
 	#endif
 
 #endif
