@@ -8,7 +8,7 @@
 // add autodetect #defines below and rename to defines_2-xy.h
 
 
-// Brushless Control DC (BLDC) defines
+// Brushless Co^ntrol DC (BLDC) defines
 #define BLDC_GH PA10		// green	, Tommyboi2001 all bldc pins same as 2.0
 #define BLDC_GL PB15		
 #define BLDC_BH PA9			// blue

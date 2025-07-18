@@ -690,6 +690,11 @@
               <FilePath>.\Inc\defines\defines_2-2-6.h</FilePath>
             </File>
             <File>
+              <FileName>defines_2-2-7.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\defines\defines_2-2-7.h</FilePath>
+            </File>
+            <File>
               <FileName>defines_2-3-1.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines\defines_2-3-1.h</FilePath>
@@ -708,6 +713,11 @@
               <FileName>defines_2-x-y.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines\defines_2-x-y.h</FilePath>
+            </File>
+            <File>
+              <FileName>defines_2-3-2.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\defines\defines_2-3-2.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -1403,6 +1413,11 @@
               <FilePath>.\Inc\defines\defines_2-2-6.h</FilePath>
             </File>
             <File>
+              <FileName>defines_2-2-7.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\defines\defines_2-2-7.h</FilePath>
+            </File>
+            <File>
               <FileName>defines_2-3-1.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines\defines_2-3-1.h</FilePath>
@@ -1421,6 +1436,11 @@
               <FileName>defines_2-x-y.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines\defines_2-x-y.h</FilePath>
+            </File>
+            <File>
+              <FileName>defines_2-3-2.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\defines\defines_2-3-2.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -1479,7 +1499,7 @@
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>1</CreateHexFile>
-          <DebugInformation>0</DebugInformation>
+          <DebugInformation>1</DebugInformation>
           <BrowseInformation>1</BrowseInformation>
           <ListingPath>.\Listings\</ListingPath>
           <HexFormatSelection>1</HexFormatSelection>
@@ -1616,7 +1636,7 @@
             <hadIRAM2>0</hadIRAM2>
             <hadIROM2>0</hadIROM2>
             <StupSel>8</StupSel>
-            <useUlib>1</useUlib>
+            <useUlib>0</useUlib>
             <EndSel>0</EndSel>
             <uLtcg>0</uLtcg>
             <nSecure>0</nSecure>
@@ -2116,6 +2136,11 @@
               <FilePath>.\Inc\defines\defines_2-2-6.h</FilePath>
             </File>
             <File>
+              <FileName>defines_2-2-7.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\defines\defines_2-2-7.h</FilePath>
+            </File>
+            <File>
               <FileName>defines_2-3-1.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines\defines_2-3-1.h</FilePath>
@@ -2134,6 +2159,11 @@
               <FileName>defines_2-x-y.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines\defines_2-x-y.h</FilePath>
+            </File>
+            <File>
+              <FileName>defines_2-3-2.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\defines\defines_2-3-2.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -2829,6 +2859,11 @@
               <FilePath>.\Inc\defines\defines_2-2-6.h</FilePath>
             </File>
             <File>
+              <FileName>defines_2-2-7.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\defines\defines_2-2-7.h</FilePath>
+            </File>
+            <File>
               <FileName>defines_2-3-1.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines\defines_2-3-1.h</FilePath>
@@ -2847,6 +2882,11 @@
               <FileName>defines_2-x-y.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines\defines_2-x-y.h</FilePath>
+            </File>
+            <File>
+              <FileName>defines_2-3-2.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\defines\defines_2-3-2.h</FilePath>
             </File>
           </Files>
         </Group>

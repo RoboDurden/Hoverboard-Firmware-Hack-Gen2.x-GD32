@@ -219,9 +219,9 @@ ARM Macro Assembler    Page 4
    [WEAK]
   130 00000000                 IMPORT           SystemInit
   131 00000000                 IMPORT           __main
-  132 00000000 4804            LDR              R0, =SystemInit
+  132 00000000 4807            LDR              R0, =SystemInit
   133 00000002 4780            BLX              R0
-  134 00000004 4804            LDR              R0, =__main
+  134 00000004 4807            LDR              R0, =__main
   135 00000006 4700            BX               R0
   136 00000008                 ENDP
   137 00000008         
@@ -367,26 +367,44 @@ ARM Macro Assembler    Page 6
   231 00000014         ; user Initial Stack & Heap
   232 00000014         
   233 00000014                 IF               :DEF:__MICROLIB
-  234 00000014         
-  235 00000014                 EXPORT           __initial_sp
-  236 00000014                 EXPORT           __heap_base
-  237 00000014                 EXPORT           __heap_limit
-  238 00000014         
-  239 00000014                 ELSE
-  254                          ENDIF
-  255 00000014         
-  256 00000014                 END
+  240 00000014         
+  241 00000014                 IMPORT           __use_two_region_memory
+  242 00000014                 EXPORT           __user_initial_stackheap
+  243 00000014         
+  244 00000014         __user_initial_stackheap
+                               PROC
+  245 00000014 4804            LDR              R0, =  Heap_Mem
+  246 00000016 4905            LDR              R1, =(Stack_Mem + Stack_Size)
+  247 00000018 4A05            LDR              R2, = (Heap_Mem +  Heap_Size)
+  248 0000001A 4B06            LDR              R3, = Stack_Mem
+  249 0000001C 4770            BX               LR
+  250 0000001E                 ENDP
+  251 0000001E         
+  252 0000001E 00 00           ALIGN
+  253 00000020         
+  254 00000020                 ENDIF
+  255 00000020         
+  256 00000020                 END
               00000000 
               00000000 
-Command Line: --xref --diag_suppress=9931,A1950W --cpu=Cortex-M23 --depend=.\ob
-jects\startup_gd32e23x.d -o.\objects\startup_gd32e23x.o -I.\RTE\_GD32E230 -I"C:
-\Users\PAN CF-LX6\AppData\Local\Arm\Packs\ARM\CMSIS\6.1.0\CMSIS\Core\Include" -
-I"C:\Users\PAN CF-LX6\AppData\Local\Arm\Packs\GigaDevice\GD32E23x_DFP\1.0.2\Dev
-ice\Firmware\Peripherals\inc" -I"C:\Users\PAN CF-LX6\AppData\Local\Arm\Packs\Gi
-gaDevice\GD32E23x_DFP\1.0.2\Device\Include" --predefine="__MICROLIB SETA 1" --p
-redefine="__UVISION_VERSION SETA 542" --predefine="GD32E23x SETA 1" --predefine
-="_RTE_ SETA 1" --list=.\listings\startup_gd32e23x.lst RTE/Device/GD32E230C8/st
-artup_gd32e23x.s
+              00000000 
+
+
+
+ARM Macro Assembler    Page 7 
+
+
+              00000400 
+              00000400 
+              00000000 
+Command Line: --debug --xref --diag_suppress=9931,A1950W --cpu=Cortex-M23 --dep
+end=.\objects\startup_gd32e23x.d -o.\objects\startup_gd32e23x.o -I.\RTE\_GD32E2
+30 -I"C:\Users\PAN CF-LX6\AppData\Local\Arm\Packs\ARM\CMSIS\6.1.0\CMSIS\Core\In
+clude" -I"C:\Users\PAN CF-LX6\AppData\Local\Arm\Packs\GigaDevice\GD32E23x_DFP\1
+.0.2\Device\Firmware\Peripherals\inc" -I"C:\Users\PAN CF-LX6\AppData\Local\Arm\
+Packs\GigaDevice\GD32E23x_DFP\1.0.2\Device\Include" --predefine="__UVISION_VERS
+ION SETA 542" --predefine="GD32E23x SETA 1" --predefine="_RTE_ SETA 1" --list=.
+\listings\startup_gd32e23x.lst RTE/Device/GD32E230C8/startup_gd32e23x.s
 
 
 
@@ -407,8 +425,9 @@ Symbol: Stack_Mem
    Definitions
       At line 44 in file RTE/Device/GD32E230C8/startup_gd32e23x.s
    Uses
-      None
-Comment: Stack_Mem unused
+      At line 246 in file RTE/Device/GD32E230C8/startup_gd32e23x.s
+      At line 248 in file RTE/Device/GD32E230C8/startup_gd32e23x.s
+
 __initial_sp 00000400
 
 Symbol: __initial_sp
@@ -416,8 +435,7 @@ Symbol: __initial_sp
       At line 45 in file RTE/Device/GD32E230C8/startup_gd32e23x.s
    Uses
       At line 68 in file RTE/Device/GD32E230C8/startup_gd32e23x.s
-      At line 235 in file RTE/Device/GD32E230C8/startup_gd32e23x.s
-
+Comment: __initial_sp used once
 3 symbols
 
 
@@ -439,24 +457,25 @@ Symbol: Heap_Mem
    Definitions
       At line 56 in file RTE/Device/GD32E230C8/startup_gd32e23x.s
    Uses
-      None
-Comment: Heap_Mem unused
+      At line 245 in file RTE/Device/GD32E230C8/startup_gd32e23x.s
+      At line 247 in file RTE/Device/GD32E230C8/startup_gd32e23x.s
+
 __heap_base 00000000
 
 Symbol: __heap_base
    Definitions
       At line 55 in file RTE/Device/GD32E230C8/startup_gd32e23x.s
    Uses
-      At line 236 in file RTE/Device/GD32E230C8/startup_gd32e23x.s
-Comment: __heap_base used once
+      None
+Comment: __heap_base unused
 __heap_limit 00000400
 
 Symbol: __heap_limit
    Definitions
       At line 57 in file RTE/Device/GD32E230C8/startup_gd32e23x.s
    Uses
-      At line 237 in file RTE/Device/GD32E230C8/startup_gd32e23x.s
-Comment: __heap_limit used once
+      None
+Comment: __heap_limit unused
 4 symbols
 
 
@@ -849,7 +868,15 @@ Symbol: WWDGT_IRQHandler
       At line 86 in file RTE/Device/GD32E230C8/startup_gd32e23x.s
       At line 167 in file RTE/Device/GD32E230C8/startup_gd32e23x.s
 
-36 symbols
+__user_initial_stackheap 00000014
+
+Symbol: __user_initial_stackheap
+   Definitions
+      At line 244 in file RTE/Device/GD32E230C8/startup_gd32e23x.s
+   Uses
+      At line 242 in file RTE/Device/GD32E230C8/startup_gd32e23x.s
+Comment: __user_initial_stackheap used once
+37 symbols
 
 
 
@@ -863,7 +890,8 @@ Symbol: Heap_Size
       At line 52 in file RTE/Device/GD32E230C8/startup_gd32e23x.s
    Uses
       At line 56 in file RTE/Device/GD32E230C8/startup_gd32e23x.s
-Comment: Heap_Size used once
+      At line 247 in file RTE/Device/GD32E230C8/startup_gd32e23x.s
+
 Stack_Size 00000400
 
 Symbol: Stack_Size
@@ -871,7 +899,8 @@ Symbol: Stack_Size
       At line 41 in file RTE/Device/GD32E230C8/startup_gd32e23x.s
    Uses
       At line 44 in file RTE/Device/GD32E230C8/startup_gd32e23x.s
-Comment: Stack_Size used once
+      At line 246 in file RTE/Device/GD32E230C8/startup_gd32e23x.s
+
 __Vectors_Size 000000CC
 
 Symbol: __Vectors_Size
@@ -903,5 +932,13 @@ Symbol: __main
    Uses
       At line 134 in file RTE/Device/GD32E230C8/startup_gd32e23x.s
 Comment: __main used once
-2 symbols
-387 symbols in table
+__use_two_region_memory 00000000
+
+Symbol: __use_two_region_memory
+   Definitions
+      At line 241 in file RTE/Device/GD32E230C8/startup_gd32e23x.s
+   Uses
+      None
+Comment: __use_two_region_memory unused
+3 symbols
+390 symbols in table

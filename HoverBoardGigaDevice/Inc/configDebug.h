@@ -9,27 +9,29 @@
 	#define REMOTE_USART				0 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
 																	//	0 is usually PB6/PB7 and the empty header close to the flash-header
 																	//	2 is usually PB10/PB11 on stm32f103 boards
+																	
+	#define PIN_PACKAGE 64	//  GD32F103Rx LQFP64
+																	
 #else
 
 	// choose your target in the dropdown list to the top-right of the Keil IDE
 	// and then set your layout below
 	// Gen2-target-layout is included in defines.h
 	#ifdef GD32F130		// TARGET = 1
-		#define LAYOUT 11
+		#define LAYOUT 4
 		#define LAYOUT_SUB 1	// Layout 2.1.7 exisits as 2.1.7.0 and 2.1.7.1
 	#elif GD32F103		// TARGET = 2
 		#define LAYOUT 1
 	#elif GD32E230		// TARGET = 3
-		#define LAYOUT 1
+		#define LAYOUT 2
 	#elif MM32SPIN05	// TARGET = 4
 		#define LAYOUT 1
 	#endif
 	
 	//#define BLDC_BC			// old block commutation bldc control
 	#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden. 
-													// not yet for target 2  = Gen2.2.x
 	
-	#define BAT_CELLS         	10        // battery number of cells. Normal Hoverboard battery: 10s
+	#define BAT_CELLS         	7        // battery number of cells. Normal Hoverboard battery: 10s
 	//#define BATTERY_LOW_SHUTOFF		// will shut off the board below BAT_LOW_DEAD = BAT_CELLS * CELL_LOW_DEAD, 
 
 	//#define MASTER		// uncomment for MASTER firmware.
@@ -57,7 +59,7 @@
 			#define SLAVE_ID	0		// must be unique for all hoverboards connected to the bus
 		#endif
 		#ifdef REMOTE_DUMMY
-			#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
+			//#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
 		#else
 			//#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
 		#endif

@@ -206,11 +206,15 @@ void CalculateBLDC(void)
 		#else
 			if (hall_b)
 			{
-				digitalWrite(LED_GREEN,(steerCounter%2) < 1);
+				#ifdef LED_GREEN
+					digitalWrite(LED_GREEN,(steerCounter%2) < 1);
+				#endif
 				digitalWrite(LED_RED,(steerCounter%2) < 1);
 			}
 		#endif
-		digitalWrite(LED_GREEN,hall_a);
+		#ifdef LED_GREEN
+			digitalWrite(LED_GREEN,hall_a);
+		#endif
 		digitalWrite(LED_RED,hall_c);
 	#endif
 
@@ -233,6 +237,7 @@ void CalculateBLDC(void)
 	// Calculate low-pass filter for pwm value
 	filter_reg = filter_reg - (filter_reg >> iFILTER_SHIFT) + bldc_inputFilterPwm;
 	bldc_outputFilterPwm = filter_reg >> iFILTER_SHIFT;
+	//iBug = bldc_outputFilterPwm + 42;
 
 	// Update PWM channels based on position y(ellow), b(lue), g(reen)
 	//blockPWM(bldc_outputFilterPwm, pos, &y, &b, &g);
