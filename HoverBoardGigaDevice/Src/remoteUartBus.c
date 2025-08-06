@@ -194,6 +194,8 @@ void RemoteCallback(void)
 				{
 					SerialServer2HoverConfig* pData = (SerialServer2HoverConfig*) aReceiveBuffer;
 					iDrivingMode = pData->iDivemode;
+					DriverInit(iDrivingMode);
+
 					break;
 				}
 			}
