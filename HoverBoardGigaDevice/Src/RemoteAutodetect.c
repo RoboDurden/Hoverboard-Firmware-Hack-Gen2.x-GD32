@@ -556,7 +556,7 @@ void AutodetectScan(uint16_t buzzerTimer)
 		return;
 	if (wStage == AUTODETECT_Stage_Results)
 	{
-		SetPWM(0);
+		SetBldcInput(0);
 		switch(iRepeat)
 		{
 		case 0:	ListFound(0,6);	break;
@@ -570,12 +570,12 @@ void AutodetectScan(uint16_t buzzerTimer)
 	}
 	if (wStage == AUTODETECT_Stage_Finished)
 	{
-		SetPWM(0);
+		SetBldcInput(0);
 		//digitalWrite(aiPinScan[SCAN_SELF_HOLD],0);	// SELF_HOLD pin to high
 		AutoDetectSetStage(AUTODETECT_Stage_Menu);
 		return;
 	}
-	SetPWM(0);		// default speed -200
+	SetBldcInput(0);		// default speed -200
 	
 	uint8_t i;
 	// AUTODETECT_Stage_Led or AUTODETECT_Stage_VBatt or AUTODETECT_Stage_CurrentDC or AUTODETECT_Stage_Hold
@@ -810,7 +810,7 @@ void AutodetectScan(uint16_t buzzerTimer)
 		}
 		break;
 	case AUTODETECT_Stage_VBatt:
-		SetPWM(	(msTicks % 4000) < 2000 ? -300 : 0);	// strong motor to see a load when hand on motor
+		SetBldcInput(	(msTicks % 4000) < 2000 ? -300 : 0);	// strong motor to see a load when hand on motor
 		fVBatt = fVBatt * 0.9 + ((float)adc_buffer.v_batt * ADC_BATTERY_VOLT) * 0.1;
 		//pinModePull(aoPin[iTest].i,GPIO_MODE_INPUT,(buzzerTimer%32000 < 16000) ? GPIO_PUPD_PULLDOWN : GPIO_PUPD_PULLUP);
 		if (buzzerTimer % 16000 == 0)	// 16 kHz
@@ -832,7 +832,7 @@ void AutodetectScan(uint16_t buzzerTimer)
 	case AUTODETECT_Stage_CurrentDC:
 		if (iTimeCountdown>3000)
 		{
-			SetPWM(0);
+			SetBldcInput(0);
 			if (iTimeCountdown>3500)	// wait 0,5s to let the motor stop
 			{
 				iOffsetDC = 2000;	// reset 
@@ -848,7 +848,7 @@ void AutodetectScan(uint16_t buzzerTimer)
 			fCurrentDC = ((adc_buffer.v_batt - iOffsetDC) * MOTOR_AMP_CONV_DC_AMP);
 			if (bCurrentManualMode)
 			{
-				SetPWM(iTimeCountdown>2000 ? 0 : -300);	// strong motor to see a load when hand on motor
+				SetBldcInput(iTimeCountdown>2000 ? 0 : -300);	// strong motor to see a load when hand on motor
 				if (buzzerTimer % 3200 == 0)	// 16 kHz
 				{
 					sprintf(sMessage,"%s: CURRENT_DC ?= %.2f\r\n",aoPin[iTest].s,fCurrentDC);
@@ -859,7 +859,7 @@ void AutodetectScan(uint16_t buzzerTimer)
 				#define MS_INTERVAL 500
 				uint16_t iInterval = MS_INTERVAL - (iTimeCountdown % MS_INTERVAL);
 				int16_t iPwm = iInterval<(MS_INTERVAL/2) ? -700 : 700;
-				SetPWM(	iPwm);	// strong motor to see a load when hand on motor
+				SetBldcInput(	iPwm);	// strong motor to see a load when hand on motor
 				
 				iInterval = iInterval % (MS_INTERVAL/2);
 				if ( (iInterval>20) && (iInterval<60) ) // regenerative current due to rotation change
@@ -913,7 +913,7 @@ void AutodetectScan(uint16_t buzzerTimer)
 		break;
 	}	
 	case AUTODETECT_Stage_Button:
-		SetPWM(0);
+		SetBldcInput(0);
 		uint8_t bOn = digitalRead(aoPin[iTest].i);
 		uint8_t wSet = STATE_OFF << iRepeat;		// STATE_OFF , STATE_OFF2, STATE_ON, STATE_ON2
 		aoPin[iTest].wState = (aoPin[iTest].wState & ~wSet) | bOn * wSet;
@@ -1144,7 +1144,7 @@ uint8_t AutodetectBldc(uint8_t posNew,uint16_t buzzerTimer)
 		// AUTODETECT_Stage_Startup
 		if (wStage == AUTODETECT_Stage_Startup	)
 		{
-			SetPWM(0);
+			SetBldcInput(0);
 			if (msTicks > 500)
 				AutoDetectNextStage();
 			return posNew;
@@ -1172,10 +1172,10 @@ uint8_t AutodetectBldc(uint8_t posNew,uint16_t buzzerTimer)
 		if (wStage == AUTODETECT_Stage_VBatt)
 				return posAuto;
 
-		//SetPWM(msTicks > 500 ? -200 : (int32_t)msTicks * -2 / 5);
-		//SetPWM(fVBattFound > 30 ? -150 : -200);
-		SetPWM(-120 - 4*(42-(int16_t)fVBattFound));		// lower vbatt needs higher pwm to make motor spin
-		//SetPWM(0);
+		//SetBldcInput(msTicks > 500 ? -200 : (int32_t)msTicks * -2 / 5);
+		//SetBldcInput(fVBattFound > 30 ? -150 : -200);
+		SetBldcInput(-120 - 4*(42-(int16_t)fVBattFound));		// lower vbatt needs higher pwm to make motor spin
+		//SetBldcInput(0);
 		
 		if (msTicksWait > msTicks)	// wait for last sMessage to be sent
 			return posAuto;

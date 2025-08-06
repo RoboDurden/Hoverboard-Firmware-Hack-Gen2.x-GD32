@@ -464,6 +464,11 @@
               <FileType>1</FileType>
               <FilePath>.\Src\RemoteROS2.c</FilePath>
             </File>
+            <File>
+              <FileName>driver.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\driver.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1186,6 +1191,11 @@
               <FileName>RemoteROS2.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\RemoteROS2.c</FilePath>
+            </File>
+            <File>
+              <FileName>driver.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\driver.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1910,6 +1920,11 @@
               <FileType>1</FileType>
               <FilePath>.\Src\RemoteROS2.c</FilePath>
             </File>
+            <File>
+              <FileName>driver.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\driver.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -2632,6 +2647,11 @@
               <FileName>RemoteROS2.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\RemoteROS2.c</FilePath>
+            </File>
+            <File>
+              <FileName>driver.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\driver.c</FilePath>
             </File>
           </Files>
         </Group>

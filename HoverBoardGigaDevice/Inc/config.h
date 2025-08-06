@@ -29,6 +29,8 @@
 	//#define BLDC_BC			// old block commutation bldc control
 	#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden. 
 	
+	#define DRIVING_MODE 0	//  0=pwm, 1=speed in revs*1024, (not yet: 3=torque, 4=iOdometer)
+
 	#define BAT_CELLS         	10        // battery number of cells. Normal Hoverboard battery: 10s
 	//#define BATTERY_LOW_SHUTOFF		// will shut off the board below BAT_LOW_DEAD = BAT_CELLS * CELL_LOW_DEAD, 
 

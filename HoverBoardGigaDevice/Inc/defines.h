@@ -12,6 +12,7 @@
 	
 	#define SINGLE
 	#define MASTER_OR_SINGLE
+	#define DRIVING_MODE 0	//  0=pwm, 1=speed/10, 3=torque, 4=iOdometer
 	#define BAT_CELLS         	6        // battery number of cells. Normal Hoverboard battery: 10s
 	#define SPEED_COEFFICIENT   -1
 	#define STEER_COEFFICIENT   1

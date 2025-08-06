@@ -26,6 +26,7 @@
 #define STAND_STILL_THRESHOLD 50
 #endif
 
+uint8_t iDrivingMode = DRIVING_MODE;	//  0=pwm, 1=speed in revs*1024, (not yet: 3=torque, 4=iOdometer)
 uint32_t iBug = 0;
 uint32_t steerCounter = 0;								// Steer counter for setting update rate
 int32_t speed = 0; 												// global variable for speed.    -1000 to 1000
@@ -159,6 +160,8 @@ iBug = 7;
 iBug = 8;
 
 	InitBldc();		// virtual function implemented by bldcBC.c and bldcSINE.c
+	DriverInit(iDrivingMode);
+
 iBug = 9;
 
 /*
@@ -243,7 +246,7 @@ iBug = 10;
 		#endif
 		
 		#ifdef SLAVE	
-			SetPWM(pwmSlave);
+			SetBldcInput(pwmSlave);
 		#else	//MASTER_OR_SINGLE
 			if ((steerCounter % 2) == 0)	// something like DELAY_IN_MAIN_LOOP = 10 ms
 			{
@@ -253,32 +256,40 @@ iBug = 10;
 			
 			if (speedShutoff)	speed = ShutOff();
 			
-			// Calculate expo rate for less steering with higher speeds
-			expo = MAP((float)ABS(speed), 0, 1000, 1, 0.5);
-			
-			// Each speedvalue or steervalue between 50 and -50 (STAND_STILL_THRESHOLD) means absolutely no pwm
-			// -> to get the device calm 'around zero speed'
-			scaledSpeed = speed < STAND_STILL_THRESHOLD && speed > -STAND_STILL_THRESHOLD ? 0 : CLAMP(speed, -speedLimit, speedLimit) * SPEED_COEFFICIENT;
-			scaledSteer = steer < STAND_STILL_THRESHOLD && steer > -STAND_STILL_THRESHOLD ? 0 : CLAMP(steer, -speedLimit, speedLimit) * STEER_COEFFICIENT * expo;
-			
-			// Map to an angle of 180 degress to 0 degrees for array access (means angle -90 to 90 degrees)
-			steerAngle = MAP((float)scaledSteer, -1000, 1000, 180, 0);
-			xScale = lookUpTableAngle[(uint16_t)steerAngle];
-
-			// Mix steering and speed value for right and left speed
-			if(steerAngle >= 90)
+			if (iDrivingMode == 0)
 			{
-				pwmSlave = CLAMP(scaledSpeed, -1000, 1000);
-				pwmMaster = CLAMP(pwmSlave / xScale, -1000, 1000);
+				// Calculate expo rate for less steering with higher speeds
+				expo = MAP((float)ABS(speed), 0, 1000, 1, 0.5);
+				
+				// Each speedvalue or steervalue between 50 and -50 (STAND_STILL_THRESHOLD) means absolutely no pwm
+				// -> to get the device calm 'around zero speed'
+				scaledSpeed = speed < STAND_STILL_THRESHOLD && speed > -STAND_STILL_THRESHOLD ? 0 : CLAMP(speed, -speedLimit, speedLimit) * SPEED_COEFFICIENT;
+				scaledSteer = steer < STAND_STILL_THRESHOLD && steer > -STAND_STILL_THRESHOLD ? 0 : CLAMP(steer, -speedLimit, speedLimit) * STEER_COEFFICIENT * expo;
+				
+				// Map to an angle of 180 degress to 0 degrees for array access (means angle -90 to 90 degrees)
+				steerAngle = MAP((float)scaledSteer, -1000, 1000, 180, 0);
+				xScale = lookUpTableAngle[(uint16_t)steerAngle];
+
+				// Mix steering and speed value for right and left speed
+				if(steerAngle >= 90)
+				{
+					pwmSlave = CLAMP(scaledSpeed, -1000, 1000);
+					pwmMaster = CLAMP(pwmSlave / xScale, -1000, 1000);
+				}
+				else
+				{
+					pwmMaster = CLAMP(scaledSpeed, -1000, 1000);
+					pwmSlave = CLAMP(xScale * pwmMaster, -1000, 1000);
+				}
 			}
 			else
 			{
-				pwmMaster = CLAMP(scaledSpeed, -1000, 1000);
-				pwmSlave = CLAMP(xScale * pwmMaster, -1000, 1000);
+				// simply boost/drop speed left and right according to steer going from -1.0 to +1.0
+				pwmMaster = speed * (1+steer/1000.0);		
+				pwmSlave = speed * (1-steer/1000.0);
 			}
-
 					// Set output
-			SetPWM(pwmMaster);
+			SetBldcInput(pwmMaster);
 
 			#ifdef USART_MASTERSLAVE
 				// Decide if slave will be enabled
@@ -442,7 +453,8 @@ int32_t ShutOff(void)
 	
 	// Set pwm and enable to off
 	SetEnable(RESET);
-	SetPWM(0);
+	iDrivingMode = 0;
+	SetBldcInput(0);
 	
 	#ifdef SELF_HOLD
 		digitalWrite(SELF_HOLD,RESET);

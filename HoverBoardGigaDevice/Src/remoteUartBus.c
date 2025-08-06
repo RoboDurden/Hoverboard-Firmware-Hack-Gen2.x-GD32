@@ -20,6 +20,7 @@ extern uint8_t usart2_rx_buf[1];
 
 static int16_t iReceivePos = 0;	
 
+extern uint8_t iDrivingMode;
 extern int32_t steer;
 extern int32_t speed;
 extern uint8_t  wState;
@@ -192,6 +193,7 @@ void RemoteCallback(void)
 				case 2: 
 				{
 					SerialServer2HoverConfig* pData = (SerialServer2HoverConfig*) aReceiveBuffer;
+					iDrivingMode = pData->iDivemode;
 					break;
 				}
 			}

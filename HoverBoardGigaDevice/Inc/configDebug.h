@@ -18,7 +18,7 @@
 	// and then set your layout below
 	// Gen2-target-layout is included in defines.h
 	#ifdef GD32F130		// TARGET = 1
-		#define LAYOUT 4
+		#define LAYOUT 11
 		#define LAYOUT_SUB 1	// Layout 2.1.7 exisits as 2.1.7.0 and 2.1.7.1
 	#elif GD32F103		// TARGET = 2
 		#define LAYOUT 1
@@ -31,12 +31,14 @@
 	//#define BLDC_BC			// old block commutation bldc control
 	#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden. 
 	
+	#define DRIVING_MODE 1	//  0=pwm, 1=speed in revs*1024, (not yet: 3=torque, 4=iOdometer)
+	
 	#define BAT_CELLS         	7        // battery number of cells. Normal Hoverboard battery: 10s
 	//#define BATTERY_LOW_SHUTOFF		// will shut off the board below BAT_LOW_DEAD = BAT_CELLS * CELL_LOW_DEAD, 
 
-	//#define MASTER		// uncomment for MASTER firmware.
+	#define MASTER		// uncomment for MASTER firmware.
 	//#define SLAVE			// uncomment for SLAVE firmware.
-	#define SINGLE			// uncomment if firmware is for single board and no master-slave dual board setup
+	//#define SINGLE			// uncomment if firmware is for single board and no master-slave dual board setup
 
 	#if defined(MASTER) || defined(SINGLE)
 		
@@ -82,7 +84,7 @@
 	#endif
 	
 	#if defined(MASTER) || defined(SLAVE)
-		#define MASTERSLAVE_USART		2 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
+		#define MASTERSLAVE_USART		1 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
 																		//	0 is usually PB6/PB7 and the empty header close to the flash-header
 																		//	2 is usually PB10/PB11 on stm32f103 boards
 	#endif

@@ -41,23 +41,14 @@
 #define BLDC_TIMER_MAX_VALUE  (BLDC_TIMER_PERIOD - 10) // = 2240
 
 
-//----------------------------------------------------------------------------
-// Set motor enable
-//----------------------------------------------------------------------------
-void SetEnable(FlagStatus setEnable);
-
-//----------------------------------------------------------------------------
-// Set pwm -1000 to 1000
-//----------------------------------------------------------------------------
-void SetPWM(int16_t setPwm);
-
-//----------------------------------------------------------------------------
-// Calculation-Routine for BLDC => calculates with 16kHz
-//----------------------------------------------------------------------------
-void CalculateBLDC(void);
-
-// virtual method to be implemented by bldcBC.c and bldcSINE.c
-void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g);
+int16_t	Driver(uint8_t iDrivemode, int32_t input);		// pwm/speed/torque/position as input and returns pwm value to get a low pass filter in bldc.c
+void DriverInit(uint8_t iDrivingMode);
+	
+void SetEnable(FlagStatus setEnable);	// Set motor enable
+void SetBldcInput(int32_t input); // -1000 to +1000 for iDriveMode==0 = pwm
+//void SetPWM(int16_t setPwm);	// Set pwm -1000 to 1000
+void CalculateBLDC(void); // Calculation-Routine for BLDC => calculates with PWM_FREQ
+void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g);	// virtual method to be implemented by bldcBC.c and bldcSINE.c
 
 // virtual method call in the beginning of main()
 void InitBldc();
