@@ -97,11 +97,11 @@ void RemoteUpdate(void)
 	feedback.wheelL_cnt = modulo32(iOdom, ENCODER_MAX);
 	feedback.left_dc_curr = (int16_t) (currentDC * 100);
 
-#ifdef MASTER_OR_SLAVE
+#ifdef MASTER
 	feedback.speedR_meas = (int16_t) (oDataSlave.realSpeed * 100); // TODO: Need to scale? 100 is just a guess... 
-	feedback.wheelR_cnt = modulo(oDataSlave.iOdom, ENCODER_MAX);
+	feedback.wheelR_cnt = modulo32(oDataSlave.iOdom, ENCODER_MAX);
 	feedback.right_dc_curr = (int16_t) (oDataSlave.currentDC * 100);
-#else
+#else // SINGLE (SLAVE not possible due to ifdef MASTER_OR_SINGLE at top of this file)
 	feedback.speedR_meas = (int16_t) (realSpeed * 100); // Fake both wheels with same speed for single. TODO: Need to scale?
 	feedback.wheelR_cnt = modulo32(iOdom, ENCODER_MAX); // Fake both wheels with same speed for single.
 	feedback.right_dc_curr = 0;

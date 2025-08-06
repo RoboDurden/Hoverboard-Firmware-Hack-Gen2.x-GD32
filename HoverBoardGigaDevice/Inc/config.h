@@ -85,6 +85,7 @@
 	#if defined(MASTER) || defined(SLAVE)
 		#define MASTERSLAVE_USART		1 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
 																		//	0 is usually PB6/PB7 and the empty header close to the flash-header
+																		//	2 is usually PB10/PB11 on stm32f103 boards
 	#endif
 	
 	#if defined(REMOTE_UART) || defined(REMOTE_UARTBUS) || defined(REMOTE_CRSF) || defined(REMOTE_ROS2)
