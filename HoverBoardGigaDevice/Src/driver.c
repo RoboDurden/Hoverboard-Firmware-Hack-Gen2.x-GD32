@@ -1,7 +1,6 @@
 #include <stdint.h>
 #include "../Inc/bldc.h"
 
-extern int32_t revs32;
 
 // Deepseek begin -----------------------------
 // prompt1: please give me the c code for a pid controller that outputs an int16_t pwm value for a bldc motor based on a uint32_t revs32 speed value. The pid controller and the revs32 will be updated at a rate of PWM_FREQ = 12000.
@@ -87,12 +86,15 @@ void PWM_Update_Handler() {
 
 // Deepseek end -----------------------------
 
+extern int32_t revs32;
+extern uint8_t iDrivingMode;
 
 PIDController pid;	// PID controller instance
 
 
-void DriverInit(uint8_t iDrivingMode) 	// Initialize controller (tune these values for your system)
+void DriverInit(uint8_t iDrivingModeNew) 	// Initialize controller (tune these values for your system)
 {
+	iDrivingMode = iDrivingModeNew;
 	switch (iDrivingMode)
 	{
 	case 1:	// input will be taken as revs/s 
