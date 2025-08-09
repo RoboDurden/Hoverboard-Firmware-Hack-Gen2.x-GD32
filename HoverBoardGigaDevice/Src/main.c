@@ -27,6 +27,7 @@
 #endif
 
 uint8_t iDrivingMode = DRIVING_MODE;	//  0=pwm, 1=speed in revs*1024, (not yet: 3=torque, 4=iOdometer)
+uint8_t bRemoteTimeout = 0; 	// any Remote can set this to 1 to disable motor (with soft brake)
 uint32_t iBug = 0;
 uint32_t steerCounter = 0;								// Steer counter for setting update rate
 int32_t speed = 0; 												// global variable for speed.    -1000 to 1000
@@ -372,7 +373,7 @@ iBug = 10;
 			enable = SET;			
 		#endif
 		
-		if (wState & STATE_Disable)	enable = RESET;
+		if (bRemoteTimeout || (wState & STATE_Disable))	enable = RESET;
 		
 		// Enable is depending on arm switch
 		//#ifdef USART_CRSF

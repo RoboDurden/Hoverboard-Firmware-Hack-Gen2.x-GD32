@@ -16,6 +16,7 @@ extern uint8_t usart0_rx_buf[1];
 extern uint8_t usart1_rx_buf[1];
 extern uint8_t usart2_rx_buf[1];
 
+extern uint8_t bRemoteTimeout; 	// any Remote can set this to 1 to disable motor (with soft brake)
 extern int32_t steer;
 extern int32_t speed;
 extern int16_t speedLimit;
@@ -84,7 +85,8 @@ void RemoteUpdate(void) 	// Update Channel values form crsfData
 	
 	if (millis() - iTimeLast > 500)
 	{
-		speed = steer = 0;
+		bRemoteTimeout = 1;
+		//speed = steer = 0;
 	}
 
 }
@@ -149,6 +151,7 @@ void RemoteCallback(void)	// Get Crsf Packet
 				memcpy(crsfData,inBuffer,CRSF_PACKET_SIZE);
 				failsafe_status = CRSF_SIGNAL_OK;
 				iTimeLast = millis();
+				bRemoteTimeout = 0;
 				ResetTimeout();	// Reset the pwm timout to avoid stopping motors	
 			}
 			else

@@ -3,7 +3,7 @@
 
 #ifdef REMOTE_ADC
 
-
+extern uint8_t bRemoteTimeout; 	// any Remote can set this to 1 to disable motor (with soft brake)
 extern int32_t steer;
 extern int32_t speed;
 extern uint32_t msTicks;

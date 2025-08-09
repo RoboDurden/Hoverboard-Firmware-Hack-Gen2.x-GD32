@@ -20,6 +20,8 @@ extern uint8_t usart2_rx_buf[1];
 
 static int16_t iReceivePos = 0;	
 
+extern uint8_t bRemoteTimeout; 	// any Remote can set this to 1 to disable motor (with soft brake)
+
 extern uint8_t iDrivingMode;
 extern int32_t steer;
 extern int32_t speed;
@@ -85,7 +87,8 @@ void RemoteUpdate(void)
 {
 	if (millis() - iTimeLastRx > LOST_CONNECTION_STOP_MILLIS)
 	{
-		speed = steer = 0;
+		bRemoteTimeout = 1;
+		//speed = steer = 0;
 	}
 }
 
@@ -95,7 +98,7 @@ uint32_t iAnswerMaster = 0;
 
 void AnswerMaster(void)
 {
-	
+	iBug++;
 	// Ask for steer input
 	SerialHover2Server oData;
 	oData.cStart = START_FRAME;
@@ -179,6 +182,7 @@ void RemoteCallback(void)
 					SerialServer2Hover* pData = (SerialServer2Hover*) aReceiveBuffer;
 					speed = pData->iSpeed;
 					wState = pData->wState;
+					bRemoteTimeout = 0;
 					break;
 				}
 				case 1: 
@@ -188,6 +192,7 @@ void RemoteCallback(void)
 					steer = pData->iSteer;
 					wState = pData->wState;
 					wStateSlave = pData->wStateSlave;
+					bRemoteTimeout = 0;
 					break;
 				}
 				case 2: 

@@ -475,7 +475,7 @@ void ADC_initOld(void)
 	rcu_adc_clock_config(RCU_ADCCK_APB2_DIV6);
 	
 	// Interrupt channel 0 enable
-	TARGET_nvic_irq_enable(DMA_Channel0_IRQn, 2, 0);
+	TARGET_nvic_irq_enable(DMA_Channel0_IRQn, 1, 0);
 	
 	// Initialize DMA channel 0 for ADC
 	TARGET_dma_deinit(DMA_CH0);
@@ -566,7 +566,7 @@ void ADC_init(void)
 	rcu_adc_clock_config(RCU_ADCCK_APB2_DIV6);
 	
 	// Interrupt channel 0 enable
-	TARGET_nvic_irq_enable(DMA_Channel0_IRQn, 2, 0);	// will trigger CalculateBldc(); Can interrupt 2+ = Timeout/Usart but not bldc or hall-irqs
+	TARGET_nvic_irq_enable(DMA_Channel0_IRQn, 1, 0);	// will trigger CalculateBldc(); Can interrupt 2+ = Timeout/Usart but not bldc or hall-irqs
 	
 	// Initialize DMA channel 0 for ADC
 	TARGET_dma_deinit(DMA_CH0);
@@ -705,7 +705,7 @@ void USART0_Init(uint32_t iBaud)
 
 
 	// Interrupt channel 1/2 enable
-	TARGET_nvic_irq_enable(TARGET_DMA_Channel1_2_IRQn, 1, 0);		// usart irqs can not interrupt 0=bldc/hall or 1=adc/CalculateBldc
+	TARGET_nvic_irq_enable(TARGET_DMA_Channel1_2_IRQn, 2, 0);		// usart irqs can not interrupt 0=bldc/hall or 1=adc/CalculateBldc
 
 
 	// Initialize DMA channel 2 for USART0 RX (CH4 for gd32f103)
@@ -799,7 +799,7 @@ void USART1_Init(uint32_t iBaud)
 	usart_enable(USART1);
 	
 	// Interrupt channel 3/4 enable
-	TARGET_nvic_irq_enable(TARGET_DMA_Channel3_4_IRQn, 1, 0);		// usart irqs can not interrupt 0=bldc/hall or 1=adc/CalculateBldc
+	TARGET_nvic_irq_enable(TARGET_DMA_Channel3_4_IRQn, 2, 0);		// usart irqs can not interrupt 0=bldc/hall or 1=adc/CalculateBldc
 	
 	// Initialize DMA channel 4 for USART_SLAVE RX
 	TARGET_dma_deinit(TARGET_DMA_CH4);
@@ -875,9 +875,9 @@ void USART2_Init(uint32_t iBaud)	// only for target==2 = gd32f103
 	
 	// Interrupt channel 3/4 enable
 	// usart irqs set to Pre-priority 2 can not interrupt 0=bldc/hall or 1=adc/CalculateBldc
-	//nvic_irq_enable(DMA_Channel3_4_IRQn, 1, 0);
+	//nvic_irq_enable(DMA_Channel3_4_IRQn, 2, 0);
 	//JMA F103 cannel 3 and 4 are separate. Only channel 4 is used so only channel 4 interrupt enabled
-	nvic_irq_enable(DMA0_Channel2_IRQn, 1, 0); // JW: Changed to Channel2 (from Channel4)
+	nvic_irq_enable(DMA0_Channel2_IRQn, 2, 0); // JW: Changed to Channel2 (from Channel4)
 
 // Initialize DMA channel 4 for USART_SLAVE RX
 	dma_deinit(DMA0, DMA_CH2); // JW: Changed to CH2 (from CH4). JMA DMA0 added
