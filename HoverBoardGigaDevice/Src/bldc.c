@@ -294,6 +294,7 @@ void CalculateBLDC(void)
 		speedCounterSlowLog = speedCounterSlow;		// for logging with StmStudio
 		speedCounterSlow = 0;
 	}
+	else if (speedCounterSlow >= 4000)	revs32 = 0;
 		
 	// Increments with 62.5us
 	if(speedCounter < 8000) speedCounter++;	// No speed after 250ms

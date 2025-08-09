@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include "../Inc/bldc.h"
 
+/*
 
 // Deepseek begin -----------------------------
 // prompt1: please give me the c code for a pid controller that outputs an int16_t pwm value for a bldc motor based on a uint32_t revs32 speed value. The pid controller and the revs32 will be updated at a rate of PWM_FREQ = 12000.
@@ -72,19 +73,87 @@ int16_t PID_Update(PIDController *pid, int32_t setpoint, int32_t actual)
 	return (int16_t)output;
 }
 
-/********************* EXAMPLE USAGE *********************
-
+// --------EXAMPLE USAGE --------------------
+//
 // Called at 12kHz from timer interrupt
-void PWM_Update_Handler() {
-    int32_t current_speed = GetMotorSpeed();  // Your sensor reading
-    int32_t target_speed = GetTargetSpeed();  // Your setpoint
-    
-    int16_t pwm = PID_Update(&speed_pid, target_speed, current_speed);
-    ApplyPWMToMotor(pwm);  // Your PWM output function
-}
-*********************************************************/
+//	void PWM_Update_Handler() {
+//    int32_t current_speed = GetMotorSpeed();  // Your sensor reading
+//    int32_t target_speed = GetTargetSpeed();  // Your setpoint
+//    
+//    int16_t pwm = PID_Update(&speed_pid, target_speed, current_speed);
+//    ApplyPWMToMotor(pwm);  // Your PWM output function
+//	}
 
 // Deepseek end -----------------------------
+
+*/
+
+// chatGpt 5 begin -------------------
+
+#include <stdint.h>
+
+#define Q_SCALE        (1 << 10)  // Q10 scaling
+#define GAIN_SCALE     (1 << 10)  // match Q_SCALE so gain floats are "normal"
+
+// PID structure
+typedef struct {
+    int32_t kp;
+    int32_t ki;
+    int32_t kd;
+    int32_t min_pwm;
+    int32_t max_pwm;
+    int32_t max_i;
+    int32_t decay;       // decay factor in Q15 (0..32767 = 0..0.9999)
+    int32_t i_term;
+    int32_t prev_error;
+} PIDController;
+
+// Init function: accepts normal float gains
+void PID_Init(PIDController *pid, float kp, float ki, float kd,
+              int16_t min_pwm, int16_t max_pwm, float max_i, float decay)
+{
+    pid->kp = (int32_t)(kp * GAIN_SCALE); // now direct scaling
+    pid->ki = (int32_t)((ki / 12000.0f) * GAIN_SCALE);
+    pid->kd = (int32_t)((kd * 12000.0f) * GAIN_SCALE);
+    pid->min_pwm = min_pwm;
+    pid->max_pwm = max_pwm;
+    pid->max_i = (int32_t)(max_i);
+    pid->decay = (int32_t)(decay * 32768.0f); // Q15 decay factor
+    pid->i_term = 0;
+    pid->prev_error = 0;
+}
+
+// Update function: called at 12 kHz
+int16_t PID_Update(PIDController *pid, int32_t setpoint_q10, int32_t actual_q10)
+{
+    int32_t error = setpoint_q10 - actual_q10;
+
+    // Proportional
+    int32_t p_term = (pid->kp * error) / GAIN_SCALE;
+
+    // Integral with decay
+    pid->i_term = (pid->i_term * (32768 - pid->decay)) >> 15;
+    pid->i_term += (pid->ki * error) / GAIN_SCALE;
+    if (pid->i_term > pid->max_i)  pid->i_term = pid->max_i;
+    if (pid->i_term < -pid->max_i) pid->i_term = -pid->max_i;
+
+    // Derivative
+    int32_t d_term = (pid->kd * (error - pid->prev_error)) / GAIN_SCALE;
+    pid->prev_error = error;
+
+    // Sum
+    int32_t output = p_term + pid->i_term + d_term;
+
+    // Clamp
+    if (output > pid->max_pwm)  output = pid->max_pwm;
+    if (output < pid->min_pwm)  output = pid->min_pwm;
+
+    return (int16_t)output;
+}
+
+
+// chatGpt 5 end ---------------
+
 
 extern int32_t revs32;
 extern uint8_t iDrivingMode;
@@ -99,8 +168,11 @@ void DriverInit(uint8_t iDrivingModeNew) 	// Initialize controller (tune these v
 	{
 	case 1:	// input will be taken as revs/s 
 		// 					kp=0.5, ki=0.1, kd=0.01, PWM range: ±30000, max integral=10000
-		PID_Init(&pid, 0.5f, 	0.1f, 	0.01f, -1250, 1250, 10000.0f);
-		PID_Init(&pid, 1.0f, 	0.1f, 	0.01f, -1250, 1250, 10000.0f);
+		//Deepseek PID_Init(&pid, 0.5f, 	0.1f, 	0.01f, -1250, 1250, 10000.0f);
+		//Deepseek PID_Init(&pid, 1.0f, 	0.1f, 	0.01f, -1250, 1250, 10000.0f);
+	
+		PID_Init(&pid, 0.4f, 0.8f, 0.0f, -1250, 1250, 400.0f, 0.0005f);		// ChatGpt 5
+
 		// Deepseek tuning Recommendations:
 		//		Start with only proportional gain (set ki=0, kd=0)
 		//		Increase kp until motor begins to oscillate, then reduce by 30%
@@ -111,6 +183,8 @@ void DriverInit(uint8_t iDrivingModeNew) 	// Initialize controller (tune these v
 	}
 }
 
+int32_t pwm = 1;
+
 int16_t	Driver(uint8_t iDrivingMode, int32_t input)		// pwm/speed/torque/position as input and returns pwm value to get a low pass filter in bldc.c
 {
 		switch (iDrivingMode)
@@ -118,7 +192,9 @@ int16_t	Driver(uint8_t iDrivingMode, int32_t input)		// pwm/speed/torque/positio
 		case 0:	// interpret as simple pwm value
 			return input;
 		case 1:	// input will be taken as revs/s*1024 
-			return PID_Update(&pid, input, revs32);
+			//Deepseek return PID_Update(&pid, input, revs32);
+			return PID_Update(&pid, (input*14)/8, revs32);	// ChatGpt code also needs a scaling of target by 14/8 :-(
+		
 		}
 	return 0;	// error, unkown drive mode
 }
