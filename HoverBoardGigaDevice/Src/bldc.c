@@ -15,7 +15,8 @@ float batteryVoltage = BAT_CELLS * 3.6;
 float currentDC = 0.42;		// to see in serial log that pin is not defined
 float realSpeed = 0.0;
 int32_t revs32 = 0;
-int32_t revs32_reg = 0;
+int32_t torque32 = 0;
+int32_t revs32_reg = 0, torque32_reg = 0;
 int32_t revs32x = 0;
 #define REVS32_SHIFT 12
 int32_t revs32Scale = (PWM_FREQ/15)<<REVS32_SHIFT;			// REVS32_SHIFT-bit fractional precision
@@ -117,6 +118,9 @@ void SetBldcInput(int32_t input)
 		return;
 	case 1:	// speed in revs*1024 = revs<<10
 		iBldcInput = input << 0;//(REVS32_SHIFT-10);
+		return;
+	case 2:	// torque in Nm*1024 = torque<<10
+		iBldcInput = input;
 		return;
 	}
 	iBldcInput = input;	// no restrictions for speed/torque/position ?
@@ -291,11 +295,23 @@ void CalculateBLDC(void)
 			revs32_reg = revs32_reg - (revs32_reg >> RANK_revs32) + revs32Now ;		// warning, (iOdom-iOdomLast) might give wrong result when iOdom overflows
 
 			revs32 = (speedCounterSlow < 1000) ? revs32_reg >> RANK_revs32 : revs32Now;
+			
+			//  torque = (fEff * V * I * 60) / (RPM * 2p)
+			// rpm = 60* (PWM_FREQ/(speedCounterSlow/(iOdom-iOdomLast)) )/90;
+			// iTorque = 0.8 * batteryVoltage * currentDC * (90/2*PI) *speedCounterSlow / (PWM_FREQ  *(iOdom-iOdomLast))
+			// iTorque = 11.459 * batteryVoltage * currentDC *speedCounterSlow / (PWM_FREQ  *(iOdom-iOdomLast))
+			int32_t torque32Now = ((((int32_t)(11.459 * batteryVoltage * currentDC))<<10) / (PWM_FREQ  *(iOdom-iOdomLast))) * speedCounterSlow;
+
+			#define RANK_torque32 3 	// Calculate low-pass filter for pwm value
+			torque32_reg = torque32_reg - (torque32_reg >> RANK_torque32) + torque32Now;
+			
+			torque32 = (speedCounterSlow < 1000) ? torque32_reg >> RANK_torque32 : torque32Now;
+			
 		}
 		speedCounterSlowLog = speedCounterSlow;		// for logging with StmStudio
 		speedCounterSlow = 0;
 	}
-	else if (speedCounterSlow >= 4000)	revs32 = 0;
+	else if (speedCounterSlow >= 4000)	revs32 = torque32 = 0;
 		
 	// Increments with 62.5us
 	if(speedCounter < 8000) speedCounter++;	// No speed after 250ms

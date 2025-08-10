@@ -2,7 +2,7 @@
 #include "../Inc/bldc.h"
 
 
-#define PID_Version  4	// 1..4
+#define PID_Version  4	// 1..4 but Gemini is the clear winner !!!
 
 
 #if PID_Version == 1
@@ -414,6 +414,7 @@ int16_t PID_Update(PIDController *pid, int32_t setpoint, int32_t actual) {
 #endif
 
 extern int32_t revs32;
+extern int32_t torque32;
 extern uint8_t iDrivingMode;
 
 PIDController pid;	// PID controller instance
@@ -458,6 +459,21 @@ void DriverInit(uint8_t iDrivingModeNew) 	// Initialize controller (tune these v
 			PID_Init(&pid, 0.2f, 1.0f, 0.0005f, -1250, 1250, 1250.0f);		
 		#endif
 		return;
+	case 2:	// input will be taken as NewtonMeter * 1024 
+		#ifdef PID_Deepseek
+			Deepseek PID_Init(&pid, 0.5f, 	0.1f, 	0.01f, -1250, 1250, 10000.0f);
+		#endif
+		#ifdef PID_ChatGPT5
+			PID_Init(&pid, 0.4f, 0.8f, 0.0f, -1250, 1250, 400.0f, 0.0005f);		// ChatGpt 5
+		#endif
+		#ifdef PID_ChatGPT5_2
+			PID_Init(&pid, 0.05f, 0.4f, 0.0f, 0.25f, -1250, 1250, 500.0f, 0.0005f, 1);	
+		#endif
+		#ifdef PID_Gemini
+			// Example values: Kp=0.2, Ki=15.0, Kd=0.0005, max I-term contribution=500
+			PID_Init(&pid, 0.2f, 1.0f, 0.0005f, -1250, 1250, 1250.0f);		
+		#endif
+		
 	}
 }
 
@@ -474,6 +490,12 @@ int16_t	Driver(uint8_t iDrivingMode, int32_t input)		// pwm/speed/torque/positio
 				return PID_Update(&pid, (input*14)/8, revs32);	// ChatGpt code also needs a scaling of target by 14/8 :-(		
 			#else
 				return PID_Update(&pid, input, revs32);
+			#endif
+		case 2:	// input will be taken as Nm*1024 
+			#ifdef PID_ChatGPT5
+				return PID_Update(&pid, (input*14)/8, torque32);	// ChatGpt code also needs a scaling of target by 14/8 :-(		
+			#else
+				return PID_Update(&pid, input, torque32);
 			#endif
 		}
 	return 0;	// error, unkown drive mode

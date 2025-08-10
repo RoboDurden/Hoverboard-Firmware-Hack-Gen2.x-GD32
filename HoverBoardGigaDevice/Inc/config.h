@@ -29,7 +29,7 @@
 	//#define BLDC_BC			// old block commutation bldc control
 	#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden. 
 	
-	#define DRIVING_MODE 0	//  0=pwm, 1=speed in revs*1024, (not yet: 3=torque, 4=iOdometer)
+	#define DRIVING_MODE 0	//  0=pwm, 1=speed in revs/s*1024, 2=torque in NewtonMeter*1024, (not yet: 3=iOdometer)
 
 	#define BAT_CELLS         	10        // battery number of cells. Normal Hoverboard battery: 10s
 	//#define BATTERY_LOW_SHUTOFF		// will shut off the board below BAT_LOW_DEAD = BAT_CELLS * CELL_LOW_DEAD, 
@@ -115,7 +115,9 @@
 #define PWM_FREQ         		16000     // PWM frequency in Hz
 
 
-#define FILTER_SHIFT 12 						// Low-pass filter for pwm, rank k=12
+#define FILTER_SHIFT 13 						// Low-pass filter for pwm, rank k=12
+					// With PWM_FREQ = 1000, 12 will take over 4s to mostly adapt to a sudden change in input. So only 250 ms for 16 kHz !
+					// 19 and 16 kHz would be 32 seconds for the motor to reach 63% of its new target speed (Gemini 2.5pro)
 
 
 #define DELAY_IN_MAIN_LOOP 	5         // Delay in ms
