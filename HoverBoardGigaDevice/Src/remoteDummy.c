@@ -11,12 +11,13 @@ extern uint32_t msTicks;
 extern uint8_t iDrivingMode;	//  0=pwm, 1=speed in revs*1024, (not yet: 3=torque, 4=iOdometer)
 
 //#define SLOW_SINE
+
 void RemoteUpdate(void)
 {
 	int32_t iMax = 250;	// pwm 300 as default
 	switch(iDrivingMode)	//  0=pwm, 1=speed in revs*1024, (not yet: 3=torque, 4=iOdometer)
 	{
-		case 1: iMax = 2.0 *1024; break;	// 1.5*1024 = max speed 1.5 revs/s
+		case 1: iMax = 3.0 *1024; break;	// 1.5*1024 = max speed 1.5 revs/s
 	}
 	
 	#ifdef MASTER_OR_SINGLE
