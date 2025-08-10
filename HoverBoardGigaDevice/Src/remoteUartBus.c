@@ -53,13 +53,15 @@ typedef struct {			// ´#pragma pack(1)´ needed to get correct sizeof()
    uint8_t  wStateSlave;   // 1=ledGreen, 2=ledOrange, 4=ledRed, 8=ledUp, 16=ledDown   , 32=Battery3Led, 64=Disable, 128=ShutOff
    uint16_t checksum;
 } SerialServer2HoverMaster;
-typedef struct {			// ´#pragma pack(1)´ needed to get correct sizeof()
+
+typedef struct {	// ´#pragma pack(1)´ needed to get correct sizeof()
    uint8_t cStart;			//  = '/';
-   //uint16_t cStart;		//  = #define START_FRAME         0xABCD
    uint8_t  iDataType;  //  2 = unique id for this data struct
    uint8_t 	iSlave;			//  contains the slave id this message is intended for
-   float  fBatteryVoltage;	// 10s LiIon = 10*3.6 = 36;
-   uint8_t 	iDivemode;			//  0=pwm, 1=speed/10, 3=torque, 4=iOdometer
+	 float  fBattFull;    // = 42.0;    // 10s LiIon = 42.0;
+	 float  fBattEmpty;   // = 27.0;    // 10s LiIon = 27.0;
+	 uint8_t  iDriveMode;	//  = 0;      //  MM32: 0=COM_VOLT, 1=COM_SPEED, 2=SINE_VOLT, 3=SINE_SPEED
+	 int8_t   iSlaveNew;	//   = -1;      //  if >= 0 contains the new slave id saved to eeprom
    uint16_t checksum;
 } SerialServer2HoverConfig;
 
@@ -198,7 +200,7 @@ void RemoteCallback(void)
 				case 2: 
 				{
 					SerialServer2HoverConfig* pData = (SerialServer2HoverConfig*) aReceiveBuffer;
-					DriverInit(pData->iDivemode);
+					DriverInit(pData->iDriveMode);
 
 					break;
 				}

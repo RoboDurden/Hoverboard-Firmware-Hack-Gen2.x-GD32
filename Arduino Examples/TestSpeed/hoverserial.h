@@ -70,6 +70,7 @@ uint16_t CalcCRC(uint8_t *ptr, int count)
      uint8_t  wState = 0;   // 1=ledGreen, 2=ledOrange, 4=ledRed, 8=ledUp, 16=ledDown   , 32=Battery3Led, 64=Disable, 128=ShutOff
      uint16_t checksum;
   } SerialServer2Hover;
+  
   typedef struct __attribute__((packed, aligned(1))) {
      uint8_t  cStart = '/';
      uint8_t  iDataType = 1;    //  unique id for this data struct
@@ -90,9 +91,7 @@ uint16_t CalcCRC(uint8_t *ptr, int count)
      uint8_t  iDriveMode  = 2;      //  MM32: 0=COM_VOLT, 1=COM_SPEED, 2=SINE_VOLT, 3=SINE_SPEED
      int8_t   iSlaveNew   = -1;      //  if >= 0 contains the new slave id saved to eeprom
      uint16_t checksum;
-  } SerialServer2HoverConfigMM32;
-
-  SerialServer2HoverConfigMM32 oHoverConfig;
+  } SerialServer2HoverConfig;
 
   template <typename O,typename D> void HoverSendData(O& oSerial, D& oData)
   {
@@ -121,7 +120,7 @@ uint16_t CalcCRC(uint8_t *ptr, int count)
     DEBUGT("\tiAmp",(float)oData.iAmp/100.0);
     DEBUGN("\tiVolt",(float)oData.iVolt/100.0);
   }
-  void HoverLogConfigMM32(SerialServer2HoverConfigMM32& oConfig)
+  void HoverLogConfig(SerialServer2HoverConfig& oConfig)
   {
     DEBUGT("config for iSlave",oConfig.iSlave);
     DEBUGT("fBattFull",oConfig.fBattFull);
@@ -154,6 +153,15 @@ uint16_t CalcCRC(uint8_t *ptr, int count)
      uint8_t  wStateSlave = 0;   // 1=ledGreen, 2=ledOrange, 4=ledRed, 8=ledUp, 16=ledDown   , 32=Battery3Led, 64=Disable, 128=ShutOff
      uint16_t checksum;
   } SerialServer2Hover;
+
+  typedef struct __attribute__((packed, aligned(1))) { 
+     uint8_t cStart     = '/';      //  unique id for this data struct
+     uint8_t  iDataType = 2;  //  unique id for this data struct
+     float  fBattFull     = 42.0;    // 10s LiIon = 42.0;
+     float  fBattEmpty    = 27.0;    // 10s LiIon = 27.0;
+     uint8_t  iDriveMode  = 2;      //  MM32: 0=COM_VOLT, 1=COM_SPEED, 2=SINE_VOLT, 3=SINE_SPEED
+     uint16_t checksum;
+  } SerialServer2HoverConfig;
 
   template <typename O,typename I> void HoverSend(O& oSerial, I iSteer, I iSpeed,uint8_t  wStateMaster=32, uint8_t  wStateSlave=0)
   {
@@ -209,6 +217,7 @@ uint16_t CalcCRC(uint8_t *ptr, int count)
 #endif
 
 
+SerialServer2HoverConfig oHoverConfig;
 
 
 
