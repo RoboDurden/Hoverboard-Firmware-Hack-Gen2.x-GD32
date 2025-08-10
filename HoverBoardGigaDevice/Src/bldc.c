@@ -122,6 +122,9 @@ void SetBldcInput(int32_t input)
 	case 2:	// torque in Nm*1024 = torque<<10
 		iBldcInput = input;
 		return;
+	case 3:	// iOdom position in hall steps = 4°
+		iBldcInput = input;
+		return;
 	}
 	iBldcInput = input;	// no restrictions for speed/torque/position ?
 }		
