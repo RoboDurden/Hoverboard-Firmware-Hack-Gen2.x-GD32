@@ -4,23 +4,32 @@
 //
 //    please share feedback to https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x
 #define _DEBUG      // debug output to first hardware serial port
-//  #define DEBUG_RX    // additional hoverboard-rx debug output
+//#define DEBUG_RX    // additional hoverboard-rx debug output
 
 #define ESP32       // comment out if using Arduino
 
 
-#define REMOTE_UARTBUS  // one serial bus to control them all :-)
+//#define REMOTE_UARTBUS  // one serial bus to control them all :-)
+
+#define MPU_Data
 
 #define SEND_MILLIS 50   // send commands to hoverboard every SEND_MILLIS millisesonds
 
 #include "util.h"
 #include "hoverserial.h"
 
-#define BAUDRATE 19200   // 19200 is default on hoverboard side because Arudino Nano SoftwareSerial can not do 115200
+//#define BAUDRATE 19200   // 19200 is default on hoverboard side because Arudino Nano SoftwareSerial can not do 115200
+#define BAUDRATE 115200
+
+#ifndef LED_BUILTIN
+  #define LED_BUILTIN 4
+#endif
 
 #ifdef ESP32
-  const int pinRX = 39, pinTX = 37;   // Wemos S2 Mini
-  //const int pinRX = 16, pinTX = 17;    Wemos Lolin32
+  //const int pinRX = 39, pinTX = 37;   // Wemos S2 Mini
+  //const int pinRX = 16, pinTX = 17;    // Wemos Lolin32
+  const int pinRX = 16, pinTX = 17;    // ESP32-2432S028
+  
   #define oSerialHover Serial1    // ESP32
 #else
   #include <SoftwareSerial.h>    // not compatible with RCReceiver because of interrupt conflicts.

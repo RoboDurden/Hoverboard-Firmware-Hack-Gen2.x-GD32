@@ -23,6 +23,11 @@ extern uint8_t usart2_rx_buf[1];
 
 static int16_t iReceivePos = -1;	
 
+#ifdef SEND_IMU_DATA
+	extern MPU_Data mpuData;	
+	extern ErrStatus    mpuStatus;                  // holds the MPU-6050 status: SUCCESS or ERROR
+#endif
+
 extern uint8_t bRemoteTimeout; 	// any Remote can set this to 1 to disable motor (with soft brake)
 extern int32_t steer;
 extern int32_t speed;
@@ -49,15 +54,24 @@ static uint8_t aReceiveBuffer[sizeof(SerialServer2Hover)];
 
 #define START_FRAME         0xABCD       // [-] Start frme definition for reliable serial communication
 typedef struct{				// ´#pragma pack(1)´ needed to get correct sizeof()
-   uint16_t cStart;
-   int16_t iSpeedL;		// 100* km/h
-   int16_t iSpeedR;		// 100* km/h
-   uint16_t iVolt;		// 100* V
-   int16_t iAmpL;			// 100* A
-   int16_t iAmpR;			// 100* A
-   int32_t iOdomL;		// hall steps
-   int32_t iOdomR;		// hall steps
-   uint16_t checksum;
+	uint16_t cStart;
+	int16_t iSpeedL;		// 100* km/h
+	int16_t iSpeedR;		// 100* km/h
+	uint16_t iVolt;		// 100* V
+	int16_t iAmpL;			// 100* A
+	int16_t iAmpR;			// 100* A
+	int32_t iOdomL;		// hall steps
+	int32_t iOdomR;		// hall steps
+	#ifdef SEND_IMU_DATA
+		int16_t     iGyroX;
+		int16_t     iGyroY;
+		int16_t     iGyroZ; 
+		int16_t     iAccelX;
+		int16_t     iAccelY;
+		int16_t     iAccelZ;
+		int16_t     iTemperature;
+	#endif
+	uint16_t checksum;
 } SerialHover2Server;
 
 int16_t aiDebug[7];
@@ -101,25 +115,17 @@ void RemoteUpdate(void)
 		oData.iSpeedR = 0;
 		oData.iOdomR = 0;
 	#endif
-/*	
-	oData.iVolt = aDebug[0];
-	oData.iAmpL = aDebug[1];
-	oData.iAmpR = aDebug[2];
-	oData.iSpeedL = aDebug[3];
-	oData.iSpeedR = (int16_t) sizeof(SerialServer2Hover);	// speed
-*/
-
-/*
-	oData.iVolt = aiDebug[0];
-	oData.iAmpL = aiDebug[1];
-	oData.iAmpR = aiDebug[2];
-	oData.iSpeedL = aiDebug[3];
-	oData.iSpeedR = aiDebug[4];
-	oData.iOdomL = aiDebug[5];
-	oData.iOdomR = aiDebug[6];
-*/
 
 	// oDataSlave.wState;
+	#ifdef SEND_IMU_DATA
+		oData.iGyroX = mpuData.gyro.x;
+		oData.iGyroY = mpuData.gyro.y;
+		oData.iGyroZ = mpuData.gyro.z;
+		oData.iAccelX = mpuData.accel.x;
+		oData.iAccelY = mpuData.accel.y;
+		oData.iAccelZ = mpuData.accel.z;
+		oData.iTemperature = mpuData.temperature;
+	#endif
 
 	oData.checksum = 	CalcCRC((uint8_t*) &oData, sizeof(oData) - 2);	// (first bytes except crc)
 	SendBuffer(USART_REMOTE, (uint8_t*) &oData, sizeof(oData));

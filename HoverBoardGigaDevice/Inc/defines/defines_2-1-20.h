@@ -14,7 +14,9 @@
 #define BUZZER PB9
 
 #define VBATT PA4
-#define CURRENT_DC PA0 
+#define ADC_BATTERY_VOLT      0.02507  	// V_Batt to V_BattMeasure = factor 30: ( (ADC-Data/4095) *3,3V *30 )
+
+//#define CURRENT_DC P??		// this board does not have a shunt resistor !
 
 #define SELF_HOLD	PB12
 #define BUTTON PA12
@@ -35,5 +37,8 @@
 // GD32F130 USART1 GD32F130 TX/RX: (PA14/PA15)AF1 , (PA2,PA3)AF1	, (PA8/PB0)AlternateFunction4
 #define USART1_TX		PA2
 #define USART1_RX		PA3
+
+#define I2C_PB6PB7	// IMU
+
 
 #endif

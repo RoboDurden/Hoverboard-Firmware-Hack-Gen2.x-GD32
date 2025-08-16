@@ -15,6 +15,11 @@
 #include "string.h"
 #include <math.h>     
 //#include "arm_math.h" 
+#ifdef MPU_6050
+	#include "../Inc/mpu6050.h"
+	extern ErrStatus    mpuStatus;                  // holds the MPU-6050 status: SUCCESS or ERROR
+#endif
+
 
 #ifdef BUZZER
 	extern uint8_t buzzerFreq;    						// global variable for the buzzer pitch. can be 1, 2, 3, 4, 5, 6, 7...
@@ -29,11 +34,11 @@
 uint8_t iDrivingMode = DRIVING_MODE;	//  0=pwm, 1=speed in revs*1024, (not yet: 3=torque, 4=iOdometer)
 uint8_t bRemoteTimeout = 0; 	// any Remote can set this to 1 to disable motor (with soft brake)
 uint32_t iBug = 0;
+uint8_t iBug8 = -1;
 uint32_t steerCounter = 0;								// Steer counter for setting update rate
 int32_t speed = 0; 												// global variable for speed.    -1000 to 1000
 int32_t speedShutoff = 0;
 int16_t speedLimit = 1000;
-
 
 
 #define STATE_LedGreen 1	
@@ -114,18 +119,16 @@ int main (void)
   SystemCoreClockUpdate();
   SysTick_Config(SystemCoreClock / 1000);	//  Configure SysTick to generate an interrupt every millisecond
 	
-iBug = 2;
 	if (	Watchdog_init() == ERROR)	// Init watchdog
 		while(1);	// If an error accours with watchdog initialization do not start device
-iBug = 3;	
 	// Init Interrupts
 	Interrupt_init();
-iBug = 4;	
+
 	#if TARGET != 3	// did not work for gd32e230 :-/
 		// Init timeout timer
 		TimeoutTimer_init();
 	#endif
-iBug = 5;
+
 	// Init GPIOs
 	GPIO_init();
 	#ifndef REMOTE_AUTODETECT
@@ -142,7 +145,7 @@ iBug = 5;
 			digitalWrite(SELF_HOLD,SET);
 		#endif
 	#endif
-iBug = 6;	
+
 	#ifdef USART0_BAUD
 			USART0_Init(USART0_BAUD);
 	#endif
@@ -152,18 +155,27 @@ iBug = 6;
 	#ifdef USART2_BAUD
 			USART2_Init(USART2_BAUD);
 	#endif
-	
+
+	#ifdef I2C_ENABLE
+		I2C_Init();
+		i2c_scanner();
+		dump_i2c_registers(0x68);
+	#endif 
+
+	#ifdef MPU_6050
+		MPU_Init();
+	#endif
+
 	// Init ADC
 	ADC_init();
-iBug = 7;	
+
 	// Init PWM
 	PWM_init();
-iBug = 8;
 
 	InitBldc();		// virtual function implemented by bldcBC.c and bldcSINE.c
 	DriverInit(iDrivingMode);
 
-iBug = 9;
+
 
 /*
 	// added by deepseek: Apply fixed PWM pattern to lock rotor to known position
@@ -251,6 +263,15 @@ iBug = 10;
 		#else	//MASTER_OR_SINGLE
 			if ((steerCounter % 2) == 0)	// something like DELAY_IN_MAIN_LOOP = 10 ms
 			{
+				#ifdef MPU_6050	// you might want to move it a few lines earlier to run in every loop
+					if (MPU_ReadAll() != SUCCESS) 
+					{
+						I2C_Init();	// try to re-init if i2c bus fails. Need when I2C_SPEED is 400000 instead of 200000
+						//MPU_Init();		// re-init mpu6050 (not really needed)
+						iBug++;
+					}
+				#endif
+				
 				RemoteUpdate();
 				//DEBUG_LedSet(RESET,0)
 			}
@@ -308,11 +329,13 @@ iBug = 10;
 			if (batteryVoltage > BAT_LOW_LVL1)	// Show green battery symbol when battery level BAT_LOW_LVL1 is reached
 			{
 				ShowBatteryState(0);
+				#ifdef BEEP_BACKWARDS
 				if (beepsBackwards == SET && speed < -50)
-				{
-					BuzzerSet(5,4)	// (iFrequency, iPattern)
-				}
-				else
+					{
+						BuzzerSet(5,4)	// (iFrequency, iPattern)
+					}
+					else
+				#endif
 				{
 					BuzzerSet(0,0)	// (iFrequency, iPattern)
 				}
@@ -320,17 +343,23 @@ iBug = 10;
 			else if (batteryVoltage > BAT_LOW_LVL2) // Make silent sound and show orange battery symbol when battery level BAT_LOW_LVL2 is reached
 			{
 				ShowBatteryState(1);
-				BuzzerSet(6,3)	// (iFrequency, iPattern)
+				#ifdef BATTERY_LOW_BEEP
+					BuzzerSet(6,3)	// (iFrequency, iPattern)
+				#endif
 			}
 			else if  (batteryVoltage > BAT_LOW_DEAD) // Make even more sound and show red battery symbol when battery level BAT_LOW_DEAD is reached
 			{
 				ShowBatteryState(2);
-				BuzzerSet(6,2)	// (iFrequency, iPattern)
+				#ifdef BATTERY_LOW_BEEP
+					BuzzerSet(6,2)	// (iFrequency, iPattern)
+				#endif
 			}
 			else 	// Shut device off, when battery is dead
 			{
 				ShowBatteryState(3);
-				BuzzerSet(6,1)	// (iFrequency, iPattern)
+				#ifdef BATTERY_LOW_BEEP
+					BuzzerSet(6,1)	// (iFrequency, iPattern)
+				#endif
 				#ifdef BATTERY_LOW_SHUTOFF
 					ShutOff();
 				#endif

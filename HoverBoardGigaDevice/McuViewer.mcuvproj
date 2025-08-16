@@ -1,0 +1,236 @@
+[elf]
+file_path = BinariesToFlash\hoverboard.elf
+relative_path = true
+
+[general]
+version = 2
+
+[settings]
+sample_frequency_hz = 100
+max_points = 10000
+max_viewport_points = 1000
+refresh_on_elf_change = true
+stop_acq_on_elf_change = true
+probe_type = 0
+target_name = 
+probe_mode = 0
+probe_speed_khz = 10000
+probe_sn = 69005100160000474735544E
+should_log = false
+log_directory = 
+gdb_command = ./gdb
+recorder_enabled = false
+restart_on_group_change = true
+keep_connection = true
+ip_address = 127.0.0.1
+port = 3333
+
+[trace_settings]
+core_frequency = 160000
+trace_prescaler = 10
+max_points = 10000
+max_viewport_points_percent = 10
+trigger_channel = -1
+trigger_level = 0,900000
+timeout = 2
+probe_type = 0
+target_name = 
+probe_speed_khz = 10000
+probe_sn = 
+should_log = false
+log_directory = 
+
+[var0]
+name = bldc_inputFilterPwm
+tracked_name = bldc_inputFilterPwm
+address = 536871228
+type = 6
+color = 1258321658
+should_update_from_elf = true
+shift = 0
+mask = 4294967295
+high_level_type = 0
+value_to_write = 0,000000
+do_not_interpret_as_enum = false
+
+[var1]
+name = bldc_outputFilterPwm
+tracked_name = bldc_outputFilterPwm
+address = 536871232
+type = 6
+color = 3690987715
+should_update_from_elf = true
+shift = 0
+mask = 4294967295
+high_level_type = 0
+value_to_write = 0,000000
+do_not_interpret_as_enum = false
+
+[var2]
+name = iBldcInput
+tracked_name = iBldcInput
+address = 536871348
+type = 6
+color = 822148351
+should_update_from_elf = true
+shift = 0
+mask = 4294967295
+high_level_type = 0
+value_to_write = 0,000000
+do_not_interpret_as_enum = false
+
+[var3]
+name = iOdom
+tracked_name = iOdom
+address = 536871372
+type = 6
+color = 3208559716
+should_update_from_elf = true
+shift = 0
+mask = 4294967295
+high_level_type = 0
+value_to_write = 0,000000
+do_not_interpret_as_enum = false
+
+[var4]
+name = revs32
+tracked_name = revs32
+address = 536871496
+type = 6
+color = 2596615599
+should_update_from_elf = true
+shift = 0
+mask = 4294967295
+high_level_type = 0
+value_to_write = 0,000000
+do_not_interpret_as_enum = false
+
+[var5]
+name = speedCounterSlowLog
+tracked_name = speedCounterSlowLog
+address = 536871528
+type = 5
+color = 2661914478
+should_update_from_elf = true
+shift = 0
+mask = 4294967295
+high_level_type = 0
+value_to_write = 0,000000
+do_not_interpret_as_enum = false
+
+[var6]
+name = torque32
+tracked_name = torque32
+address = 536871612
+type = 6
+color = 2656818748
+should_update_from_elf = true
+shift = 0
+mask = 4294967295
+high_level_type = 0
+value_to_write = 0,000000
+do_not_interpret_as_enum = false
+
+[group0]
+name = new group0
+acquisition_type = 0
+
+[group0-plot0]
+name = new plot0
+type = 0
+visibility = true
+
+[group0-plot0-series0]
+name = bldc_inputFilterPwm
+visibility = true
+format = DEC
+
+[group0-plot0-series1]
+name = bldc_outputFilterPwm
+visibility = true
+format = DEC
+
+[group0-plot0-series2]
+name = iBldcInput
+visibility = true
+format = DEC
+
+[group0-plot0-series3]
+name = iOdom
+visibility = true
+format = DEC
+
+[group0-plot0-series4]
+name = revs32
+visibility = false
+format = DEC
+
+[group0-plot0-series5]
+name = speedCounterSlowLog
+visibility = false
+format = DEC
+
+[group0-plot0-series6]
+name = torque32
+visibility = false
+format = DEC
+
+[trace_plot0]
+name = CH0
+alias = CH0
+visibility = true
+domain = 1
+
+[trace_plot1]
+name = CH1
+alias = CH1
+visibility = true
+domain = 1
+
+[trace_plot2]
+name = CH2
+alias = CH2
+visibility = true
+domain = 1
+
+[trace_plot3]
+name = CH3
+alias = CH3
+visibility = true
+domain = 1
+
+[trace_plot4]
+name = CH4
+alias = CH4
+visibility = true
+domain = 1
+
+[trace_plot5]
+name = CH5
+alias = CH5
+visibility = true
+domain = 1
+
+[trace_plot6]
+name = CH6
+alias = CH6
+visibility = true
+domain = 1
+
+[trace_plot7]
+name = CH7
+alias = CH7
+visibility = true
+domain = 1
+
+[trace_plot8]
+name = CH8
+alias = CH8
+visibility = true
+domain = 1
+
+[trace_plot9]
+name = CH9
+alias = CH9
+visibility = true
+domain = 1

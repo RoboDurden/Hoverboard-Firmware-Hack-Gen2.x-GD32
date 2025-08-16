@@ -17,8 +17,8 @@ void RemoteUpdate(void)
 	int32_t iMax = 0;
 	switch(iDrivingMode)	//  0=pwm, 1=speed in revs*1024, (not yet: 3=torque, 4=iOdometer)
 	{
-		case 0: iMax = 250; break;	// pwm value
-		case 1: iMax = 0.3 *1024; break;	// 1.5*1024 = max speed 1.5 revs/s
+		case 0: iMax = 500; break;	// pwm value
+		case 1: iMax = 1.0 *1024; break;	// 1.5*1024 = max speed 1.5 revs/s
 		case 2: iMax = 5.0 *1024; break;	// 1.5*1024 = max speed 1.5 Nm (Newton meter)
 		case 3: iMax = 900; break;	// 90 = 360°
 	}

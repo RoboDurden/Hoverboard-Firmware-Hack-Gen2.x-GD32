@@ -1,4 +1,8 @@
+#include <Arduino.h>
+#include "util.h"
+
 // hoverserial.h v20250813
+
 /*
 // Variables todo
 uint8_t upperLEDMaster = 0;
@@ -49,13 +53,6 @@ uint16_t CalcCRC(uint8_t *ptr, int count)
 
 #define START_FRAME         0xABCD       // [-] Start frme definition for reliable serial communication
 
-  template <typename O,typename D> void HoverSendData(O& oSerial, D& oData)
-  {
-    oData.checksum = CalcCRC((uint8_t*)&oData, sizeof(oData)-2); // first bytes except crc
-    oSerial.write((uint8_t*) &oData, sizeof(oData)); 
-    //DEBUGN(oData.iSlave, sizeof(oData)); 
-  }
-
 #ifdef REMOTE_UARTBUS
   typedef struct __attribute__((packed, aligned(1))) {
      uint16_t cStart = START_FRAME;    //  = '/';
@@ -100,6 +97,12 @@ uint16_t CalcCRC(uint8_t *ptr, int count)
      uint16_t checksum;
   } SerialServer2HoverConfig;
 
+  template <typename O,typename D> void HoverSendData(O& oSerial, D& oData)
+  {
+    oData.checksum = CalcCRC((uint8_t*)&oData, sizeof(oData)-2); // first bytes except crc
+    oSerial.write((uint8_t*) &oData, sizeof(oData)); 
+    //DEBUGN(oData.iSlave, sizeof(oData)); 
+  }
 
   template <typename O,typename I> void HoverSend(O& oSerial, uint8_t iSlave, I iSpeed, uint8_t  wState=32)
   {
@@ -121,29 +124,36 @@ uint16_t CalcCRC(uint8_t *ptr, int count)
     DEBUGT("\tiAmp",(float)oData.iAmp/100.0);
     DEBUGN("\tiVolt",(float)oData.iVolt/100.0);
   }
+  void HoverLogConfig(SerialServer2HoverConfig& oConfig)
+  {
+    DEBUGT("config for iSlave",oConfig.iSlave);
+    DEBUGT("fBattFull",oConfig.fBattFull);
+    DEBUGT("fBattEmpty",oConfig.fBattEmpty);
+    DEBUGT("iDriveMode",oConfig.iDriveMode);
+    DEBUGN("iSlaveNew",oConfig.iSlaveNew);
+  }
 
 #else
 
   typedef struct __attribute__((packed, aligned(1))) {
-     uint16_t cStart = START_FRAME;    //  = '/';
-     int16_t iSpeedL;   // 100* km/h
-     int16_t iSpeedR;   // 100* km/h
-     uint16_t iVolt;    // 100* V
-     int16_t iAmpL;   // 100* A
-     int16_t iAmpR;   // 100* A
-     int32_t iOdomL;    // hall steps
-     int32_t iOdomR;    // hall steps
-    #ifdef MPU_Data
-      int16_t     iGyroX;
-      int16_t     iGyroY;
-      int16_t     iGyroZ; 
-      int16_t     iAccelX;
-      int16_t     iAccelY;
-      int16_t     iAccelZ;
-      int16_t     iTemperature;
-    #endif
-     
-     uint16_t checksum;
+		uint16_t cStart = START_FRAME;    //  = '/';
+		int16_t iSpeedL;   // 100* km/h
+		int16_t iSpeedR;   // 100* km/h
+		uint16_t iVolt;    // 100* V
+		int16_t iAmpL;   // 100* A
+		int16_t iAmpR;   // 100* A
+		int32_t iOdomL;    // hall steps
+		int32_t iOdomR;    // hall steps
+		#ifdef MPU_Data
+			int16_t     iGyroX;
+			int16_t     iGyroY;
+			int16_t     iGyroZ; 
+			int16_t     iAccelX;
+			int16_t     iAccelY;
+			int16_t     iAccelZ;
+			int16_t     iTemperature;
+		#endif
+		uint16_t checksum;
   } SerialHover2Server;
   
   //typedef struct{   // new version
@@ -162,7 +172,7 @@ uint16_t CalcCRC(uint8_t *ptr, int count)
      uint8_t  iDataType = 2;  //  unique id for this data struct
      float  fBattFull     = 42.0;    // 10s LiIon = 42.0;
      float  fBattEmpty    = 27.0;    // 10s LiIon = 27.0;
-     uint8_t  iDriveMode  = 0;      //  MM32: 0=COM_VOLT, 1=COM_SPEED, 2=SINE_VOLT, 3=SINE_SPEED
+     uint8_t  iDriveMode  = 2;      //  MM32: 0=COM_VOLT, 1=COM_SPEED, 2=SINE_VOLT, 3=SINE_SPEED
      uint16_t checksum;
   } SerialServer2HoverConfig;
 
@@ -195,16 +205,16 @@ uint16_t CalcCRC(uint8_t *ptr, int count)
     DEBUGT("\tiAmpL",(float)oData.iAmpL/100.0);
     DEBUGT(" iAmpR",(float)oData.iAmpR/100.0);
     DEBUGN("\tiVolt",(float)oData.iVolt/100.0);
-    #ifdef MPU_Data
-      DEBUGT("iGyroX",oData.iGyroX);
-      DEBUGT("iGyroY",oData.iGyroY);
-      DEBUGT("iGyroZ",oData.iGyroZ); 
-      DEBUGT("iAccelX",oData.iAccelX);
-      DEBUGT("iAccelY",oData.iAccelY);
-      DEBUGT("iAccelZ",oData.iAccelZ);
-      DEBUGN("iTemperature",oData.iTemperature);
-    #endif
-    
+	#ifdef MPU_Data
+		DEBUGT("iGyroX",oData.iGyroX);
+		DEBUGT("iGyroY",oData.iGyroY);
+		DEBUGT("iGyroZ",oData.iGyroZ); 
+		DEBUGT("iAccelX",oData.iAccelX);
+		DEBUGT("iAccelY",oData.iAccelY);
+		DEBUGT("iAccelZ",oData.iAccelZ);
+		DEBUGN("iTemperature",oData.iTemperature);
+	#endif
+
   }
 
   void HoverDebug(SerialHover2Server& oData)
@@ -228,17 +238,6 @@ uint16_t CalcCRC(uint8_t *ptr, int count)
   }
 
 #endif
-
-void HoverLogConfig(SerialServer2HoverConfig& oConfig)
-{
-  #ifdef REMOTE_UARTBUS
-    DEBUGT("config for iSlave",oConfig.iSlave);
-    DEBUGT("iSlaveNew",oConfig.iSlaveNew);
-  #endif
-  DEBUGT("fBattFull",oConfig.fBattFull);
-  DEBUGT("fBattEmpty",oConfig.fBattEmpty);
-  DEBUGN("iDriveMode",oConfig.iDriveMode);
-}
 
 
 SerialServer2HoverConfig oHoverConfig;
@@ -264,7 +263,7 @@ void DebugOut(uint8_t aBuffer[], uint8_t iSize)
 #endif
 
 //boolean Receive(Serial& oSerial, SerialFeedback& Feedback)
-template <typename O,typename OF> boolean Receive(O& oSerial, OF& Feedback)
+template <typename O,typename OF> boolean HoverReceive(O& oSerial, OF& Feedback)
 {
   int iTooMuch = oSerial.available() - sizeof(SerialHover2Server) + 1;
   int8_t bFirst = 1;

@@ -395,6 +395,11 @@
               <FilePath>.\Src\bldc.c</FilePath>
             </File>
             <File>
+              <FileName>driver.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\driver.c</FilePath>
+            </File>
+            <File>
               <FileName>bldcBC.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\bldcBC.c</FilePath>
@@ -465,9 +470,14 @@
               <FilePath>.\Src\RemoteROS2.c</FilePath>
             </File>
             <File>
-              <FileName>driver.c</FileName>
+              <FileName>i2c.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Src\driver.c</FilePath>
+              <FilePath>.\Src\i2c.c</FilePath>
+            </File>
+            <File>
+              <FileName>mpu6050.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\mpu6050.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -578,6 +588,16 @@
               <FileName>defines.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines.h</FilePath>
+            </File>
+            <File>
+              <FileName>i2c.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\i2c.h</FilePath>
+            </File>
+            <File>
+              <FileName>mpu6050.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\mpu6050.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -705,6 +725,11 @@
               <FilePath>.\Inc\defines\defines_2-3-1.h</FilePath>
             </File>
             <File>
+              <FileName>defines_2-3-2.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\defines\defines_2-3-2.h</FilePath>
+            </File>
+            <File>
               <FileName>defines_2-4-1.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines\defines_2-4-1.h</FilePath>
@@ -720,9 +745,9 @@
               <FilePath>.\Inc\defines\defines_2-x-y.h</FilePath>
             </File>
             <File>
-              <FileName>defines_2-3-2.h</FileName>
+              <FileName>defines_2-3-3.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\Inc\defines\defines_2-3-2.h</FilePath>
+              <FilePath>.\Inc\defines\defines_2-3-3.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -1123,6 +1148,11 @@
               <FilePath>.\Src\bldc.c</FilePath>
             </File>
             <File>
+              <FileName>driver.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\driver.c</FilePath>
+            </File>
+            <File>
               <FileName>bldcBC.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\bldcBC.c</FilePath>
@@ -1193,9 +1223,14 @@
               <FilePath>.\Src\RemoteROS2.c</FilePath>
             </File>
             <File>
-              <FileName>driver.c</FileName>
+              <FileName>i2c.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Src\driver.c</FilePath>
+              <FilePath>.\Src\i2c.c</FilePath>
+            </File>
+            <File>
+              <FileName>mpu6050.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\mpu6050.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1306,6 +1341,16 @@
               <FileName>defines.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines.h</FilePath>
+            </File>
+            <File>
+              <FileName>i2c.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\i2c.h</FilePath>
+            </File>
+            <File>
+              <FileName>mpu6050.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\mpu6050.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -1433,6 +1478,11 @@
               <FilePath>.\Inc\defines\defines_2-3-1.h</FilePath>
             </File>
             <File>
+              <FileName>defines_2-3-2.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\defines\defines_2-3-2.h</FilePath>
+            </File>
+            <File>
               <FileName>defines_2-4-1.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines\defines_2-4-1.h</FilePath>
@@ -1448,9 +1498,9 @@
               <FilePath>.\Inc\defines\defines_2-x-y.h</FilePath>
             </File>
             <File>
-              <FileName>defines_2-3-2.h</FileName>
+              <FileName>defines_2-3-3.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\Inc\defines\defines_2-3-2.h</FilePath>
+              <FilePath>.\Inc\defines\defines_2-3-3.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -1851,6 +1901,11 @@
               <FilePath>.\Src\bldc.c</FilePath>
             </File>
             <File>
+              <FileName>driver.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\driver.c</FilePath>
+            </File>
+            <File>
               <FileName>bldcBC.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\bldcBC.c</FilePath>
@@ -1921,9 +1976,14 @@
               <FilePath>.\Src\RemoteROS2.c</FilePath>
             </File>
             <File>
-              <FileName>driver.c</FileName>
+              <FileName>i2c.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Src\driver.c</FilePath>
+              <FilePath>.\Src\i2c.c</FilePath>
+            </File>
+            <File>
+              <FileName>mpu6050.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\mpu6050.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2034,6 +2094,16 @@
               <FileName>defines.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines.h</FilePath>
+            </File>
+            <File>
+              <FileName>i2c.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\i2c.h</FilePath>
+            </File>
+            <File>
+              <FileName>mpu6050.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\mpu6050.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -2161,6 +2231,11 @@
               <FilePath>.\Inc\defines\defines_2-3-1.h</FilePath>
             </File>
             <File>
+              <FileName>defines_2-3-2.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\defines\defines_2-3-2.h</FilePath>
+            </File>
+            <File>
               <FileName>defines_2-4-1.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines\defines_2-4-1.h</FilePath>
@@ -2176,9 +2251,9 @@
               <FilePath>.\Inc\defines\defines_2-x-y.h</FilePath>
             </File>
             <File>
-              <FileName>defines_2-3-2.h</FileName>
+              <FileName>defines_2-3-3.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\Inc\defines\defines_2-3-2.h</FilePath>
+              <FilePath>.\Inc\defines\defines_2-3-3.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -2579,6 +2654,11 @@
               <FilePath>.\Src\bldc.c</FilePath>
             </File>
             <File>
+              <FileName>driver.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\driver.c</FilePath>
+            </File>
+            <File>
               <FileName>bldcBC.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\bldcBC.c</FilePath>
@@ -2649,9 +2729,14 @@
               <FilePath>.\Src\RemoteROS2.c</FilePath>
             </File>
             <File>
-              <FileName>driver.c</FileName>
+              <FileName>i2c.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Src\driver.c</FilePath>
+              <FilePath>.\Src\i2c.c</FilePath>
+            </File>
+            <File>
+              <FileName>mpu6050.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\mpu6050.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2762,6 +2847,16 @@
               <FileName>defines.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines.h</FilePath>
+            </File>
+            <File>
+              <FileName>i2c.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\i2c.h</FilePath>
+            </File>
+            <File>
+              <FileName>mpu6050.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\mpu6050.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -2889,6 +2984,11 @@
               <FilePath>.\Inc\defines\defines_2-3-1.h</FilePath>
             </File>
             <File>
+              <FileName>defines_2-3-2.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\defines\defines_2-3-2.h</FilePath>
+            </File>
+            <File>
               <FileName>defines_2-4-1.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\defines\defines_2-4-1.h</FilePath>
@@ -2904,9 +3004,9 @@
               <FilePath>.\Inc\defines\defines_2-x-y.h</FilePath>
             </File>
             <File>
-              <FileName>defines_2-3-2.h</FileName>
+              <FileName>defines_2-3-3.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\Inc\defines\defines_2-3-2.h</FilePath>
+              <FilePath>.\Inc\defines\defines_2-3-3.h</FilePath>
             </File>
           </Files>
         </Group>

@@ -319,20 +319,24 @@ void CalculateBLDC(void)
 	// Increments with 62.5us
 	if(speedCounter < 8000) speedCounter++;	// No speed after 250ms
 	
-	// Every time position reaches value 1, one (electrical 360°) round = 24° mechanical angle is performed (rising edge)
-	if (lastPos != 1 && pos == 1)
-	{
-		realSpeed = 1991.81f / (float)speedCounter; //[km/h]		// robo 2025: should get changed to rpm ?
-		revs32x =  revs32Scale / speedCounter;
-		if (lastPos == 2)	
-			realSpeed *= -1;
-		else
-			revs32x *= -1;
-		
-		speedCounterLog = speedCounter;	// for logging with StmStudio
-		speedCounter = 0;
-	}
-	else if (speedCounter >= 8000)	realSpeed = revs32x = 0;
+	#ifdef SPEED_AsRevsPerSec
+		realSpeed	= revs32 / 1024.0;
+	#else
+		// Every time position reaches value 1, one (electrical 360°) round = 24° mechanical angle is performed (rising edge)
+		if (lastPos != 1 && pos == 1)
+		{
+			realSpeed = 1991.81f / (float)speedCounter; //[km/h]		// robo 2025: should get changed to rpm ?
+			revs32x =  revs32Scale / speedCounter;
+			if (lastPos == 2)	
+				realSpeed *= -1;
+			else
+				revs32x *= -1;
+			
+			speedCounterLog = speedCounter;	// for logging with StmStudio
+			speedCounter = 0;
+		}
+		else if (speedCounter >= 8000)	realSpeed = revs32x = 0;
+	#endif
 	
 	//if (speedCounterSlowLog <= 600)	revs32 = revs32x;		// that doesn't work as motor begins to oscillate
 	

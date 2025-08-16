@@ -267,6 +267,40 @@ typedef struct
 	#pragma pack(pop)
 #endif
 
+#ifdef MPU_6050		// RemoteUart and RemoteUartBus need to access mpuData
+
+	#if (!defined(I2C_PB6PB7) && !defined(I2C_PB8PB9))
+		#error "neither I2C_PB6PB7 nor I2C_PB8PB9 defined in your defines_2-t-l.h file"
+	#endif
+	#if defined (HAS_USART0) && defined(I2C_PB6PB7)
+		#warning "I2C_PB6PB7 and USART0 active. If USART0_TX = PB6, Disable USART0 for RemoteXY or MasterSlave"
+	#endif
+	
+	
+	#define I2C_ENABLE
+	
+	
+	typedef struct{
+		int16_t     x;
+		int16_t     y;
+		int16_t     z; 
+	} Gyro;
+
+	typedef struct{
+		int16_t     x;
+		int16_t     y;
+		int16_t     z; 
+	} Accel;
+
+	typedef struct {
+		Gyro        gyro;
+		Accel       accel;
+		int16_t     temperature;
+	} MPU_Data;
+
+#endif
+
+
 
 
 #endif		// DEFINES_H

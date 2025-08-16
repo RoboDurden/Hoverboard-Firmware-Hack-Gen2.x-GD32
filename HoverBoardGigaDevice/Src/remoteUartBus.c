@@ -20,8 +20,11 @@ extern uint8_t usart2_rx_buf[1];
 
 static int16_t iReceivePos = 0;	
 
+#ifdef SEND_IMU_DATA
+	extern MPU_Data mpuData;	
+	extern ErrStatus    mpuStatus;                  // holds the MPU-6050 status: SUCCESS or ERROR
+#endif
 extern uint8_t bRemoteTimeout; 	// any Remote can set this to 1 to disable motor (with soft brake)
-
 extern uint8_t iDrivingMode;
 extern int32_t steer;
 extern int32_t speed;
@@ -60,7 +63,8 @@ typedef struct {	// ´#pragma pack(1)´ needed to get correct sizeof()
    uint8_t 	iSlave;			//  contains the slave id this message is intended for
 	 float  fBattFull;    // = 42.0;    // 10s LiIon = 42.0;
 	 float  fBattEmpty;   // = 27.0;    // 10s LiIon = 27.0;
-	 uint8_t  iDriveMode;	//  = 0;      //  MM32: 0=COM_VOLT, 1=COM_SPEED, 2=SINE_VOLT, 3=SINE_SPEED
+	 uint8_t  iDriveMode;	//  = 0;  MM32: 0=COM_VOLT, 1=COM_SPEED, 2=SINE_VOLT, 3=SINE_SPEED
+												// 				GD32: 0=pwm, 1=speed in revs/s*1024, 2=torque in NewtonMeter*1024, 3=iOdometer
 	 int8_t   iSlaveNew;	//   = -1;      //  if >= 0 contains the new slave id saved to eeprom
    uint16_t checksum;
 } SerialServer2HoverConfig;
@@ -69,13 +73,22 @@ static uint8_t aReceiveBuffer[255];	//sizeof(SerialServer2Hover)
 
 #define START_FRAME         0xABCD       // [-] Start frme definition for reliable serial communication
 typedef struct{				// ´#pragma pack(1)´ needed to get correct sizeof()
-   uint16_t cStart;
-   uint8_t iSlave;		//  the slave id this message is sent from
-   int16_t iSpeed;		// 100* km/h
-   uint16_t iVolt;		// 100* V
-   int16_t iAmp;			// 100* A
-   int32_t iOdom;		// hall steps
-   uint16_t checksum;
+	uint16_t cStart;
+	uint8_t iSlave;		//  the slave id this message is sent from
+	int16_t iSpeed;		// 100* km/h
+	uint16_t iVolt;		// 100* V
+	int16_t iAmp;			// 100* A
+	int32_t iOdom;		// hall steps
+	#ifdef SEND_IMU_DATA
+		int16_t     iGyroX;
+		int16_t     iGyroY;
+		int16_t     iGyroZ; 
+		int16_t     iAccelX;
+		int16_t     iAccelY;
+		int16_t     iAccelZ;
+		int16_t     iTemperature;
+	#endif
+	uint16_t checksum;
 } SerialHover2Server;
 
 
@@ -110,6 +123,15 @@ void AnswerMaster(void)
 	oData.iSpeed = (int16_t) (realSpeed * 100);
 	oData.iOdom = (int32_t) iOdom;
 	oData.iOdom = iAnswerMaster++;
+	#ifdef SEND_IMU_DATA
+		oData.iGyroX = mpuData.gyro.x;
+		oData.iGyroY = mpuData.gyro.y;
+		oData.iGyroZ = mpuData.gyro.z;
+		oData.iAccelX = mpuData.accel.x;
+		oData.iAccelY = mpuData.accel.y;
+		oData.iAccelZ = mpuData.accel.z;
+		oData.iTemperature = mpuData.temperature;
+	#endif
 
 	oData.checksum = 	CalcCRC((uint8_t*) &oData, sizeof(oData) - 2);	// (first bytes except crc)
 

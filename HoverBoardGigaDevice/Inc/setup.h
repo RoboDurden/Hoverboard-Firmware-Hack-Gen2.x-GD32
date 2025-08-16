@@ -88,6 +88,8 @@ void USART0_Init(uint32_t iBaud);
 void USART1_Init(uint32_t iBaud);
 void USART2_Init(uint32_t iBaud);
 
+
+
 //----------------------------------------------------------------------------
 // Initializes the usart master slave
 //----------------------------------------------------------------------------

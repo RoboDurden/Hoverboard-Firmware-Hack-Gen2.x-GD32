@@ -150,6 +150,7 @@ void GPIO_init(void)
 	rcu_periph_clock_enable(RCU_GPIOB);
 	rcu_periph_clock_enable(RCU_GPIOC);
 	rcu_periph_clock_enable(RCU_GPIOF);
+
 	
 	#ifdef TIMER_BLDC_EMERGENCY_SHUTDOWN
 		// Init emergency shutdown pin
@@ -909,6 +910,7 @@ void USART2_Init(uint32_t iBaud)	// only for target==2 = gd32f103
 	dma_channel_enable(DMA0, DMA_CH2); // JW: Changed to CH2 (from CH4). JMA DMA0 added
 #endif
 }
+
 
 
 
