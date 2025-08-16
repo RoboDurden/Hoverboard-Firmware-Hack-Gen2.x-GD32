@@ -1,12 +1,15 @@
-// Kafkar.com
+// based on https://github.com/Kafkar/ESP32_2432S028R-LVGL-tutorial
 #include <Arduino.h>
 
 #include "../include/hoverserial.h"
 
-
-#define SERIAL2_RX 16
-#define SERIAL2_TX 17
+// rx pin on 4pin serial JST1.5mm heder left to USB-C is not working because TX output CH340C pulls to high on idle :-(
+// solder rx and tx directly to the ESP32 WROOM module, which are pulled through the rgb led to 3.3V with 1 kOhm resistor.
+// solder gnd to that 4pin serial header, 5V from Hoverboard Uart to the VIn pin of same JST port (or to the connected little smd transistor = easier)
+//#define SERIAL2_RX 16   // uncomment these 2 lines if other pins are used.
+//#define SERIAL2_TX 17   // uncomment these 2 lines if other pins are used.
 HardwareSerial oSerialHover(2);
+#define HOVER_BAUDRATE 115200   // you need to change RemoteUart/RemoteUartBus baudrate also in config.h : #define REMOTE_BAUD 115200
 
 SerialHover2Server oHoverFeedback;
 
@@ -183,8 +186,11 @@ void setup() {
   Serial.begin(115200);
   Serial.println(LVGL_Arduino);
   
-
-  oSerialHover.begin(115200);
+  #ifdef SERIAL2_RX
+    oSerialHover.begin(HOVER_BAUDRATE, SERIAL_8N1, SERIAL2_RX, SERIAL2_TX);
+  #else
+    oSerialHover.begin(HOVER_BAUDRATE);
+  #endif
 
   // Start LVGL
   lv_init();
