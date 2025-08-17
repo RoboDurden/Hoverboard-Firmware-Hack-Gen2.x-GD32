@@ -1,0 +1,6 @@
+{
+	"files.associations": {
+		"lv_draw_vg_lite_type.h": "c",
+		"lv_obj_event_private.h": "c"
+	}
+}

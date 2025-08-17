@@ -30,6 +30,7 @@
 	
 	//#define BLDC_BC			// old block commutation bldc control
 	#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden. 
+	#define BLDC_SINE_BOOSTER		// can boost speed by 15% starting from 87% throttle.
 	
 	#define DRIVING_MODE 0	//  0=pwm, 1=speed in revs/s*1024, 2=torque in NewtonMeter*1024, 3=iOdometer
 	
@@ -69,6 +70,7 @@
 			#define SLAVE_ID	0		// must be unique for all hoverboards connected to the bus
 		#endif
 		#ifdef REMOTE_DUMMY
+			//#define SLOW_SINE	// 9 second period instead of 3 seconds
 			//#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
 		#else
 			//#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors

@@ -16,7 +16,7 @@ float currentDC = 0.42;		// to see in serial log that pin is not defined
 float realSpeed = 0.0;
 int32_t revs32 = 0;
 int32_t torque32 = 0;
-int32_t revs32_reg = 0, torque32_reg = 0;
+int32_t revs32_reg = 0, torque32_reg = 0, realSpeed32_reg = 0;
 int32_t revs32x = 0;
 #define REVS32_SHIFT 12
 int32_t revs32Scale = (PWM_FREQ/15)<<REVS32_SHIFT;			// REVS32_SHIFT-bit fractional precision
@@ -320,7 +320,11 @@ void CalculateBLDC(void)
 	if(speedCounter < 8000) speedCounter++;	// No speed after 250ms
 	
 	#ifdef SPEED_AsRevsPerSec
-		realSpeed	= revs32 / 1024.0;
+	
+		#define RANK_realSpeed32 10 	// Calculate low-pass filter for pwm value
+		realSpeed32_reg = realSpeed32_reg - (realSpeed32_reg >> RANK_realSpeed32) + revs32;
+	
+		realSpeed	= (realSpeed32_reg >> RANK_realSpeed32) / 1024.0;
 	#else
 		// Every time position reaches value 1, one (electrical 360°) round = 24° mechanical angle is performed (rising edge)
 		if (lastPos != 1 && pos == 1)

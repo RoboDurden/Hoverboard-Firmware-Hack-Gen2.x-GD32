@@ -8,21 +8,20 @@
 
 #define ESP32       // comment out if using Arduino
 
-
 //#define REMOTE_UARTBUS  // one serial bus to control them all :-)
 
-#define MPU_Data
+//#define MPU_Data    // uncomment if your hoverboard:config.h has active: #define SEND_IMU_DATA
 
 #define SEND_MILLIS 50   // send commands to hoverboard every SEND_MILLIS millisesonds
 
 #include "util.h"
 #include "hoverserial.h"
 
-//#define BAUDRATE 19200   // 19200 is default on hoverboard side because Arudino Nano SoftwareSerial can not do 115200
-#define BAUDRATE 115200
+#define BAUDRATE 19200   // 19200 is default on hoverboard side because Arudino Nano SoftwareSerial can not do 115200
+//#define BAUDRATE 115200   // better for receving high frequency MPU_Data
 
 #ifndef LED_BUILTIN
-  #define LED_BUILTIN 4
+  #define LED_BUILTIN 4   // ESP32_2432S028 like "HoverBike CYD LVGL"
 #endif
 
 #ifdef ESP32

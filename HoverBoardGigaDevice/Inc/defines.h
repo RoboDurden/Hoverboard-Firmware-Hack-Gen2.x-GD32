@@ -57,7 +57,7 @@
 	#endif
 #endif
 
-#define BLDC_TIMER_PERIOD       (72000000u / 2u / PWM_FREQ) // = 2250
+#define BLDC_TIMER_PERIOD       (72000000u / 2u / PWM_FREQ) // = 2250 for 16 kHz and 3000 for 12 kHz
 
 #ifndef TIMER_BLDC	// these defines should be equal for all Gen2 boards as they only have on bldc capable TIMER = TIMER0
 	#define TIMER_BLDC 		TIMER0
@@ -206,9 +206,10 @@
 // Useful math function defines
 #define ABS(a) (((a) < 0.0) ? -(a) : (a))
 #define CLAMP(x, low, high) (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
-#ifndef MAX
-	#define MAX(x, high) (((x) > (high)) ? (high) : (x))
-#endif	
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+//bug ?!? #define MAX(x, high) (((x) > (high)) ? (high) : (x))
+	
 #define MAP(x, xMin, xMax, yMin, yMax) ((x - xMin) * (yMax - yMin) / (xMax - xMin) + yMin)
 
 // ################################################################################

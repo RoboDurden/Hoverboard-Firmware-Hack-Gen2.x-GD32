@@ -13,7 +13,6 @@ HardwareSerial oSerialHover(2);
 
 SerialHover2Server oHoverFeedback;
 
-
 #include <SPI.h>
 
 // include the installed LVGL- Light and Versatile Graphics Library - https://github.com/lvgl/lvgl
@@ -54,10 +53,12 @@ int x, y, z;
 lv_obj_t * sw;
 lv_obj_t * slider;
 lv_obj_t * btn_label;
+lv_obj_t * text0_label;
 lv_obj_t * text_label;
 lv_obj_t * chart;
 #define SER_COUNT 6
 lv_chart_series_t * aSer[SER_COUNT];
+
 
 // Create a variable to store the LED state
 bool ledsOff = false;
@@ -99,12 +100,12 @@ static void event_handler(lv_event_t *e)
         if(lv_obj_has_state(obj, LV_STATE_CHECKED)==true)
         {
           DEBUGN("eventhandler",1)
-          s = "hallo engel :-)";
+          s = "speed on";
         }
         else
         {
           DEBUGN("eventhandler",0)
-          s = "hallo verlierer :-()";
+          s = "speed off";
         }
         lv_label_set_text(text_label, s.c_str());    
         //LV_LOG_USER("State: %s\n", lv_obj_has_state(obj, LV_STATE_CHECKED) ? "On" : "Off");
@@ -116,47 +117,73 @@ static lv_obj_t * slider_label;
 // Callback that prints the current slider value on the TFT display and Serial Monitor for debugging purposes
 static void slider_event_callback(lv_event_t * e) {
   lv_obj_t * slider = (lv_obj_t*) lv_event_get_target(e);
-  char buf[8];
-  lv_snprintf(buf, sizeof(buf), "%d%%", (int)lv_slider_get_value(slider));
+  int iSlider = (int)lv_slider_get_value(slider);
+  char buf[12];
+  lv_snprintf(buf, sizeof(buf), iSlider<100 ? "%d" : "#ff0000 %d", iSlider);
   lv_label_set_text(slider_label, buf);
   //lv_obj_align_to(slider_label, slider, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
 }
 
 
+static lv_style_t style_large;
 void lv_create_main_gui(void) 
 {
+  LV_FONT_DECLARE(lv_font_montserrat_28);
+  lv_style_init(&style_large);
+  lv_style_set_text_font(&style_large, &lv_font_montserrat_28); // Bigger font than default
+
   sw = lv_switch_create(lv_screen_active());
+  lv_switch_set_orientation(sw,LV_SWITCH_ORIENTATION_VERTICAL);
+  lv_obj_set_width(sw, 30);    // Set smaller width to make the lines wrap  
+  lv_obj_set_height(sw,55);
+
   lv_obj_add_event_cb(sw, event_handler, LV_EVENT_ALL, NULL);
   lv_obj_add_flag(sw, LV_OBJ_FLAG_EVENT_BUBBLE);
   lv_obj_align(sw, LV_ALIGN_TOP_LEFT , 5, 5);
-  lv_obj_add_state(sw, LV_STATE_CHECKED);
+  //lv_obj_add_state(sw, LV_STATE_CHECKED);
 
-  // Create a text label aligned center on top ("Hello, Kafkar.com!")
+  text0_label = lv_label_create(lv_screen_active());
+  //lv_label_set_long_mode(text0_label, LV_LABEL_LONG_WRAP);    // Breaks the long lines
+  lv_label_set_recolor(text0_label, true);
+  lv_label_set_text(text0_label, "#0000ff Hello, HoverBike V1.0 :-)");
+  //lv_obj_add_style(text0_label, &style_large, 0);  // Apply the style to the label
+  lv_obj_set_width(text0_label, 250);    // Set smaller width to make the lines wrap
+  lv_obj_set_height(text0_label, 20);    // Set smaller width to make the lines wrap
+  lv_obj_set_style_text_align(text0_label, LV_TEXT_ALIGN_CENTER, 0);
+  lv_obj_align(text0_label, LV_ALIGN_TOP_MID, 0, 0);
+
+  //lv_obj_align_to(text0_label, sw, LV_ALIGN_OUT_RIGHT_TOP, 0, -5);
+
   text_label = lv_label_create(lv_screen_active());
   //lv_label_set_long_mode(text_label, LV_LABEL_LONG_WRAP);    // Breaks the long lines
   lv_label_set_recolor(text_label, true);
-  lv_label_set_text(text_label, "#ff0000Hello, HoverBike V1.0 :-)");
-  lv_obj_set_width(text_label, 200);    // Set smaller width to make the lines wrap
-  lv_obj_set_height(text_label, 60);    // Set smaller width to make the lines wrap
+  lv_label_set_text(text_label, "#ff0000 www.2China.de");
+  lv_obj_add_style(text_label, &style_large, 0);  // Apply the style to the label
+  lv_obj_set_width(text_label, 250);    // Set smaller width to make the lines wrap
+  lv_obj_set_height(text_label, 30);    // Set smaller width to make the lines wrap
   lv_obj_set_style_text_align(text_label, LV_TEXT_ALIGN_CENTER, 0);
-  //lv_obj_align(text_label, LV_ALIGN_CENTER, 0, -90);
-  lv_obj_align_to(text_label, sw, LV_ALIGN_OUT_RIGHT_TOP, 0, 0);
+  lv_obj_align(text_label, LV_ALIGN_TOP_MID, 0, 20);
+  //lv_obj_align_to(text_label, sw, LV_ALIGN_OUT_RIGHT_TOP, 0, -5);
+
+
 
   
   // Create a slider aligned in the center bottom of the TFT display
   slider = lv_slider_create(lv_screen_active());
   lv_slider_set_orientation(slider,LV_SLIDER_ORIENTATION_VERTICAL);
   lv_obj_set_width(slider, 30);    // Set smaller width to make the lines wrap  
-  lv_obj_set_height(slider,180);
-  lv_obj_align(slider, LV_ALIGN_RIGHT_MID, 0, 0);
+  lv_obj_set_height(slider,170);
+  lv_obj_align(slider, LV_ALIGN_RIGHT_MID, -5, 0);
   lv_obj_add_event_cb(slider, slider_event_callback, LV_EVENT_VALUE_CHANGED, NULL);
   lv_slider_set_range(slider, 0, 100);
   lv_obj_set_style_anim_duration(slider, 2000, 0);
 
   // Create a label below the slider to display the current slider value
   slider_label = lv_label_create(lv_screen_active());
+  lv_obj_add_style(slider_label, &style_large, 0);  // Apply the style to the label
+  lv_label_set_recolor(slider_label, true);
   lv_obj_set_style_text_align(slider_label, LV_TEXT_ALIGN_RIGHT, 0);
-  lv_label_set_text(slider_label, "0%");
+  lv_label_set_text(slider_label, "0");
   //lv_obj_align_to(slider_label, slider, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
   lv_obj_align(slider_label, LV_ALIGN_TOP_RIGHT, 0, 0);
 
@@ -232,13 +259,21 @@ void loop()
     DEBUGT("millis",iNow-iTimeHoverLastRx);
     DEBUGN("mpu",oHoverFeedback.iAmpR);
 
-    String sMess = String(oHoverFeedback.iGyroX) + " , " + String(oHoverFeedback.iGyroY) + " , " + String(oHoverFeedback.iGyroZ)
-      + "    " + String(oHoverFeedback.iAccelX) + " , " + String(oHoverFeedback.iAccelY) + " , " + String(oHoverFeedback.iAccelZ)
-      + "\n" + String(oHoverFeedback.iSpeedL/100.0) + " , " + String(oHoverFeedback.iVolt/100.0) + " , " + String(oHoverFeedback.iAmpL/100.0)
-      + " , " + String(oHoverFeedback.iOdomL);
+    float fCircumference = 2.0420352; // in meters
+    //2,45044224 = (90,0/270,0) *2,0420352*3,6   = (hall_hoverMotor/hall_wheel) * wheel_diameter*PI * 3.6 kmh/revs
+    float fSpeedKmh = 2.45044224*oHoverFeedback.iSpeedL/100.0;  // conversion from revs/s to km/h for my ebike hub motor with internal 3:1 planetary gearbox
+    float fDistance = (fCircumference/270) * oHoverFeedback.iOdomL;
 
-    //Serial.println(sMess);
-    lv_label_set_text(text_label, sMess.c_str());    
+    if (iNow > 2000)
+    {
+      String sMess = String(oHoverFeedback.iGyroX) + " , " + String(oHoverFeedback.iGyroY) + " , " + String(oHoverFeedback.iGyroZ)
+          + "    " + String(oHoverFeedback.iAccelX) + " , " + String(oHoverFeedback.iAccelY) + " , " + String(oHoverFeedback.iAccelZ);
+      lv_label_set_text(text0_label, sMess.c_str());    
+
+      sMess = "#ff0000 " + String(fSpeedKmh,1) + "# #00ff00 " + String(oHoverFeedback.iVolt/100.0,1) + // " , " + String(oHoverFeedback.iAmpL/100.0)
+          + " # #0000ff " + String(fDistance,fDistance < 10 ? 1 : 0);
+      lv_label_set_text(text_label, sMess.c_str());    
+    }
 
     int32_t ai[SER_COUNT] = {10*oHoverFeedback.iGyroX+200,10*oHoverFeedback.iGyroY+200,10*oHoverFeedback.iGyroZ+200
           ,oHoverFeedback.iAccelX-200,oHoverFeedback.iAccelY-200,oHoverFeedback.iAccelZ-200};

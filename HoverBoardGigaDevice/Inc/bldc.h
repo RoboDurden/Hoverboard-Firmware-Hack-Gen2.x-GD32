@@ -36,7 +36,7 @@
 #include "../Inc/defines.h"
 
 // Internal constants
-#define BLDC_TIMER_MID_VALUE  (int16_t)(BLDC_TIMER_PERIOD / 2)   // = 1125
+#define BLDC_TIMER_MID_VALUE  (int16_t)(BLDC_TIMER_PERIOD / 2)   // = 1125 for 16 kHz and 1500 for 12 kHz
 #define BLDC_TIMER_MIN_VALUE  (int16_t)10
 #define BLDC_TIMER_MAX_VALUE  (BLDC_TIMER_PERIOD - 10) // = 2240
 

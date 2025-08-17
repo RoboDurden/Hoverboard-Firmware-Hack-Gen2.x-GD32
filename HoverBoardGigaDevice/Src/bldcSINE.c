@@ -316,6 +316,239 @@ float fGradient = 0, fGradientX = 0;
 uint16_t iDT = 0;
 uint16_t iAdd = 0;
 
+#ifdef BLDC_SINE_GEMINI		// bug, not working !!!
+
+int32_t boosted_pwmGo;
+int16_t v_offsetLog;
+void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g)
+{
+	// --- All your angle calculation code remains unchanged ---
+	// ... (code from pwmGo = -pwm; down to angle_idx = ...;) ...
+	pwmGo = -pwm;
+	uint32_t safe_hall_time_last,safe_hall_time_step;
+	uint8_t iRetries = 10;
+	do	// Get current sector (0-5) and other interrupt set data
+	{
+		bInterrupt = 0;
+		sector = hall_to_sector[hall];
+		sectorLast = hall_to_sector[hall_last];
+		safe_hall_time_last = hall_time_last;  // Timestamp of last edge. last_edge and pos might change any time by gpio interrupt!
+		safe_hall_time_step = hall_time_step;
+	} while (bInterrupt && iRetries--);	 // during last three mappings, a hall interrupt might have occured
+	sector10x = 10* sector;
+	angle_deg = sector * 60u;
+	angle_deg_add = 0;
+	int16_t iOffset = 0;
+	#define RANK_hts 9
+	hall_time_step_LPR = hall_time_step_LPR - (hall_time_step_LPR >> RANK_hts) + safe_hall_time_step;
+	if (ABS(pwmGo) > 50)
+	{
+		if (sector != sectorLast)
+		{
+			sectorChange = (sector - sectorLast + 6) % 6;
+			if (sectorChange > 3) sectorChange -= 6;
+		}
+		hall_time_step_LP = hall_time_step_LPR >> RANK_hts;
+		if ( (hall_time_step_LP > 0) && (hall_time_step_LP < (PWM_FREQ/20)) )
+		{
+			iDT = buzzerTimer>safe_hall_time_last ? buzzerTimer-safe_hall_time_last : buzzerTimer + (0x00010000-safe_hall_time_last);
+			iAdd = ((60u * iDT) + (hall_time_step_LP/2)) / hall_time_step_LP;
+			if (iAdd < 90)
+			{
+				angle_deg_add = sectorChange * iAdd;
+				iOffset = sectorChange < 0 ? 390 : 330;
+			}
+		}
+	}
+	angle_deg_final  = angle_deg + angle_deg_add + iOffset;
+	angle_idx = (uint16_t)angle_deg_final % 360;
+	uint16_t angle_idx_b = (angle_idx + PHASE_B_OFFSET) % 360;
+	uint16_t angle_idx_c = (angle_idx + PHASE_C_OFFSET) % 360;
+
+
+	// === NEW LOGIC: HYBRID SPWM / SVM CONTROL ===
+
+	int32_t phase_a_temp, phase_b_temp, phase_c_temp;
+	int16_t final_offset = 0; // By default, there is no offset (SPWM mode)
+
+	// Get absolute value of throttle command to check against the threshold
+	uint16_t pwm_abs = (pwmGo < 0) ? -pwmGo : pwmGo;
+	const uint16_t threshold = 1088; // This is ~87% of your 1250 max throttle
+
+	if (pwm_abs <= threshold)
+	{
+		// --- EFFICIENCY ZONE (0% to 87% throttle) ---
+		// Output is pure Sinusoidal PWM. No boost, no offset.
+		phase_a_temp = (pwmGo * (int32_t)sine_table[angle_idx]);
+		phase_b_temp = (pwmGo * (int32_t)sine_table[angle_idx_b]);
+		phase_c_temp = (pwmGo * (int32_t)sine_table[angle_idx_c]);
+	}
+	else
+	{
+		// --- POWER ZONE (87% to 100% throttle) ---
+		// Smoothly transition from SPWM to full SVM.
+
+		// 1. Calculate how far we are into the power zone (result is 0-256)
+		// Using 32-bit math to prevent overflow before the division
+		uint32_t power_level = ((uint32_t)(pwm_abs - threshold) * 256) / (1250 - threshold);
+		if (power_level > 256) power_level = 256; // Clamp value for safety
+
+		// 2. Smoothly scale the voltage boost based on power_level
+		// The total boost is ~15.5%. We apply a percentage of it.
+		int32_t boost = (pwmGo * 155 * (int32_t)power_level) / (1000 * 256);
+		boosted_pwmGo = pwmGo + boost;
+
+		// 3. Calculate phase voltages using the new boosted value
+		phase_a_temp = (boosted_pwmGo * (int32_t)sine_table[angle_idx]);
+		phase_b_temp = (boosted_pwmGo * (int32_t)sine_table[angle_idx_b]);
+		phase_c_temp = (boosted_pwmGo * (int32_t)sine_table[angle_idx_c]);
+
+		// 4. Calculate the full SVM offset that would be needed at this power level
+		int32_t v_min = MIN(phase_a_temp, MIN(phase_b_temp, phase_c_temp));
+		int32_t v_max = MAX(phase_a_temp, MAX(phase_b_temp, phase_c_temp));
+		int32_t v_offset = -(v_min + v_max) / 2;
+
+		// 5. Smoothly fade in the SVM offset based on power_level
+		final_offset = (v_offset * (int32_t)power_level) / 256;
+	}
+
+	v_offsetLog = final_offset >> 15;		// only for logging with StmStudio
+	
+	// 6. Apply the final calculated offset (it's 0 in the efficiency zone)
+	// and scale back from Q15 to the final PWM value.
+	*y = (phase_a_temp + final_offset) >> 15;
+	*b = (phase_b_temp + final_offset) >> 15;
+	*g = (phase_c_temp + final_offset) >> 15;
+}
+
+#elif defined BLDC_SINE_BOOSTER
+
+/* Gemini 2.5pro:
+ optimal Space Vector Modulation (SVM) approach. This change can boost your motor voltage by up to 15.5%.
+ The technique I used is an efficient method that's equivalent to traditional SVM. 
+ It works by first calculating the standard sine waves (as your code already did) 
+ and then adding a specific offset voltage to all three phases. 
+ This offset centers the waveforms within the available PWM range, effectively flattening their peaks 
+ and allowing for a higher overall voltage output without distortion.
+ 
+ robo added linear transistion from 87% throttle as Gemini could not resolve its bug before free quota exceeded
+ 
+*/
+
+int16_t v_offsetLog;
+int16_t pwmGoBoost;
+const uint32_t uPwmBoost = (134*BLDC_TIMER_MID_VALUE)>>10;	// 13% = 196 for 12 kHz
+const uint32_t uDiv24 = (0.15/uPwmBoost)*16777215;	// 16.777.215 = <<24
+//const uint32_t uDiv24 = ((BLDC_SINE_BOOSTER/100.0)/uPwmBoost)*16777215;	// higher then 15% reduces max speed
+
+
+//uint32_t uPwmBoostLog;
+//uint32_t uDiv24Log;
+
+void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) 	// pos is not used but hall_to_sector mapping :-/
+{
+	//uPwmBoostLog = uPwmBoost;
+	//uDiv24Log = uDiv24;
+	
+	
+	pwmGo = -pwm;
+	uint32_t safe_hall_time_last,safe_hall_time_step;
+	uint8_t iRetries = 10;
+	do	// Get current sector (0-5) and other interrupt set data
+	{
+		bInterrupt = 0;
+		sector = hall_to_sector[hall];
+		sectorLast = hall_to_sector[hall_last];
+		safe_hall_time_last = hall_time_last;  // Timestamp of last edge. last_edge and pos might change any time by gpio interrupt! 
+		safe_hall_time_step = hall_time_step;
+	} while (bInterrupt && iRetries--);	 // during last three mappings, a hall interrupt might have occured
+
+	sector10x = 10* sector;		// for debugging with StmStudio
+	
+	angle_deg = sector * 60u;	// Calculate base angle for this sector (0-60° range), made global for StmStudio to debug at realtime
+	angle_deg_add = 0;	// , made global for StmStudio to debug at realtime
+	int16_t iOffset = 0;
+	
+	// Calculate low-pass filter for pwm value
+	#define RANK_hts 9	// Calculate low-pass filter for pwm value
+	hall_time_step_LPR = hall_time_step_LPR - (hall_time_step_LPR >> RANK_hts) + safe_hall_time_step;	// update low-pass register
+	
+	if (ABS(pwmGo) > 50)
+	{
+		if (sector != sectorLast) 
+		{
+			sectorChange = (sector - sectorLast + 6) % 6;	// normaly +1 or -1 but could be more if a hall position is skipped because of PWM_FREQ sampling frequency
+			if (sectorChange > 3) sectorChange -= 6;  // Handle reverse direction
+		}
+		
+		hall_time_step_LP = hall_time_step_LPR >> RANK_hts;	// calculate low pass
+		if (	(hall_time_step_LP > 0) && (hall_time_step_LP < (PWM_FREQ/20))	)	// >50ms for one hall change is to slow to interpolate
+		{
+			iDT = buzzerTimer>safe_hall_time_last ? buzzerTimer-safe_hall_time_last : buzzerTimer + (0x00010000-safe_hall_time_last);		// overflow did not work :-/
+			iAdd = ((60u * iDT) + (hall_time_step_LP/2)) / hall_time_step_LP;	// will be 60° for constant speed as iDT takes exactly hall_time_step. hall_time_step/2 implements rounding to integer
+			if (iAdd < 90)	// not for heavy breaking when the next hall step takes longer than expected
+			{
+				angle_deg_add = sectorChange * iAdd;
+				iOffset = sectorChange < 0 ? 390 : 330;		// +-30° +360° to prevent negative angle
+			}
+		}
+	}
+	angle_deg_final  = angle_deg + angle_deg_add + iOffset;
+	
+	angle_idx = (uint16_t)angle_deg_final % 360;	// Convert to integer lookup index (0-359)
+	
+    // === MODIFICATION START: Replaced SPWM with SVM ===
+
+	uint8_t bFlatten;
+	// 0. Increase maximum commanded PWM value by 15%.
+	uint16_t uPwmGo = ABS(pwmGo);
+	uint16_t uPwmFlatten = BLDC_TIMER_MID_VALUE-uPwmBoost;	// 87% = 1304 for 12 kHz
+	
+	if (uPwmGo < uPwmFlatten		)		//pure sine up to 87% throttle
+	{
+		pwmGoBoost = pwmGo;
+		bFlatten = 0;
+	}
+	else	// flatened and increasingly boosted sine. Better would be to only flaten only the part exceeding BLDC_TIMER_MID_VALUE
+	{
+		//pwmGoBoost = pwmGo * (1+ (uPwmGo-uPwmFlatten) * (0.15/uPwmBoost)	);
+		pwmGoBoost = pwmGo + (pwmGo<0?-1:1)*(int16_t)((uPwmGo*uDiv24*(uPwmGo-uPwmFlatten))>>24);	// = (uPwmGo-uPwmFlatten) * (0.15/uPwmBoost)
+		bFlatten = 1;
+	}
+	
+	// 1. Calculate phase offsets for B and C phases
+	uint16_t angle_idx_b = (angle_idx + PHASE_B_OFFSET) % 360;
+	uint16_t angle_idx_c = (angle_idx + PHASE_C_OFFSET) % 360;
+
+	// 2. Get the initial sinusoidal values for all three phases
+	int32_t phase_a_temp = (pwmGoBoost * (int32_t)sine_table[angle_idx]);
+	int32_t phase_b_temp = (pwmGoBoost * (int32_t)sine_table[angle_idx_b]);
+	int32_t phase_c_temp = (pwmGoBoost * (int32_t)sine_table[angle_idx_c]);
+	
+	int32_t  v_offset = 0;
+	if (bFlatten)
+	{
+		// 3. Find the minimum and maximum of the three phase values
+		int32_t v_min = MIN(phase_a_temp, MIN(phase_b_temp, phase_c_temp));
+		int32_t v_max = MAX(phase_a_temp, MAX(phase_b_temp, phase_c_temp));
+
+		// 4. Calculate the common-mode offset voltage
+		v_offset = -(v_min + v_max) / 2;
+	}
+	v_offsetLog = v_offset >> 15;		// only for logging with StmStudio
+
+    // 5. Add the offset to each phase and scale back (Q15 format)
+	// This centers the waveform, achieving the SVM effect.
+	*y = (phase_a_temp + v_offset) >> 15;
+	*b = (phase_b_temp + v_offset) >> 15;
+	*g = (phase_c_temp + v_offset) >> 15;
+
+    // === MODIFICATION END ===
+}
+
+#else	
+
+// old BLDC_SINE
 void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) 	// pos is not used but hall_to_sector mapping :-/
 {
 	pwmGo = -pwm;
@@ -374,6 +607,8 @@ void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) 	// pos is not used 
 	*b = (pwmGo * (int32_t)sine_table[angle_idx_b]) >> 15;
 	*g = (pwmGo * (int32_t)sine_table[angle_idx_c]) >> 15;
 }
+
+#endif
 
 
 #endif
