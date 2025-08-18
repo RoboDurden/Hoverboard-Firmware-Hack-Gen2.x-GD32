@@ -147,7 +147,7 @@ void lv_create_main_gui(void)
   lv_label_set_recolor(text0_label, true);
   lv_label_set_text(text0_label, "#0000ff Hello, HoverBike V1.0 :-)");
   //lv_obj_add_style(text0_label, &style_large, 0);  // Apply the style to the label
-  lv_obj_set_width(text0_label, 250);    // Set smaller width to make the lines wrap
+  lv_obj_set_width(text0_label, 270);    // Set smaller width to make the lines wrap
   lv_obj_set_height(text0_label, 20);    // Set smaller width to make the lines wrap
   lv_obj_set_style_text_align(text0_label, LV_TEXT_ALIGN_CENTER, 0);
   lv_obj_align(text0_label, LV_ALIGN_TOP_MID, 0, 0);
@@ -159,7 +159,7 @@ void lv_create_main_gui(void)
   lv_label_set_recolor(text_label, true);
   lv_label_set_text(text_label, "#ff0000 www.2China.de");
   lv_obj_add_style(text_label, &style_large, 0);  // Apply the style to the label
-  lv_obj_set_width(text_label, 250);    // Set smaller width to make the lines wrap
+  lv_obj_set_width(text_label, 270);    // Set smaller width to make the lines wrap
   lv_obj_set_height(text_label, 30);    // Set smaller width to make the lines wrap
   lv_obj_set_style_text_align(text_label, LV_TEXT_ALIGN_CENTER, 0);
   lv_obj_align(text_label, LV_ALIGN_TOP_MID, 0, 20);
@@ -255,6 +255,7 @@ void loop()
   unsigned long iNow = millis();
 
   if (HoverReceive(oSerialHover,oHoverFeedback))
+  //if (1)
   {
     DEBUGT("millis",iNow-iTimeHoverLastRx);
     DEBUGN("mpu",oHoverFeedback.iAmpR);
@@ -267,16 +268,21 @@ void loop()
     if (iNow > 2000)
     {
       String sMess = String(oHoverFeedback.iGyroX) + " , " + String(oHoverFeedback.iGyroY) + " , " + String(oHoverFeedback.iGyroZ)
-          + "    " + String(oHoverFeedback.iAccelX) + " , " + String(oHoverFeedback.iAccelY) + " , " + String(oHoverFeedback.iAccelZ);
+          + "    " + String(oHoverFeedback.iAccelX) + " , " + String(oHoverFeedback.iAccelY) + " , " + String(oHoverFeedback.iAccelZ) + "   ";
       lv_label_set_text(text0_label, sMess.c_str());    
 
-      sMess = "#ff0000 " + String(fSpeedKmh,1) + "# #00ff00 " + String(oHoverFeedback.iVolt/100.0,1) + // " , " + String(oHoverFeedback.iAmpL/100.0)
-          + " # #0000ff " + String(fDistance,fDistance < 10 ? 1 : 0);
+      //sMess = "#ff0000 " + String(fSpeedKmh,1) + "# #00ff00 " + String(oHoverFeedback.iVolt/100.0,1) + // " , " + String(oHoverFeedback.iAmpL/100.0)
+      //    + " # #0000ff " + String(fDistance,fDistance < 10 ? 1 : 0);
+
+    //fSpeedKmh = 23.12, oHoverFeedback.iAmpR = 23452, oHoverFeedback.iSpeedR = (uint16_t) 52232, oHoverFeedback.iAmpL = 8;
+     sMess = "#000000 " + String(oHoverFeedback.iAmpR) + "# #ff0000 " + String((int16_t)oHoverFeedback.iSpeedR) + " # #0000ff " + String((int16_t)oHoverFeedback.iOdomR)
+          + " # #000000 " + String(oHoverFeedback.iAmpL/100) + "   ";
+           
       lv_label_set_text(text_label, sMess.c_str());    
     }
 
-    int32_t ai[SER_COUNT] = {10*oHoverFeedback.iGyroX+200,10*oHoverFeedback.iGyroY+200,10*oHoverFeedback.iGyroZ+200
-          ,oHoverFeedback.iAccelX-200,oHoverFeedback.iAccelY-200,oHoverFeedback.iAccelZ-200};
+    int32_t ai[SER_COUNT] = {oHoverFeedback.iGyroX/2+200,oHoverFeedback.iGyroY/2+200,oHoverFeedback.iGyroZ*2+200
+          ,oHoverFeedback.iAccelX/64-200,oHoverFeedback.iAccelY/64-200,oHoverFeedback.iAccelZ/64-200};
     uint32_t p = lv_chart_get_point_count(chart);
     for (int i=0; i<SER_COUNT; i++)
     {

@@ -176,6 +176,9 @@
 	#endif
 #endif
 
+#ifdef PILOT_HOVERBIKE
+	#include "PilotHoverbike.h"
+#endif
 	
 // ADC value conversion defines
 #ifndef MOTOR_AMP_CONV_DC_AMP

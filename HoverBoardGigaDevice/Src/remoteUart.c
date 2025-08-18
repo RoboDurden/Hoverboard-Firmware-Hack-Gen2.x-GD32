@@ -28,6 +28,12 @@ static int16_t iReceivePos = -1;
 	extern ErrStatus    mpuStatus;                  // holds the MPU-6050 status: SUCCESS or ERROR
 #endif
 
+#ifdef PILOT_HOVERBIKE
+	extern int16_t iGoert1;
+	extern int16_t iGoert2;
+	extern int16_t iGoert3;
+#endif
+
 extern uint8_t bRemoteTimeout; 	// any Remote can set this to 1 to disable motor (with soft brake)
 extern int32_t steer;
 extern int32_t speed;
@@ -111,9 +117,15 @@ void RemoteUpdate(void)
 		oData.iSpeedR = (int16_t) (oDataSlave.realSpeed * 100);
 		oData.iOdomR = (int32_t) oDataSlave.iOdom;
 	#else
-		oData.iAmpR = 0;
-		oData.iSpeedR = 0;
-		oData.iOdomR = 0;
+
+		#ifdef PILOT_HOVERBIKE
+			oData.iAmpR = (int16_t)iGoert1;
+			oData.iSpeedR = (int16_t)iGoert2;
+		#else
+			oData.iAmpR = 0;
+			oData.iSpeedR = 0;
+		#endif
+		oData.iOdomR = iGoert3;;
 	#endif
 
 	// oDataSlave.wState;

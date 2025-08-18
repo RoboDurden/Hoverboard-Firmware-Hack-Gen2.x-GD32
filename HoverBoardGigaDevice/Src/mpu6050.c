@@ -34,12 +34,12 @@ extern uint32_t iBug;
 MPU_Data mpuData;                                       // holds the MPU-6050 data
 
 int32_t aiLowPass[sizeof(mpuData)/2];		// mpuData only contain 16bit integers !
-void DoLowPass(uint8_t iFilterShift, int16_t i, int32_t* aiState, int16_t* aiNew)
+void DoLowPass(uint8_t iFilterShift, int16_t i, int32_t* aiState, int16_t* aiNew, uint8_t iShiftRight)
 {
 	for (i--; i >=0; i--)
 	{
 		aiState[i] = aiState[i] - (aiState[i] >> iFilterShift) + aiNew[i];  		// Calculate low-pass filter for new value
-		aiNew[i] = aiState[i] >> (iFilterShift+6);		// replace new value with low pass value
+		aiNew[i] = aiState[i] >> (iFilterShift+iShiftRight);		// replace new value with low pass value
 	}
 }
 
@@ -351,7 +351,7 @@ int MPU_ReadAll()
 		mpuData.gyro.y  = (int16_t)((buf[10] << 8) | buf[11]);
 		mpuData.gyro.z  = (int16_t)((buf[12] << 8) | buf[13]);
 		
-		DoLowPass(3, sizeof(mpuData)/2, aiLowPass, (int16_t*) &mpuData);
+		DoLowPass(4, sizeof(mpuData)/2, aiLowPass, (int16_t*) &mpuData,0);
 	}
 	return mpuStatus;
 }

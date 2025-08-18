@@ -479,6 +479,11 @@
               <FileType>1</FileType>
               <FilePath>.\Src\mpu6050.c</FilePath>
             </File>
+            <File>
+              <FileName>PilotHoverbike.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\PilotHoverbike.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -598,6 +603,11 @@
               <FileName>mpu6050.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\mpu6050.h</FilePath>
+            </File>
+            <File>
+              <FileName>PilotHoverbike.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\PilotHoverbike.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -1232,6 +1242,11 @@
               <FileType>1</FileType>
               <FilePath>.\Src\mpu6050.c</FilePath>
             </File>
+            <File>
+              <FileName>PilotHoverbike.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\PilotHoverbike.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1351,6 +1366,11 @@
               <FileName>mpu6050.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\mpu6050.h</FilePath>
+            </File>
+            <File>
+              <FileName>PilotHoverbike.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\PilotHoverbike.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -1985,6 +2005,11 @@
               <FileType>1</FileType>
               <FilePath>.\Src\mpu6050.c</FilePath>
             </File>
+            <File>
+              <FileName>PilotHoverbike.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\PilotHoverbike.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -2104,6 +2129,11 @@
               <FileName>mpu6050.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\mpu6050.h</FilePath>
+            </File>
+            <File>
+              <FileName>PilotHoverbike.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\PilotHoverbike.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -2738,6 +2768,11 @@
               <FileType>1</FileType>
               <FilePath>.\Src\mpu6050.c</FilePath>
             </File>
+            <File>
+              <FileName>PilotHoverbike.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\PilotHoverbike.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -2857,6 +2892,11 @@
               <FileName>mpu6050.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\mpu6050.h</FilePath>
+            </File>
+            <File>
+              <FileName>PilotHoverbike.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\PilotHoverbike.h</FilePath>
             </File>
           </Files>
         </Group>

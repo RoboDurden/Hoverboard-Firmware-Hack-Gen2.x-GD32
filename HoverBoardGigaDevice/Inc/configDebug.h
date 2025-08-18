@@ -32,13 +32,13 @@
 	#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden. 
 	#define BLDC_SINE_BOOSTER		// can boost speed by 15% starting from 87% throttle.
 	
-	#define DRIVING_MODE 0	//  0=pwm, 1=speed in revs/s*1024, 2=torque in NewtonMeter*1024, 3=iOdometer
+	#define DRIVING_MODE 1	//  0=pwm, 1=speed in revs/s*1024, 2=torque in NewtonMeter*1024, 3=iOdometer
 	
 	#define SPEED_AsRevsPerSec		// Will overflow at 327 revs/s = 19620 rpm. Hoverboard motor: 14 rpm/V * 50V = 700 rpm
 	
 	#define BAT_CELLS         	7        // battery number of cells. Normal Hoverboard battery: 10s
 	//#define BATTERY_LOW_SHUTOFF		// will shut off the board below BAT_LOW_DEAD = BAT_CELLS * CELL_LOW_DEAD, 
-	#define BATTERY_LOW_BEEP		// will start beeping for different battery low lwevels
+	//#define BATTERY_LOW_BEEP		// will start beeping for different battery low lwevels
 
 	#define BEEP_BACKWARDS
 
@@ -52,8 +52,8 @@
 	#if defined(MASTER) || defined(SINGLE)
 		
 		// choose only one 'remote' to control the motor
-		//#define REMOTE_DUMMY
-		#define REMOTE_UART
+		#define REMOTE_DUMMY
+		//#define REMOTE_UART
 		//#define REMOTE_UARTBUS	// ESP32 as master and multiple boards as multiple slaves ESP.tx-Hovers.rx and ESP.rx-Hovers.tx
 		//#define REMOTE_CRSF		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/26
 		//#define REMOTE_ROS2		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/122
@@ -78,11 +78,14 @@
 		#ifdef REMOTE_ROS2
 		    #define STAND_STILL_THRESHOLD 10
 		#endif
-		
-		#define MPU_6050		// fill mpuData struct in main.c with mpu_read_all()
-		#define SEND_IMU_DATA // send the IMU data with RemoteUart or RemoteUartBus
-		
-		#define REMOTE_BAUD 115200
+
+
+		//#define PILOT_HOVERBIKE	// very experimental pedal detection with chatGpt5 :-/
+		#ifdef PILOT_HOVERBIKE
+			#define MPU_6050		// fill mpuData struct in main.c with mpu_read_all()
+			#define SEND_IMU_DATA // send the IMU data with RemoteUart or RemoteUartBus
+			#define REMOTE_BAUD 115200
+		#endif
 
 		#define SPEED_COEFFICIENT   -1
 		#define STEER_COEFFICIENT   1

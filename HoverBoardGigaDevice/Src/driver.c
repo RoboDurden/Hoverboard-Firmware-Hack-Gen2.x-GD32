@@ -12,7 +12,7 @@ with my good old physics approach of a damped harmonic oscilator ten times :-(
 
 yes, here the prompt for Gemini 2.5pro that did the job in one promt:
 	
-Please give me the c code for a PID controller that outputs an int16_t pwm value ranging from -1250 to +1250 for a bldc motor based on a int32_t revs32 speed value that will be revs/s*1024. 
+Please give me the c code for a PID controller that outputs an int16_t pwm value ranging from -BLDC_TIMER_MID_VALUE to +BLDC_TIMER_MID_VALUE for a bldc motor based on a int32_t revs32 speed value that will be revs/s*1024. 
 The PID controller and the revs32 will be updated at a rate of PWM_FREQ = 12000 Hz. 
 The code will run on a GD32F130, so no floating point engine.
 The PID controller code should only work with  integers but no 128bit integers and no 64bit division.
@@ -56,8 +56,8 @@ typedef struct {
  * @param kp       The proportional gain (e.g., 0.5).
  * @param ki       The integral gain (e.g., 10.0).
  * @param kd       The derivative gain (e.g., 0.001).
- * @param min_pwm  The minimum PWM output value (e.g., -1250).
- * @param max_pwm  The maximum PWM output value (e.g., 1250).
+ * @param min_pwm  The minimum PWM output value (e.g., -BLDC_TIMER_MID_VALUE).
+ * @param max_pwm  The maximum PWM output value (e.g., BLDC_TIMER_MID_VALUE).
  * @param max_i    The maximum absolute contribution of the integral term to the final output.
  */
 void PID_Init(PIDController *pid, float kp, float ki, float kd,
@@ -153,13 +153,13 @@ void DriverInit(uint8_t iDrivingModeNew) 	// Initialize controller (tune these v
 	switch (iDrivingMode)
 	{
 	case 1:	// input will be taken as revs/s 
-		PID_Init(&pid, 0.2f, 1.0f, 0.0005f, -1250, 1250, 1250.0f);		
+		PID_Init(&pid, 0.2f, 1.0f, 0.0005f, -BLDC_TIMER_MID_VALUE, BLDC_TIMER_MID_VALUE, BLDC_TIMER_MID_VALUE);		
 		return;
 	case 2:	// input will be taken as NewtonMeter * 1024 
-		PID_Init(&pid, 0.2f, 1.0f, 0.0005f, -1250, 1250, 1250.0f);		
+		PID_Init(&pid, 0.2f, 1.0f, 0.0005f, -BLDC_TIMER_MID_VALUE, BLDC_TIMER_MID_VALUE, BLDC_TIMER_MID_VALUE);		
 		return;
 	case 3:	// input will be iOdom position in hall steps = 4°
-		PID_Init(&pid, 50.0f, 1.0f, 0.005f, -1250, 1250, 1250.0f);		
+		PID_Init(&pid, 50.0f, 1.0f, 0.005f, -BLDC_TIMER_MID_VALUE, BLDC_TIMER_MID_VALUE, BLDC_TIMER_MID_VALUE);		
 		return;
 	}
 }

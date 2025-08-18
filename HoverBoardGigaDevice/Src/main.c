@@ -33,6 +33,7 @@
 
 uint8_t iDrivingMode = DRIVING_MODE;	//  0=pwm, 1=speed in revs*1024, (not yet: 3=torque, 4=iOdometer)
 uint8_t bRemoteTimeout = 0; 	// any Remote can set this to 1 to disable motor (with soft brake)
+uint8_t bPilotTimeout = 0;	// any Pilot can set this to 1 to disable motor (with soft brake)
 uint32_t iBug = 0;
 uint8_t iBug8 = -1;
 uint32_t steerCounter = 0;								// Steer counter for setting update rate
@@ -263,7 +264,7 @@ iBug = 10;
 		#else	//MASTER_OR_SINGLE
 			if ((steerCounter % 2) == 0)	// something like DELAY_IN_MAIN_LOOP = 10 ms
 			{
-				#ifdef MPU_6050	// you might want to move it a few lines earlier to run in every loop
+				#ifdef MPU_6050_XXX	// you might want to move it a few lines earlier to run in every loop
 					if (MPU_ReadAll() != SUCCESS) 
 					{
 						I2C_Init();	// try to re-init if i2c bus fails. Need when I2C_SPEED is 400000 instead of 200000
@@ -278,38 +279,43 @@ iBug = 10;
 			
 			if (speedShutoff)	speed = ShutOff();
 			
-			if (iDrivingMode == 0)
-			{
-				// Calculate expo rate for less steering with higher speeds
-				expo = MAP((float)ABS(speed), 0, 1000, 1, 0.5);
-				
-				// Each speedvalue or steervalue between 50 and -50 (STAND_STILL_THRESHOLD) means absolutely no pwm
-				// -> to get the device calm 'around zero speed'
-				scaledSpeed = speed < STAND_STILL_THRESHOLD && speed > -STAND_STILL_THRESHOLD ? 0 : CLAMP(speed, -speedLimit, speedLimit) * SPEED_COEFFICIENT;
-				scaledSteer = steer < STAND_STILL_THRESHOLD && steer > -STAND_STILL_THRESHOLD ? 0 : CLAMP(steer, -speedLimit, speedLimit) * STEER_COEFFICIENT * expo;
-				
-				// Map to an angle of 180 degress to 0 degrees for array access (means angle -90 to 90 degrees)
-				steerAngle = MAP((float)scaledSteer, -1000, 1000, 180, 0);
-				xScale = lookUpTableAngle[(uint16_t)steerAngle];
-
-				// Mix steering and speed value for right and left speed
-				if(steerAngle >= 90)
+			#ifdef PILOT_XY
+				Pilot(&pwmMaster,&pwmSlave);
+			#else
+				if (iDrivingMode == 0)
 				{
-					pwmSlave = CLAMP(scaledSpeed, -1000, 1000);
-					pwmMaster = CLAMP(pwmSlave / xScale, -1000, 1000);
+					// Calculate expo rate for less steering with higher speeds
+					expo = MAP((float)ABS(speed), 0, 1000, 1, 0.5);
+					
+					// Each speedvalue or steervalue between 50 and -50 (STAND_STILL_THRESHOLD) means absolutely no pwm
+					// -> to get the device calm 'around zero speed'
+					scaledSpeed = speed < STAND_STILL_THRESHOLD && speed > -STAND_STILL_THRESHOLD ? 0 : CLAMP(speed, -speedLimit, speedLimit) * SPEED_COEFFICIENT;
+					scaledSteer = steer < STAND_STILL_THRESHOLD && steer > -STAND_STILL_THRESHOLD ? 0 : CLAMP(steer, -speedLimit, speedLimit) * STEER_COEFFICIENT * expo;
+					
+					// Map to an angle of 180 degress to 0 degrees for array access (means angle -90 to 90 degrees)
+					steerAngle = MAP((float)scaledSteer, -1000, 1000, 180, 0);
+					xScale = lookUpTableAngle[(uint16_t)steerAngle];
+
+					// Mix steering and speed value for right and left speed
+					if(steerAngle >= 90)
+					{
+						pwmSlave = CLAMP(scaledSpeed, -1000, 1000);
+						pwmMaster = CLAMP(pwmSlave / xScale, -1000, 1000);
+					}
+					else
+					{
+						pwmMaster = CLAMP(scaledSpeed, -1000, 1000);
+						pwmSlave = CLAMP(xScale * pwmMaster, -1000, 1000);
+					}
 				}
 				else
 				{
-					pwmMaster = CLAMP(scaledSpeed, -1000, 1000);
-					pwmSlave = CLAMP(xScale * pwmMaster, -1000, 1000);
+					// simply boost/drop speed left and right according to steer going from -1.0 to +1.0
+					pwmMaster = speed * (1+steer/1000.0);		
+					pwmSlave = speed * (1-steer/1000.0);
 				}
-			}
-			else
-			{
-				// simply boost/drop speed left and right according to steer going from -1.0 to +1.0
-				pwmMaster = speed * (1+steer/1000.0);		
-				pwmSlave = speed * (1-steer/1000.0);
-			}
+			#endif
+			
 					// Set output
 			SetBldcInput(pwmMaster);
 
@@ -402,7 +408,7 @@ iBug = 10;
 			enable = SET;			
 		#endif
 		
-		if (bRemoteTimeout || (wState & STATE_Disable))	enable = RESET;
+		if (bPilotTimeout || bRemoteTimeout || (wState & STATE_Disable))	enable = RESET;
 		
 		// Enable is depending on arm switch
 		//#ifdef USART_CRSF
