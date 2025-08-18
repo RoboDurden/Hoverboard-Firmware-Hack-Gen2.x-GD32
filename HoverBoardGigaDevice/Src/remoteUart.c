@@ -121,11 +121,12 @@ void RemoteUpdate(void)
 		#ifdef PILOT_HOVERBIKE
 			oData.iAmpR = (int16_t)iGoert1;
 			oData.iSpeedR = (int16_t)iGoert2;
+			oData.iOdomR = iGoert3;
 		#else
 			oData.iAmpR = 0;
 			oData.iSpeedR = 0;
+			oData.iOdomR = 0;
 		#endif
-		oData.iOdomR = iGoert3;;
 	#endif
 
 	// oDataSlave.wState;
