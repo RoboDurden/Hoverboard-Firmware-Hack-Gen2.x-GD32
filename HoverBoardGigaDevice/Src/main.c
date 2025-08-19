@@ -264,7 +264,7 @@ iBug = 10;
 		#else	//MASTER_OR_SINGLE
 			if ((steerCounter % 2) == 0)	// something like DELAY_IN_MAIN_LOOP = 10 ms
 			{
-				#ifdef MPU_6050_XXX	// you might want to move it a few lines earlier to run in every loop
+				#if defined(PILOT_DEFAULT) && defined(SEND_IMU_DATA)
 					if (MPU_ReadAll() != SUCCESS) 
 					{
 						I2C_Init();	// try to re-init if i2c bus fails. Need when I2C_SPEED is 400000 instead of 200000
@@ -279,9 +279,7 @@ iBug = 10;
 			
 			if (speedShutoff)	speed = ShutOff();
 			
-			#ifdef PILOT_XY
-				Pilot(&pwmMaster,&pwmSlave);
-			#else
+			#ifdef PILOT_DEFAULT
 				if (iDrivingMode == 0)
 				{
 					// Calculate expo rate for less steering with higher speeds
@@ -314,6 +312,8 @@ iBug = 10;
 					pwmMaster = speed * (1+steer/1000.0);		
 					pwmSlave = speed * (1-steer/1000.0);
 				}
+			#else
+				Pilot(&pwmMaster,&pwmSlave);
 			#endif
 			
 					// Set output

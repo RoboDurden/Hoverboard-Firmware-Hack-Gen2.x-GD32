@@ -1,6 +1,7 @@
 #ifndef REMOTE_ROS2_H
 #define REMOTE_ROS2_H
 
+#define STAND_STILL_THRESHOLD 10
 
 #define REMOTE_BAUD 19200
 

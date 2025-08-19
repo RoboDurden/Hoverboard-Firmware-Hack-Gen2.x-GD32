@@ -69,20 +69,16 @@
 		#endif
 		#ifdef REMOTE_DUMMY
 			//#define SLOW_SINE	// 9 second period instead of 3 seconds
-			//#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
+			#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
 		#else
 			//#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
 		#endif
-		#ifdef REMOTE_ROS2
-		    #define STAND_STILL_THRESHOLD 10
-		#endif
 
-		//#define MPU_6050		// tested for 2.1.20 ! fill mpuData struct in main.c with mpu_read_all()
-		//#define SEND_IMU_DATA // send the IMU data with RemoteUart or RemoteUartBus
+		//#define SEND_IMU_DATA // send the IMU data with RemoteUart or RemoteUartBus. Tested for 2.1.20 !
 
-
-		#define SPEED_COEFFICIENT   -1
-		#define STEER_COEFFICIENT   1
+		//#define PILOT_HOVERBIKE	// very experimental pedal detection with chatGpt5 :-/
+		#define SPEED_COEFFICIENT   -1	// only used if no PILOT_XY is defined
+		#define STEER_COEFFICIENT   1		// only used if no PILOT_XY is defined
 		
 		//#define DISABLE_BUTTON	// this is the opposite of former CHECK_BUTTON define.
 															// remove '//' if you use a slave board as master 

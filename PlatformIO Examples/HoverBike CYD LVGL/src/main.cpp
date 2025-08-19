@@ -281,8 +281,10 @@ void loop()
       lv_label_set_text(text_label, sMess.c_str());    
     }
 
+//    int32_t ai[SER_COUNT] = {oHoverFeedback.iGyroX/2+200,oHoverFeedback.iGyroY/2+200,oHoverFeedback.iGyroZ*2+200
+//          ,oHoverFeedback.iAccelX/64-200,oHoverFeedback.iAccelY/64-200,oHoverFeedback.iAccelZ/64-200};
     int32_t ai[SER_COUNT] = {oHoverFeedback.iGyroX/2+200,oHoverFeedback.iGyroY/2+200,oHoverFeedback.iGyroZ*2+200
-          ,oHoverFeedback.iAccelX/64-200,oHoverFeedback.iAccelY/64-200,oHoverFeedback.iAccelZ/64-200};
+          ,oHoverFeedback.iAccelX/64-200,oHoverFeedback.iAccelY/64-200,50*(int16_t)oHoverFeedback.iOdomR-200};
     uint32_t p = lv_chart_get_point_count(chart);
     for (int i=0; i<SER_COUNT; i++)
     {

@@ -1,11 +1,20 @@
 #ifndef DEFINES_H
 #define DEFINES_H
 
-#include "../Inc/target.h"
-#include "../Inc/setup.h"
-#include "../Inc/configSelect.h"
-#include "../Inc/remote.h"
+// ----------- #include framework begin ------------------------------
 
+#include "../Inc/target.h"
+#include "../Inc/configSelect.h"
+
+#ifdef PILOT_HOVERBIKE
+	#include "PilotHoverbike.h"		// https://youtu.be/ihCpCtgXIRA
+#elif defined (PILOT_New)		
+	#include "PilotNew.h"		// for your new onboard user code :-)
+#else
+	#define PILOT_DEFAULT
+#endif
+
+#include "../Inc/remote.h"
 
 #if defined(REMOTE_AUTODETECT)
 	#include "defines/defines_2-ad.h"		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/??
@@ -30,7 +39,12 @@
 	#include INCLUE_FILE(TARGET , LAYOUT)	// "defines_2-target-version.h"
 #endif
 
+#include "../Inc/setup.h"
 
+// ----------- #include framework end ------------------------------
+
+
+// ------- now checking setup and defining needed structs ----------
 
 #ifdef BUTTON
 	#define BUTTON_PUSHED 1
@@ -74,13 +88,6 @@
 	#define TIMER_TIMEOUT_IRQn TIMER13_IRQn
 #endif
 
-/*
-#ifdef DEBUG_LED_PIN
-  #define DEBUG_LedSet(bSet){gpio_bit_write(DEBUG_LED_PORT, DEBUG_LED_PIN, bSet);}
-#else
-  #define DEBUG_LedSet(bSet)
-#endif
-*/
 
 #ifdef DEBUG_LED
 #define DEBUG_LedSet(bSet,iCol){digitalWrite((iCol==0 ? LED_GREEN : (iCol==2 ? LED_ORANGE : LED_RED)), bSet);}
@@ -99,20 +106,11 @@
 	#endif
 #endif
 
-/*
-#if defined(MASTERSLAVE_USART) && defined(REMOTE_USART)
-	#if !defined(USART0_TX) || !defined(USART1_TX)
-		error"you board only has one USART. Choose between MASTERSLAVE_USART and REMOTE_USART"
-	#endif
-#endif
-*/
-
 #if defined(MASTER) || defined(SLAVE)
 	#define MASTER_OR_SLAVE
 #endif
 
 
-//#if defined(MASTER_OR_SLAVE) && (!defined(USART0_MASTERSLAVE)) && (!defined(USART1_MASTERSLAVE))
 #if defined(MASTER_OR_SLAVE) && (!defined(MASTERSLAVE_USART))
 	#error "MASTER or SLAVE set in config.h but no but no uart available. Please choose SINGLE (and REMOTE_UARTBUS)"
 #endif
@@ -126,6 +124,8 @@
 		#error "MASTERSLAVE_USART must be different from REMOTE_USART"
 	#endif
 #endif
+
+
 
 #ifdef REMOTE_USART
 	#if REMOTE_USART == 0
@@ -176,9 +176,6 @@
 	#endif
 #endif
 
-#ifdef PILOT_HOVERBIKE
-	#include "PilotHoverbike.h"
-#endif
 	
 // ADC value conversion defines
 #ifndef MOTOR_AMP_CONV_DC_AMP
@@ -271,6 +268,12 @@ typedef struct
 	#pragma pack(pop)
 #endif
 
+#ifdef SEND_IMU_DATA
+	#ifndef MPU_6050
+		#define MPU_6050
+	#endif
+#endif
+	
 #ifdef MPU_6050		// RemoteUart and RemoteUartBus need to access mpuData
 
 	#if (!defined(I2C_PB6PB7) && !defined(I2C_PB8PB9))
@@ -282,7 +285,6 @@ typedef struct
 	
 	
 	#define I2C_ENABLE
-	
 	
 	typedef struct{
 		int16_t     x;
@@ -303,8 +305,6 @@ typedef struct
 	} MPU_Data;
 
 #endif
-
-
 
 
 #endif		// DEFINES_H

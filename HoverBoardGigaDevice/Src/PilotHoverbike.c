@@ -1,7 +1,8 @@
+#include "../Inc/defines.h"
 
 #ifdef PILOT_HOVERBIKE
 
-#include "../Inc/defines.h"
+
 #include "../Inc/it.h"
 #include "../Inc/mpu6050.h"
 
@@ -13,6 +14,48 @@ extern float currentDC; 									// global variable for current dc
 extern int32_t speed;
 
 int16_t iGoert1=0, iGoert2=0, iGoert3=0;
+
+
+// -------------- Deepseek begin
+#include <stdint.h>
+
+typedef struct {
+    int16_t prev_x;    // Previous input (x[n-1])
+    int16_t prev_y;    // Previous output (y[n-1])
+    int16_t b0;  // Feedforward coefficient (Q15)
+    int16_t b1;  // Feedforward coefficient (Q15)
+    int16_t a1;  // Feedback coefficient (Q15)
+} IIR_HPF;
+
+// Initialize filter structure with coefficients
+void init_iir_hpf(IIR_HPF *filter) {
+    filter->prev_x = 0;
+    filter->prev_y = 0;
+    filter->b0 = 29476;   // (1+alpha)/2 = 0.8995 in Q15
+    filter->b1 = -29476;  // -0.8995 in Q15
+    filter->a1 = 26183;   // alpha = 0.799 in Q15
+}
+
+// Process one sample through the high-pass filter
+int16_t iir_hpf_update(IIR_HPF *filter, int16_t input) {
+    // Calculate accumulator (32-bit to prevent overflow)
+    int32_t acc = (int32_t)filter->b0 * (int32_t)input;
+    acc += (int32_t)filter->b1 * (int32_t)filter->prev_x;
+    acc += (int32_t)filter->a1 * (int32_t)filter->prev_y;
+    
+    // Round to nearest and convert back to Q0 (add 0.5 in Q15)
+    acc += (1 << 14);         // Add rounding constant
+    int16_t output = (int16_t)(acc >> 15);  // Convert Q15 to integer
+    
+    // Update filter state
+    filter->prev_x = input;  // Store current input for next iteration
+    filter->prev_y = output; // Store current output for feedback
+    
+    return output;
+}
+
+//----------- Deepseek end
+
 
 #ifdef GOERTZEL
 
@@ -220,9 +263,6 @@ void 	Pilot(int16_t* pPwmMaster, int16_t* pPwmSlave)
 // With Fs=25 Hz, BASE_SHIFT=5 -> ~1.3 s time constant.
 #define BASE_SHIFT       3
 
-// Schmitt clip thresholds in raw ADC/LSB units (tune these)
-#define CLIP_THR_HI      10      // enter +1 if (x - baseline) >= +10
-#define CLIP_THR_LO     -10      // enter -1 if (x - baseline) <= -10
 
 // Optional input downscale to grow headroom when buffers are long
 #ifndef INPUT_SHIFT
@@ -369,6 +409,7 @@ void pedal_init(float fs_hz,
 /* =================== Schmitt clip around baseline =================== */
 static inline int8_t clip_sample(int16_t x)
 {
+	/*
     // Update baseline (EMA)
     PD.baseline += (((int32_t)x - PD.baseline) >> BASE_SHIFT);
 
@@ -379,7 +420,9 @@ static inline int8_t clip_sample(int16_t x)
 #endif
 
 		iGoert2 = d;
-
+*/
+		int32_t d = x;
+	
     // Schmitt: hold previous state inside deadband
     if (d >= CLIP_THR_HI)       PD.clip_state = +1;
     else if (d <= CLIP_THR_LO)  PD.clip_state = -1;
@@ -420,6 +463,8 @@ static inline void corr_update_one(int lag, int8_t s_new, int8_t s_old_out)
      0 : no pedaling detected
      1 : pedaling (1..1.5 Hz) detected
 */
+int32_t gmax;
+int32_t best_band;
 int pedal_process_sample(int16_t x_raw)
 {
     // 1) Clip to -1/0/+1 around a running baseline (amplitude-robust)
@@ -449,11 +494,12 @@ int pedal_process_sample(int16_t x_raw)
 
     // 4) Decision (per-sample)
     // Normalize by M by comparing against thresholds scaled with M
-    int32_t best_band = 0;
+    int32_t best_band1 = 0;
     for (int i = 0; i < PD.numLags; i++) {
         int32_t v = PD.corr_band[i];
-        if (v > best_band) best_band = v;
+        if (v > best_band1) best_band1 = v;
     }
+		best_band = best_band1;
     // Convert thresholds: (thr_q15/32768)*M  => (thr_q15 * M) >> 15
     int32_t thr_abs        = ((int32_t)PD.thr_q15 * (int32_t)PD.M) >> 15;
     int32_t guard_margin   = ((int32_t)PD.guard_margin_q15 * (int32_t)PD.M) >> 15;
@@ -461,7 +507,7 @@ int pedal_process_sample(int16_t x_raw)
     // Guard criterion: best_band should clearly beat guards
     int32_t g1 = PD.corr_guard1;
     int32_t g2 = PD.corr_guard2;
-    int32_t gmax = (g1 > g2) ? g1 : g2;
+    gmax = (g1 > g2) ? g1 : g2;
 
     int detected = (best_band >= thr_abs) && (best_band >= gmax + guard_margin);
     return detected ? 1 : 0;
@@ -472,14 +518,19 @@ int pedal_process_sample(int16_t x_raw)
 uint16_t iBrake = 0;
 // CLIP_THR_HI
 uint8_t bPilotInit = 1;
+IIR_HPF hpf;
+
 void PilotInit()
 {
 		//=================== Example suggested init ===================
    // For Fs=25 Hz, band 1..1.5 Hz, ~2 cycles window, 55% threshold, 15% guard margin:
 		// pedal_init(fs_hz, fmin_hz, fmax_hz, window_periods, thr_frac, guard_margin_frac)
    // pedal_init(25.0f, 1.0f, 1.5f, 2.0f, 0.55f, 0.15f);
-	pedal_init(SAMPLING_FREQ, 1.0f, 1.5f, 2.0f, 0.55f, 0.15f);
+	//pedal_init(SAMPLING_FREQ, 1.0f, 1.5f, 2.0f, 0.55f, 0.15f);
+	pedal_init(SAMPLING_FREQ, 1.0f, 1.5f, 2.0f, 0.25f, 0.05f);
 	bPilotInit = 0;
+	
+	init_iir_hpf(&hpf);
 }
 
 #define SAMPLETIME (1000/SAMPLING_FREQ)	// every 40 ms = 25 Hz
@@ -487,6 +538,10 @@ void PilotInit()
 int8_t iClipState=0;
 uint32_t iTimeLastSample,iTimeNextSample = 0;
 uint16_t iMpuRetries = 0;
+
+int16_t iSample;
+int16_t iSampleHP;
+
 
 void 	Pilot(int16_t* pPwmMaster, int16_t* pPwmSlave)
 {
@@ -518,8 +573,10 @@ void 	Pilot(int16_t* pPwmMaster, int16_t* pPwmSlave)
 	
 	if (bPilotInit)	PilotInit();
 	
-	//int16_t iSample = mpuData.gyro.x - mpuData.gyro.y;	
-	int16_t iSample = mpuData.gyro.z;		// it is the bumping because of a fully supension bike
+	//iSample = mpuData.gyro.x - mpuData.gyro.y;	
+	iSample = mpuData.gyro.z;		// it is the bumping because of a fully supension bike
+  iSampleHP = iir_hpf_update(&hpf, iSample);		// high pass filter for 25 Hz and cutoff below 1 Hz
+	
 	int iResult = pedal_process_sample(iSample);
 	
 	iGoert3 = iClipState = PD.clip_state;

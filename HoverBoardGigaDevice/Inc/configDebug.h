@@ -32,7 +32,7 @@
 	#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden. 
 	#define BLDC_SINE_BOOSTER		// can boost speed by 15% starting from 87% throttle.
 	
-	#define DRIVING_MODE 1	//  0=pwm, 1=speed in revs/s*1024, 2=torque in NewtonMeter*1024, 3=iOdometer
+	#define DRIVING_MODE 0	//  0=pwm, 1=speed in revs/s*1024, 2=torque in NewtonMeter*1024, 3=iOdometer
 	
 	#define SPEED_AsRevsPerSec		// Will overflow at 327 revs/s = 19620 rpm. Hoverboard motor: 14 rpm/V * 50V = 700 rpm
 	
@@ -40,7 +40,7 @@
 	//#define BATTERY_LOW_SHUTOFF		// will shut off the board below BAT_LOW_DEAD = BAT_CELLS * CELL_LOW_DEAD, 
 	//#define BATTERY_LOW_BEEP		// will start beeping for different battery low lwevels
 
-	#define BEEP_BACKWARDS
+	//#define BEEP_BACKWARDS
 
 	//#define DEBUG_LED		// uncomment to activate DEBUG_LedSet(bSet,iColor) macro. iCol: 0=green, 1=organge, 2=red
 
@@ -52,8 +52,8 @@
 	#if defined(MASTER) || defined(SINGLE)
 		
 		// choose only one 'remote' to control the motor
-		#define REMOTE_DUMMY
-		//#define REMOTE_UART
+		//#define REMOTE_DUMMY
+		#define REMOTE_UART
 		//#define REMOTE_UARTBUS	// ESP32 as master and multiple boards as multiple slaves ESP.tx-Hovers.rx and ESP.rx-Hovers.tx
 		//#define REMOTE_CRSF		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/26
 		//#define REMOTE_ROS2		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/122
@@ -75,20 +75,12 @@
 		#else
 			//#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
 		#endif
-		#ifdef REMOTE_ROS2
-		    #define STAND_STILL_THRESHOLD 10
-		#endif
 
+		//#define SEND_IMU_DATA // send the IMU data with RemoteUart or RemoteUartBus. Tested for 2.1.20 !
 
-		//#define PILOT_HOVERBIKE	// very experimental pedal detection with chatGpt5 :-/
-		#ifdef PILOT_HOVERBIKE
-			#define MPU_6050		// fill mpuData struct in main.c with mpu_read_all()
-			#define SEND_IMU_DATA // send the IMU data with RemoteUart or RemoteUartBus
-			#define REMOTE_BAUD 115200
-		#endif
-
-		#define SPEED_COEFFICIENT   -1
-		#define STEER_COEFFICIENT   1
+		#define PILOT_HOVERBIKE	// very experimental pedal detection with chatGpt5 :-/
+		// #define SPEED_COEFFICIENT   -1	// only used if no PILOT_XY is defined
+		// #define STEER_COEFFICIENT   1		// only used if no PILOT_XY is defined
 		
 		//#define DISABLE_BUTTON	// this is the opposite of former CHECK_BUTTON define.
 															// remove '//' if you use a slave board as master 
