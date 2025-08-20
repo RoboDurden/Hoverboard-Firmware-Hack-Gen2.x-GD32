@@ -24,7 +24,6 @@ extern float currentDC; 				// global variable for current dc
 extern float realSpeed; 				// global variable for real Speed
 extern int32_t revs32;					// revs/s *1024
 extern int32_t torque32;				// torque in Nm*1024 
-
 extern DataSlave oDataSlave;	//	currentDC, realSpeed and iOdom and wState of (possible) slave
 
 // write only:
