@@ -76,6 +76,7 @@
 
 		//#define SEND_IMU_DATA // send the IMU data with RemoteUart or RemoteUartBus. Tested for 2.1.20 !
 
+		//#define PILOT_USER	// uncomment if you want to extend the firmware with custom code :-)
 		//#define PILOT_HOVERBIKE	// very experimental pedal detection with chatGpt5 :-/
 		#define SPEED_COEFFICIENT   -1	// only used if no PILOT_XY is defined
 		#define STEER_COEFFICIENT   1		// only used if no PILOT_XY is defined

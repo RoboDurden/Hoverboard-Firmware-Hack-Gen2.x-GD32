@@ -13,7 +13,6 @@ extern MPU_Data mpuData;
 extern float currentDC; 									// global variable for current dc
 extern int32_t speed;
 
-int16_t iGoert1=0, iGoert2=0, iGoert3=0;
 
 
 // -------------- Deepseek begin
@@ -57,7 +56,209 @@ int16_t iir_hpf_update(IIR_HPF *filter, int16_t input) {
 //----------- Deepseek end
 
 
-#ifdef GOERTZEL
+int16_t iSample, iSampleHP;
+
+#define GOERTZEL_GEMINI
+//#define GOERTZEL
+
+#ifdef GOERTZEL_GEMINI
+
+uint16_t iGoert1=0, iGoert2=0;
+int16_t iGoert3=0;
+
+int32_t iterm1;
+int32_t iterm2;
+int32_t iterm3_intermediate;
+int32_t iterm3;
+int32_t imag_sq;
+
+int k0, k1;
+// -------------- Gemini 2.5pro begin
+
+#include <math.h> // Only used for cos() in the Init function.
+
+
+int8_t Goertzel_Init(GoertzelDetector* detector, float f0, float f1, float fs, uint16_t n, int64_t threshold) {
+    if (n > MAX_SAMPLES) {
+        return -1; // Error: N is larger than the max configured buffer size.
+    }
+
+    // Reset the detector state
+    detector->buffer_index = 0;
+    detector->samples_added = 0;
+    detector->n = n;
+    detector->threshold = threshold;
+    detector->num_bins = 0;
+
+    // Clear the sample buffer
+    for (int i = 0; i < MAX_SAMPLES; ++i) {
+        detector->sample_buffer[i] = 0;
+    }
+
+    // Determine the range of integer frequency bins (k) to check
+    k0 = (int)floor(f0 * n / fs);
+    k1 = (int)ceil(f1 * n / fs);
+
+    if (k1 - k0 + 1 > MAX_BINS) {
+        return -1; // Error: The frequency range requires checking more bins than allocated.
+    }
+
+    // Pre-calculate the fixed-point coefficients for each bin
+    for (int k = k0; k <= k1; ++k) {
+        float omega = (2.0f * M_PI * k) / n;
+        float cosine = cosf(omega);
+        // The coefficient is 2*cos(omega). We scale it for fixed-point math.
+        detector->coeffs[detector->num_bins] = (int32_t)(2.0f * cosine * FIXED_POINT_SCALE);
+        detector->num_bins++;
+    }
+
+    return 0; // Success
+}
+
+/**
+ * @brief Processes a new sample and returns the detection result.
+ */
+int8_t Goertzel_AddSample(GoertzelDetector* detector, int16_t sample) {
+    // Add the new sample to the cyclic buffer
+    detector->sample_buffer[detector->buffer_index] = sample;
+    detector->buffer_index = (detector->buffer_index + 1) % detector->n;
+
+    // Wait until the buffer is full before starting detection
+    if (detector->samples_added < detector->n) {
+        detector->samples_added++;
+        return -1; // Buffer not yet full
+    }
+
+    // Once the buffer is full, perform detection on every new sample
+    for (int i = 0; i < detector->num_bins; ++i) {
+        int32_t coeff = detector->coeffs[i];
+
+        // IIR filter state variables for the Goertzel calculation
+        int32_t q1 = 0;
+        int32_t q2 = 0;
+
+        // Process all N samples in the cyclic buffer
+        for (int j = 0; j < detector->n; ++j) {
+            // Read samples from the buffer, wrapping around correctly
+            int16_t current_sample = detector->sample_buffer[(detector->buffer_index + j) % detector->n];
+
+            // The core Goertzel recursive formula using fixed-point arithmetic
+            // q0 = sample + (coeff * q1 / SCALE) - q2
+            // **FIX**: Use a 64-bit intermediate for (coeff * q1) to prevent overflow.
+            int32_t q0 = current_sample + (int32_t)(((int64_t)coeff * q1) >> FIXED_POINT_Q) - q2;
+            q2 = q1;
+            q1 = q0;
+        }
+
+        // Calculate the squared magnitude of the frequency component
+        // mag_sq = q1*q1 + q2*q2 - (coeff * q1 / SCALE) * q2
+        // We use 64-bit integers to prevent overflow during intermediate calculations.
+        int64_t term1 = (int64_t)q1 * q1;
+        int64_t term2 = (int64_t)q2 * q2;
+        int64_t term3_intermediate = (int64_t)coeff * q1;
+        int64_t term3 = (term3_intermediate >> FIXED_POINT_Q) * q2;
+
+        int64_t mag_sq = term1 + term2 - term3;
+
+iterm1 = term1;
+iterm2 = term2;
+iterm3_intermediate = term3_intermediate;
+iterm3 = term3;
+iGoert3 = imag_sq = mag_sq;
+				
+				
+        // Check if the energy at this frequency bin is above the threshold
+        if (mag_sq > detector->threshold) {
+            return 1; // Detection!
+        }
+    }
+
+    return 0; // No detection
+}
+
+// -------------- Gemini 2.5pro end
+
+
+#define GOERTZEL_FS 25	// sampling frequency in Hz
+#define GOERTZEL_N 64		// buffer size
+const int64_t THRESHOLD = 600;
+
+IIR_HPF hpf;		// high-pass filter for 25Hz and 1 Hz cut-off from Deepseek
+GoertzelDetector pedaling_detector;
+
+uint8_t bPilotInit = 1;
+uint8_t PilotInit()
+{
+  if (Goertzel_Init(&pedaling_detector, 1.0, 1.5, GOERTZEL_FS, GOERTZEL_N, THRESHOLD) != 0) 
+		return 0;
+	init_iir_hpf(&hpf);
+	bPilotInit = 0;
+	iBug = 0;
+	return 1;
+}
+
+#define SAMPLETIME (1000/GOERTZEL_FS)	// every 40 ms = 25 Hz
+
+uint32_t iTimeLastSample,iTimeNextSample = 0;
+uint16_t iMpuRetries = 0;
+int8_t iClipState=0;
+void 	Pilot(int16_t* pPwmMaster, int16_t* pPwmSlave)
+{
+	*pPwmMaster = -speed;		// just forward speed from RemoteUart for now.
+	
+	uint32_t iNow = millis();
+	if (iNow < iTimeNextSample)
+		return;
+
+	if (MPU_ReadAll() == SUCCESS) 
+	{
+		bPilotTimeout = 0;
+	}
+	else
+	{
+		I2C_Init();	// try to re-init if i2c bus fails. Need when I2C_SPEED is 400000 instead of 200000
+		//MPU_Init();		// re-init mpu6050 (not really needed)
+		if (iMpuRetries < 100)
+			iMpuRetries++;
+		else
+			bPilotTimeout = 1;
+		
+		return;
+	}
+	iMpuRetries = 0;
+
+	iBug = iNow-iTimeLastSample;
+	iTimeLastSample = iNow;
+	iTimeNextSample = iNow + SAMPLETIME;
+	
+	if (bPilotInit)	PilotInit();
+
+	//iSample = mpuData.gyro.x - mpuData.gyro.y;	
+	iSample = mpuData.gyro.z;		// it is the forward-backwards bumping because of a fully supension bike
+  iGoert1 = iSampleHP = iir_hpf_update(&hpf, iSample);		// high pass filter for 25 Hz and cutoff below 1 Hz
+
+	if (iSampleHP >= CLIP_THR_HI)       iClipState = +1;
+	else if (iSampleHP <= CLIP_THR_LO)  iClipState = -1;
+	
+	iGoert2 = iClipState;
+	//iGoert1 = iSample;
+
+	int8_t iResult = Goertzel_AddSample(&pedaling_detector, iClipState);
+	if (iResult>=0)
+	{
+		currentDC = iResult == 0 ? 1 : 8;
+	}
+
+}
+
+
+
+#elif defined(GOERTZEL)
+
+uint16_t iGoert1=0, iGoert2=0;
+int16_t iGoert3=0;
+
+// ------------ ChatGpt5 begin -------------------------
 
 #include <stdint.h>
 #include <math.h>
@@ -171,7 +372,11 @@ static uint32_t goertzel_block(const int16_t *buf, int start, int N, int32_t coe
     -1 while the buffer hasn't filled yet,
      0 or 1 once full (decision updates on every new sample).
 */
-int goertzel_process_sample(int16_t sample,uint16_t* pP1,uint16_t* pP2)
+int32_t band_power_reg = 0;
+uint32_t band_powerLP = 0;
+uint32_t p1, p2;
+
+int goertzel_process_sample(int16_t sample)
 {
     add_sample(sample);
 
@@ -181,25 +386,37 @@ int goertzel_process_sample(int16_t sample,uint16_t* pP1,uint16_t* pP2)
     int start = gBufIdx;
 
     // Evaluate both band edges (or two probes inside your 1–1.5 Hz band).
-    uint32_t p1 = goertzel_block(gBuf, start, gN, gCoeff1_q15);
-    uint32_t p2 = goertzel_block(gBuf, start, gN, gCoeff2_q15);
+    p1 = goertzel_block(gBuf, start, gN, gCoeff1_q15);
+    p2 = goertzel_block(gBuf, start, gN, gCoeff2_q15);
 
     uint32_t band_power = (p1 > p2) ? p1 : p2;
 
-		*pP1 = p1>>2;
-		*pP2 = p2>>2;
+	#define RANK_BANDPOWER 6
+	band_power_reg = band_power_reg - (band_power_reg >> RANK_BANDPOWER) + band_power;
+	band_powerLP = band_power_reg >> RANK_BANDPOWER;
+
+	iGoert1 = band_power;
+	iGoert2 = band_powerLP;
 	
-    // Decide
-    return (band_power > gThreshold) ? 1 : 0;
+	// Decide
+	return (band_powerLP > gThreshold) ? 1 : 0;
 }
+
+// ------------ ChatGpt5 end -------------------------
+
 
 #define GOERTZEL_FS 25	// sampling frequency in Hz
 #define GOERTZEL_N 128		// buffer size
 
+IIR_HPF hpf;		// high-pass filter for 25Hz and 1 Hz cut-off from Deepseek
+
 uint8_t bPilotInit = 1;
 void PilotInit()
 {
-	goertzel_init(GOERTZEL_FS, GOERTZEL_N, 1.0, 1.5, 20000);
+	
+	//goertzel_init(float fs_hz, int N, float f1_hz, float f2_hz, uint32_t threshold)
+	goertzel_init(GOERTZEL_FS, GOERTZEL_N, 1.0, 1.5, 100);
+	init_iir_hpf(&hpf);
 	bPilotInit = 0;
 }
 
@@ -207,15 +424,20 @@ void PilotInit()
 
 uint32_t iTimeLastSample,iTimeNextSample = 0;
 uint16_t iMpuRetries = 0;
+int8_t iClipState=0;
 void 	Pilot(int16_t* pPwmMaster, int16_t* pPwmSlave)
 {
-	*pPwmMaster = -speed;
+	*pPwmMaster = -speed;		// just forward speed from RemoteUart for now.
+	
 	uint32_t iNow = millis();
 	if (iNow < iTimeNextSample)
 		return;
-	
 
-	if (MPU_ReadAll() != SUCCESS) 
+	if (MPU_ReadAll() == SUCCESS) 
+	{
+		bPilotTimeout = 0;
+	}
+	else
 	{
 		I2C_Init();	// try to re-init if i2c bus fails. Need when I2C_SPEED is 400000 instead of 200000
 		//MPU_Init();		// re-init mpu6050 (not really needed)
@@ -233,10 +455,18 @@ void 	Pilot(int16_t* pPwmMaster, int16_t* pPwmSlave)
 	iTimeNextSample = iNow + SAMPLETIME;
 	
 	if (bPilotInit)	PilotInit();
-		
-	int iResult = goertzel_process_sample(mpuData.gyro.x, &iGoert1,&iGoert2);
-	//int iResult = goertzel_process_sample(mpuData.gyro.x - mpuData.gyro.y , &iGoert1,&iGoert2);
-	//int iResult = goertzel_process_sample(mpuData.accel.z , &iGoert1,&iGoert2);
+
+	//iSample = mpuData.gyro.x - mpuData.gyro.y;	
+	iSample = mpuData.gyro.z;		// it is the forward-backwards bumping because of a fully supension bike
+  iSampleHP = iir_hpf_update(&hpf, iSample);		// high pass filter for 25 Hz and cutoff below 1 Hz
+
+	if (iSampleHP >= CLIP_THR_HI)       iClipState = +1;
+	else if (iSampleHP <= CLIP_THR_LO)  iClipState = -1;
+	
+	iGoert3 = iClipState;
+	//iGoert1 = iSample;
+	
+	int iResult = goertzel_process_sample(iSample);
 	if (iResult>=0)
 	{
 		currentDC = iResult == 0 ? 1 : 8;
@@ -533,14 +763,15 @@ void PilotInit()
 	init_iir_hpf(&hpf);
 }
 
+
+int16_t iGoert1=0, iGoert2=0, iGoert3=0;
+
 #define SAMPLETIME (1000/SAMPLING_FREQ)	// every 40 ms = 25 Hz
 
 int8_t iClipState=0;
 uint32_t iTimeLastSample,iTimeNextSample = 0;
 uint16_t iMpuRetries = 0;
 
-int16_t iSample;
-int16_t iSampleHP;
 
 
 void 	Pilot(int16_t* pPwmMaster, int16_t* pPwmSlave)
@@ -551,7 +782,11 @@ void 	Pilot(int16_t* pPwmMaster, int16_t* pPwmSlave)
 	if (iNow < iTimeNextSample)
 		return;
 	
-	if (MPU_ReadAll() != SUCCESS) 
+	if (MPU_ReadAll() == SUCCESS) 
+	{
+		bPilotTimeout = 0;
+	}
+	else
 	{
 		I2C_Init();	// try to re-init if i2c bus fails. Need when I2C_SPEED is 400000 instead of 200000
 		//MPU_Init();		// re-init mpu6050 (not really needed)

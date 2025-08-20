@@ -275,7 +275,7 @@ void loop()
       //    + " # #0000ff " + String(fDistance,fDistance < 10 ? 1 : 0);
 
     //fSpeedKmh = 23.12, oHoverFeedback.iAmpR = 23452, oHoverFeedback.iSpeedR = (uint16_t) 52232, oHoverFeedback.iAmpL = 8;
-     sMess = "#000000 " + String(oHoverFeedback.iAmpR) + "# #ff0000 " + String((int16_t)oHoverFeedback.iSpeedR) + " # #0000ff " + String((int16_t)oHoverFeedback.iOdomR)
+     sMess = "#000000 " + String(oHoverFeedback.iAmpR) + "# #ff0000 " + String((int16_t)oHoverFeedback.iSpeedR) + " # #0000ff " + String((int32_t)oHoverFeedback.iOdomR)
           + " # #000000 " + String(oHoverFeedback.iAmpL/100) + "   ";
            
       lv_label_set_text(text_label, sMess.c_str());    
@@ -284,7 +284,7 @@ void loop()
 //    int32_t ai[SER_COUNT] = {oHoverFeedback.iGyroX/2+200,oHoverFeedback.iGyroY/2+200,oHoverFeedback.iGyroZ*2+200
 //          ,oHoverFeedback.iAccelX/64-200,oHoverFeedback.iAccelY/64-200,oHoverFeedback.iAccelZ/64-200};
     int32_t ai[SER_COUNT] = {oHoverFeedback.iGyroX/2+200,oHoverFeedback.iGyroY/2+200,oHoverFeedback.iGyroZ*2+200
-          ,oHoverFeedback.iAccelX/64-200,oHoverFeedback.iAccelY/64-200,50*(int16_t)oHoverFeedback.iOdomR-200};
+          ,oHoverFeedback.iAccelX/64-200,oHoverFeedback.iAccelY/64-200,50*(int16_t)oHoverFeedback.iSpeedR-200};
     uint32_t p = lv_chart_get_point_count(chart);
     for (int i=0; i<SER_COUNT; i++)
     {

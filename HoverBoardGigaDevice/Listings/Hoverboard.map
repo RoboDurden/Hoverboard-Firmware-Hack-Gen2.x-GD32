@@ -180,6 +180,9 @@ Section Cross References
     remotedummy.o(.text) refers to main.o(.bss.speed) for speed
     remotedummy.o(.text) refers to it.o(.text) for ResetTimeout
     remotedummy.o(.ARM.exidx) refers to remotedummy.o(.text) for [Anonymous Symbol]
+    pilotuser.o(.text) refers to main.o(.bss.speed) for speed
+    pilotuser.o(.text) refers to main.o(.bss.steer) for steer
+    pilotuser.o(.ARM.exidx) refers to pilotuser.o(.text) for [Anonymous Symbol]
     gd32f1x0_adc.o(.text) refers to gd32f1x0_rcu.o(.text) for rcu_periph_reset_enable
     gd32f1x0_adc.o(.ARM.exidx) refers to gd32f1x0_adc.o(.text) for [Anonymous Symbol]
     gd32f1x0_dbg.o(.ARM.exidx) refers to gd32f1x0_dbg.o(.text) for [Anonymous Symbol]
@@ -317,6 +320,8 @@ Removing Unused input sections from the image.
     Removing i2c.o(.text), (0 bytes).
     Removing mpu6050.o(.text), (0 bytes).
     Removing pilothoverbike.o(.text), (0 bytes).
+    Removing pilotuser.o(.text), (88 bytes).
+    Removing pilotuser.o(.ARM.exidx), (8 bytes).
     Removing gd32f1x0_adc.o(.ARM.exidx), (256 bytes).
     Removing gd32f1x0_dbg.o(.text), (128 bytes).
     Removing gd32f1x0_dbg.o(.ARM.exidx), (48 bytes).
@@ -345,7 +350,7 @@ Removing Unused input sections from the image.
     Removing startup_gd32f1x0.o(HEAP), (1024 bytes).
     Removing system_gd32f1x0.o(.ARM.exidx), (16 bytes).
 
-70 unused section(s) (total 7892 bytes) removed from the image.
+72 unused section(s) (total 7988 bytes) removed from the image.
 
 ==============================================================================
 
@@ -393,6 +398,7 @@ Image Symbol Table
     ../fplib/microlib/fpmul.c                0x00000000   Number         0  fmul.o ABSOLUTE
     ../fplib/microlib/fpmul.c                0x00000000   Number         0  dmul.o ABSOLUTE
     PilotHoverbike.c                         0x00000000   Number         0  pilothoverbike.o ABSOLUTE
+    PilotUser.c                              0x00000000   Number         0  pilotuser.o ABSOLUTE
     RTE/Device/GD32F130C8/startup_gd32f1x0.s 0x00000000   Number         0  startup_gd32f1x0.o ABSOLUTE
     RemoteAdc.c                              0x00000000   Number         0  remoteadc.o ABSOLUTE
     RemoteAutodetect.c                       0x00000000   Number         0  remoteautodetect.o ABSOLUTE
@@ -1011,16 +1017,16 @@ Memory Map of the image
 
     Exec Addr    Load Addr    Size         Type   Attr      Idx    E Section Name        Object
 
-    0x08000000   0x08000000   0x00000168   Data   RO          330    RESET               startup_gd32f1x0.o
-    0x08000168   0x08000168   0x00000000   Code   RO          347  * .ARM.Collect$$$$00000000  mc_w.l(entry.o)
-    0x08000168   0x08000168   0x00000004   Code   RO          386    .ARM.Collect$$$$00000001  mc_w.l(entry2.o)
-    0x0800016c   0x0800016c   0x00000004   Code   RO          389    .ARM.Collect$$$$00000004  mc_w.l(entry5.o)
-    0x08000170   0x08000170   0x00000000   Code   RO          391    .ARM.Collect$$$$00000008  mc_w.l(entry7b.o)
-    0x08000170   0x08000170   0x00000000   Code   RO          393    .ARM.Collect$$$$0000000A  mc_w.l(entry8b.o)
-    0x08000170   0x08000170   0x00000008   Code   RO          394    .ARM.Collect$$$$0000000B  mc_w.l(entry9a.o)
-    0x08000178   0x08000178   0x00000000   Code   RO          396    .ARM.Collect$$$$0000000D  mc_w.l(entry10a.o)
-    0x08000178   0x08000178   0x00000000   Code   RO          398    .ARM.Collect$$$$0000000F  mc_w.l(entry11a.o)
-    0x08000178   0x08000178   0x00000004   Code   RO          387    .ARM.Collect$$$$00002712  mc_w.l(entry2.o)
+    0x08000000   0x08000000   0x00000168   Data   RO          338    RESET               startup_gd32f1x0.o
+    0x08000168   0x08000168   0x00000000   Code   RO          355  * .ARM.Collect$$$$00000000  mc_w.l(entry.o)
+    0x08000168   0x08000168   0x00000004   Code   RO          394    .ARM.Collect$$$$00000001  mc_w.l(entry2.o)
+    0x0800016c   0x0800016c   0x00000004   Code   RO          397    .ARM.Collect$$$$00000004  mc_w.l(entry5.o)
+    0x08000170   0x08000170   0x00000000   Code   RO          399    .ARM.Collect$$$$00000008  mc_w.l(entry7b.o)
+    0x08000170   0x08000170   0x00000000   Code   RO          401    .ARM.Collect$$$$0000000A  mc_w.l(entry8b.o)
+    0x08000170   0x08000170   0x00000008   Code   RO          402    .ARM.Collect$$$$0000000B  mc_w.l(entry9a.o)
+    0x08000178   0x08000178   0x00000000   Code   RO          404    .ARM.Collect$$$$0000000D  mc_w.l(entry10a.o)
+    0x08000178   0x08000178   0x00000000   Code   RO          406    .ARM.Collect$$$$0000000F  mc_w.l(entry11a.o)
+    0x08000178   0x08000178   0x00000004   Code   RO          395    .ARM.Collect$$$$00002712  mc_w.l(entry2.o)
     0x0800017c   0x0800017c   0x00000794   Code   RO            1    .text               main.o
     0x08000910   0x08000910   0x000006ca   Code   RO           31    .text               bldc.o
     0x08000fda   0x08000fda   0x00000002   PAD
@@ -1032,67 +1038,67 @@ Memory Map of the image
     0x08001f22   0x08001f22   0x00000002   PAD
     0x08001f24   0x08001f24   0x000000ba   Code   RO          172    .text               remotedummy.o
     0x08001fde   0x08001fde   0x00000002   PAD
-    0x08001fe0   0x08001fe0   0x000005a6   Code   RO          199    .text               gd32f1x0_adc.o
+    0x08001fe0   0x08001fe0   0x000005a6   Code   RO          207    .text               gd32f1x0_adc.o
     0x08002586   0x08002586   0x00000002   PAD
-    0x08002588   0x08002588   0x00000370   Code   RO          215    .text               gd32f1x0_dma.o
-    0x080028f8   0x080028f8   0x0000016e   Code   RO          223    .text               gd32f1x0_exti.o
+    0x08002588   0x08002588   0x00000370   Code   RO          223    .text               gd32f1x0_dma.o
+    0x080028f8   0x080028f8   0x0000016e   Code   RO          231    .text               gd32f1x0_exti.o
     0x08002a66   0x08002a66   0x00000002   PAD
-    0x08002a68   0x08002a68   0x000009d0   Code   RO          231    .text               gd32f1x0_fmc.o
-    0x08003438   0x08003438   0x000000e2   Code   RO          240    .text               gd32f1x0_fwdgt.o
+    0x08002a68   0x08002a68   0x000009d0   Code   RO          239    .text               gd32f1x0_fmc.o
+    0x08003438   0x08003438   0x000000e2   Code   RO          248    .text               gd32f1x0_fwdgt.o
     0x0800351a   0x0800351a   0x00000002   PAD
-    0x0800351c   0x0800351c   0x00000198   Code   RO          248    .text               gd32f1x0_gpio.o
-    0x080036b4   0x080036b4   0x0000012c   Code   RO          265    .text               gd32f1x0_misc.o
-    0x080037e0   0x080037e0   0x00000724   Code   RO          286    .text               gd32f1x0_rcu.o
-    0x08003f04   0x08003f04   0x00000102   Code   RO          295    .text               gd32f1x0_syscfg.o
+    0x0800351c   0x0800351c   0x00000198   Code   RO          256    .text               gd32f1x0_gpio.o
+    0x080036b4   0x080036b4   0x0000012c   Code   RO          273    .text               gd32f1x0_misc.o
+    0x080037e0   0x080037e0   0x00000724   Code   RO          294    .text               gd32f1x0_rcu.o
+    0x08003f04   0x08003f04   0x00000102   Code   RO          303    .text               gd32f1x0_syscfg.o
     0x08004006   0x08004006   0x00000002   PAD
-    0x08004008   0x08004008   0x00000d50   Code   RO          303    .text               gd32f1x0_timer.o
-    0x08004d58   0x08004d58   0x00000024   Code   RO          331    .text               startup_gd32f1x0.o
-    0x08004d7c   0x08004d7c   0x0000013c   Code   RO          337    .text               system_gd32f1x0.o
-    0x08004eb8   0x08004eb8   0x000000b0   Code   RO          350    .text               mf_w.l(fadd.o)
-    0x08004f68   0x08004f68   0x00000064   Code   RO          352    .text               mf_w.l(fmul.o)
-    0x08004fcc   0x08004fcc   0x0000007c   Code   RO          354    .text               mf_w.l(fdiv.o)
-    0x08005048   0x08005048   0x0000014e   Code   RO          356    .text               mf_w.l(dadd.o)
-    0x08005196   0x08005196   0x000000e4   Code   RO          358    .text               mf_w.l(dmul.o)
-    0x0800527a   0x0800527a   0x000000de   Code   RO          360    .text               mf_w.l(ddiv.o)
-    0x08005358   0x08005358   0x0000001c   Code   RO          362    .text               mf_w.l(fcmple.o)
-    0x08005374   0x08005374   0x0000001c   Code   RO          364    .text               mf_w.l(fcmplt.o)
-    0x08005390   0x08005390   0x0000001c   Code   RO          366    .text               mf_w.l(fcmpgt.o)
-    0x080053ac   0x080053ac   0x00000012   Code   RO          368    .text               mf_w.l(fflti.o)
-    0x080053be   0x080053be   0x0000000a   Code   RO          370    .text               mf_w.l(ffltui.o)
-    0x080053c8   0x080053c8   0x00000022   Code   RO          372    .text               mf_w.l(dflti.o)
-    0x080053ea   0x080053ea   0x0000001a   Code   RO          374    .text               mf_w.l(dfltui.o)
-    0x08005404   0x08005404   0x00000032   Code   RO          376    .text               mf_w.l(ffixi.o)
-    0x08005436   0x08005436   0x00000042   Code   RO          378    .text               mf_w.l(ffixl.o)
-    0x08005478   0x08005478   0x0000003e   Code   RO          380    .text               mf_w.l(dfixi.o)
-    0x080054b6   0x080054b6   0x00000026   Code   RO          382    .text               mf_w.l(f2d.o)
-    0x080054dc   0x080054dc   0x00000038   Code   RO          384    .text               mf_w.l(d2f.o)
-    0x08005514   0x08005514   0x0000001e   Code   RO          400    .text               mc_w.l(llshl.o)
-    0x08005532   0x08005532   0x00000020   Code   RO          402    .text               mc_w.l(llushr.o)
-    0x08005552   0x08005552   0x00000024   Code   RO          404    .text               mc_w.l(llsshr.o)
-    0x08005576   0x08005576   0x00000000   Code   RO          406    .text               mc_w.l(iusefp.o)
-    0x08005576   0x08005576   0x0000006e   Code   RO          407    .text               mf_w.l(fepilogue.o)
-    0x080055e4   0x080055e4   0x000000ba   Code   RO          409    .text               mf_w.l(depilogue.o)
+    0x08004008   0x08004008   0x00000d50   Code   RO          311    .text               gd32f1x0_timer.o
+    0x08004d58   0x08004d58   0x00000024   Code   RO          339    .text               startup_gd32f1x0.o
+    0x08004d7c   0x08004d7c   0x0000013c   Code   RO          345    .text               system_gd32f1x0.o
+    0x08004eb8   0x08004eb8   0x000000b0   Code   RO          358    .text               mf_w.l(fadd.o)
+    0x08004f68   0x08004f68   0x00000064   Code   RO          360    .text               mf_w.l(fmul.o)
+    0x08004fcc   0x08004fcc   0x0000007c   Code   RO          362    .text               mf_w.l(fdiv.o)
+    0x08005048   0x08005048   0x0000014e   Code   RO          364    .text               mf_w.l(dadd.o)
+    0x08005196   0x08005196   0x000000e4   Code   RO          366    .text               mf_w.l(dmul.o)
+    0x0800527a   0x0800527a   0x000000de   Code   RO          368    .text               mf_w.l(ddiv.o)
+    0x08005358   0x08005358   0x0000001c   Code   RO          370    .text               mf_w.l(fcmple.o)
+    0x08005374   0x08005374   0x0000001c   Code   RO          372    .text               mf_w.l(fcmplt.o)
+    0x08005390   0x08005390   0x0000001c   Code   RO          374    .text               mf_w.l(fcmpgt.o)
+    0x080053ac   0x080053ac   0x00000012   Code   RO          376    .text               mf_w.l(fflti.o)
+    0x080053be   0x080053be   0x0000000a   Code   RO          378    .text               mf_w.l(ffltui.o)
+    0x080053c8   0x080053c8   0x00000022   Code   RO          380    .text               mf_w.l(dflti.o)
+    0x080053ea   0x080053ea   0x0000001a   Code   RO          382    .text               mf_w.l(dfltui.o)
+    0x08005404   0x08005404   0x00000032   Code   RO          384    .text               mf_w.l(ffixi.o)
+    0x08005436   0x08005436   0x00000042   Code   RO          386    .text               mf_w.l(ffixl.o)
+    0x08005478   0x08005478   0x0000003e   Code   RO          388    .text               mf_w.l(dfixi.o)
+    0x080054b6   0x080054b6   0x00000026   Code   RO          390    .text               mf_w.l(f2d.o)
+    0x080054dc   0x080054dc   0x00000038   Code   RO          392    .text               mf_w.l(d2f.o)
+    0x08005514   0x08005514   0x0000001e   Code   RO          408    .text               mc_w.l(llshl.o)
+    0x08005532   0x08005532   0x00000020   Code   RO          410    .text               mc_w.l(llushr.o)
+    0x08005552   0x08005552   0x00000024   Code   RO          412    .text               mc_w.l(llsshr.o)
+    0x08005576   0x08005576   0x00000000   Code   RO          414    .text               mc_w.l(iusefp.o)
+    0x08005576   0x08005576   0x0000006e   Code   RO          415    .text               mf_w.l(fepilogue.o)
+    0x080055e4   0x080055e4   0x000000ba   Code   RO          417    .text               mf_w.l(depilogue.o)
     0x0800569e   0x0800569e   0x00000002   PAD
-    0x080056a0   0x080056a0   0x00000030   Code   RO          411    .text               mc_w.l(init.o)
-    0x080056d0   0x080056d0   0x0000000e   Code   RO          415    i.__scatterload_copy  mc_w.l(handlers.o)
-    0x080056de   0x080056de   0x00000002   Code   RO          416    i.__scatterload_null  mc_w.l(handlers.o)
-    0x080056e0   0x080056e0   0x0000000e   Code   RO          417    i.__scatterload_zeroinit  mc_w.l(handlers.o)
+    0x080056a0   0x080056a0   0x00000030   Code   RO          419    .text               mc_w.l(init.o)
+    0x080056d0   0x080056d0   0x0000000e   Code   RO          423    i.__scatterload_copy  mc_w.l(handlers.o)
+    0x080056de   0x080056de   0x00000002   Code   RO          424    i.__scatterload_null  mc_w.l(handlers.o)
+    0x080056e0   0x080056e0   0x0000000e   Code   RO          425    i.__scatterload_zeroinit  mc_w.l(handlers.o)
     0x080056ee   0x080056ee   0x0000000c   Data   RO           63    .rodata..L__const.up_or_down.up_down  bldc.o
-    0x080056fa   0x080056fa   0x0000000c   Data   RO          250    .rodata..Lswitch.table.gpio_deinit.1  gd32f1x0_gpio.o
+    0x080056fa   0x080056fa   0x0000000c   Data   RO          258    .rodata..Lswitch.table.gpio_deinit.1  gd32f1x0_gpio.o
     0x08005706   0x08005706   0x00000008   Data   RO          108    .rodata.cst8        bldcsine.o
-    0x0800570e   0x0800570e   0x00000008   Data   RO          288    .rodata.cst8        gd32f1x0_rcu.o
+    0x0800570e   0x0800570e   0x00000008   Data   RO          296    .rodata.cst8        gd32f1x0_rcu.o
     0x08005716   0x08005716   0x00000008   Data   RO           64    .rodata.hall_to_pos  bldc.o
     0x0800571e   0x0800571e   0x00000002   PAD
     0x08005720   0x08005720   0x000002d4   Data   RO           19    .rodata.lookUpTableAngle  main.o
     0x080059f4   0x080059f4   0x000002d0   Data   RO          111    .rodata.sine_table  bldcsine.o
-    0x08005cc4   0x08005cc4   0x00000020   Data   RO          414    Region$$Table       anon$$obj.o
+    0x08005cc4   0x08005cc4   0x00000020   Data   RO          422    Region$$Table       anon$$obj.o
 
 
     Execution Region RW_IRAM1 (Exec base: 0x20000000, Load base: 0x08005ce8, Size: 0x000005a8, Max: 0x00002000, ABSOLUTE)
 
     Exec Addr    Load Addr    Size         Type   Attr      Idx    E Section Name        Object
 
-    0x20000000   0x08005ce8   0x00000004   Data   RW          339    .data.SystemCoreClock  system_gd32f1x0.o
+    0x20000000   0x08005ce8   0x00000004   Data   RW          347    .data.SystemCoreClock  system_gd32f1x0.o
     0x20000004   0x08005cec   0x00000004   Data   RW           33    .data.batteryVoltage  bldc.o
     0x20000008   0x08005cf0   0x00000004   Data   RW           34    .data.currentDC     bldc.o
     0x2000000c   0x08005cf4   0x00000001   Data   RW           50    .data.iFILTER_SHIFT  bldc.o
@@ -1189,7 +1195,7 @@ Memory Map of the image
     0x20000190        -       0x00000010   Zero   RW          122    .bss.timerBldc_paramter_struct  setup.o
     0x200001a0        -       0x00000004   Zero   RW           37    .bss.torque32       bldc.o
     0x200001a4        -       0x00000004   Zero   RW           39    .bss.torque32_reg   bldc.o
-    0x200001a8        -       0x00000400   Zero   RW          328    STACK               startup_gd32f1x0.o
+    0x200001a8        -       0x00000400   Zero   RW          336    STACK               startup_gd32f1x0.o
 
 
 ==============================================================================

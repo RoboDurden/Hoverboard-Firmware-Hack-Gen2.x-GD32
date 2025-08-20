@@ -484,6 +484,11 @@
               <FileType>1</FileType>
               <FilePath>.\Src\PilotHoverbike.c</FilePath>
             </File>
+            <File>
+              <FileName>PilotUser.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\PilotUser.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -608,6 +613,11 @@
               <FileName>PilotHoverbike.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\PilotHoverbike.h</FilePath>
+            </File>
+            <File>
+              <FileName>PilotUser.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\PilotUser.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -1247,6 +1257,11 @@
               <FileType>1</FileType>
               <FilePath>.\Src\PilotHoverbike.c</FilePath>
             </File>
+            <File>
+              <FileName>PilotUser.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\PilotUser.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1371,6 +1386,11 @@
               <FileName>PilotHoverbike.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\PilotHoverbike.h</FilePath>
+            </File>
+            <File>
+              <FileName>PilotUser.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\PilotUser.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -2010,6 +2030,11 @@
               <FileType>1</FileType>
               <FilePath>.\Src\PilotHoverbike.c</FilePath>
             </File>
+            <File>
+              <FileName>PilotUser.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\PilotUser.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -2134,6 +2159,11 @@
               <FileName>PilotHoverbike.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\PilotHoverbike.h</FilePath>
+            </File>
+            <File>
+              <FileName>PilotUser.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\PilotUser.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -2773,6 +2803,11 @@
               <FileType>1</FileType>
               <FilePath>.\Src\PilotHoverbike.c</FilePath>
             </File>
+            <File>
+              <FileName>PilotUser.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\PilotUser.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -2897,6 +2932,11 @@
               <FileName>PilotHoverbike.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Inc\PilotHoverbike.h</FilePath>
+            </File>
+            <File>
+              <FileName>PilotUser.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Inc\PilotUser.h</FilePath>
             </File>
           </Files>
         </Group>

@@ -122,6 +122,7 @@ int main (void)
 	
 	if (	Watchdog_init() == ERROR)	// Init watchdog
 		while(1);	// If an error accours with watchdog initialization do not start device
+	
 	// Init Interrupts
 	Interrupt_init();
 

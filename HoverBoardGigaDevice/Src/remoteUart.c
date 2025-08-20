@@ -31,7 +31,7 @@ static int16_t iReceivePos = -1;
 #ifdef PILOT_HOVERBIKE
 	extern int16_t iGoert1;
 	extern int16_t iGoert2;
-	extern int16_t iGoert3;
+	extern int32_t iGoert3;
 #endif
 
 extern uint8_t bRemoteTimeout; 	// any Remote can set this to 1 to disable motor (with soft brake)

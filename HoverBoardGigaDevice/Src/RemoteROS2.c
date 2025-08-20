@@ -170,6 +170,15 @@ void RemoteCallback(void)
 	}	
 }
 
+
 #endif // MASTER_OR_SINGLE
+
+/*
+void 	Pilot(int16_t* pPwmMaster, int16_t* pPwmSlave)
+{
+	*pPwmMaster = CLAMP(speed + steer,-1000,+1000);	// or something like that
+	*pPwmMaster = CLAMP(speed - steer,-1000,1000);	// or something like that
+}
+*/
 
 #endif // REMOTE_ROS2

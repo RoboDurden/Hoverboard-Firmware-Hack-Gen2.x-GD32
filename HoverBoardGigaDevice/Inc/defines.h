@@ -8,8 +8,8 @@
 
 #ifdef PILOT_HOVERBIKE
 	#include "PilotHoverbike.h"		// https://youtu.be/ihCpCtgXIRA
-#elif defined (PILOT_New)		
-	#include "PilotNew.h"		// for your new onboard user code :-)
+#elif defined (PILOT_USER)		
+	#include "PilotUser.h"		// for your new onboard user code :-)
 #else
 	#define PILOT_DEFAULT
 #endif
