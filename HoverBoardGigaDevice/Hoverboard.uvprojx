@@ -489,6 +489,11 @@
               <FileType>1</FileType>
               <FilePath>.\Src\PilotUser.c</FilePath>
             </File>
+            <File>
+              <FileName>SEGGER_RTT.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\SEGGER_RTT.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1261,6 +1266,11 @@
               <FileName>PilotUser.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\PilotUser.c</FilePath>
+            </File>
+            <File>
+              <FileName>SEGGER_RTT.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\SEGGER_RTT.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2035,6 +2045,11 @@
               <FileType>1</FileType>
               <FilePath>.\Src\PilotUser.c</FilePath>
             </File>
+            <File>
+              <FileName>SEGGER_RTT.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\SEGGER_RTT.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -2807,6 +2822,11 @@
               <FileName>PilotUser.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\PilotUser.c</FilePath>
+            </File>
+            <File>
+              <FileName>SEGGER_RTT.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\SEGGER_RTT.c</FilePath>
             </File>
           </Files>
         </Group>

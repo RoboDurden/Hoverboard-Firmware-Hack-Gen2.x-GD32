@@ -1,7 +1,6 @@
 #include <stdint.h>
 #include "../Inc/bldc.h"
 
-
 // PID_Gemini	might work better with lower rank bldc_outputFilterPwm like 10
 
 /*
@@ -179,3 +178,4 @@ int16_t	Driver(uint8_t iDrivingMode, int32_t input)		// pwm/speed/torque/positio
 		}
 	return 0;	// error, unkown drive mode
 }
+

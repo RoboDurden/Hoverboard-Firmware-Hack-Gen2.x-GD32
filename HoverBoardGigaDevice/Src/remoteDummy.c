@@ -1,6 +1,7 @@
 #include "../Inc/defines.h"
 #include "../Inc/it.h"
 
+#include "SEGGER_RTT.h"
 
 #ifdef REMOTE_DUMMY
 
@@ -11,16 +12,27 @@ extern uint32_t msTicks;
 extern uint8_t iDrivingMode;	//  0=pwm, 1=speed in revs*1024, (not yet: 3=torque, 4=iOdometer)
 
 //#define SLOW_SINE
-
+uint32_t iTimeRTT = 0;
 void RemoteUpdate(void)
 {
+	if (millis() > iTimeRTT)
+	{
+		iTimeRTT = millis() + 500;
+		SEGGER_RTT_WriteString(0, "Hello RTT :-)\r\n");
+	}
+	int ch = SEGGER_RTT_GetKey();   // non-blocking, returns -1 if no char
+	if (ch >= 0) {
+			SEGGER_RTT_PutChar(0, ch);  // echo back
+	}
+	
+	
 	int32_t iMax = 0;
 	switch(iDrivingMode)	//  0=pwm, 1=speed in revs*1024, (not yet: 3=torque, 4=iOdometer)
 	{
 		case 0: iMax = 500; break;	// pwm value
-		case 1: iMax = 8.3 *1024; break;	// 1.5*1024 = max speed 1.5 revs/s
+		case 1: iMax = 0.5 *1024; break;	// 1.5*1024 = max speed 1.5 revs/s
 		case 2: iMax = 5.0 *1024; break;	// 1.5*1024 = max speed 1.5 Nm (Newton meter)
-		case 3: iMax = 900; break;	// 90 = 360°
+		case 3: iMax = 900; break;	// 90 = 360ï¿½
 	}
 	
 	#ifdef MASTER_OR_SINGLE

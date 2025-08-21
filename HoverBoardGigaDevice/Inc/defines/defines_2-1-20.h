@@ -7,6 +7,10 @@
 #define UPPER_LED PB2
 #define LOWER_LED PB5
 
+#define PHOTO_L PC15
+#define PHOTO_R PA11
+
+
 #define HALL_A PC13
 #define HALL_B PA1
 #define HALL_C PC14

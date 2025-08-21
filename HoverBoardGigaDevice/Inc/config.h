@@ -6,7 +6,11 @@
 				// will drive the motor without hall input to detect the hall pins..
 
 #ifdef REMOTE_AUTODETECT
-	#define REMOTE_USART				0 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
+	//#define WINDOWS_RN		// adds a \r before every \n
+	
+	#define RTT_REMOTE
+
+#define REMOTE_USART				0 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
 																	//	0 is usually PB6/PB7 and the empty header close to the flash-header
 																	//	2 is usually PB10/PB11 on stm32f103 boards
 																	

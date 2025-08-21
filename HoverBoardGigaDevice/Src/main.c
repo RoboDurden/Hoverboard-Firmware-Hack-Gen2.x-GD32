@@ -1,7 +1,6 @@
 #define ARM_MATH_CM3
 
 
-
 #include "../Inc/defines.h"
 #include "../Inc/it.h"
 #include "../Inc/bldc.h"
