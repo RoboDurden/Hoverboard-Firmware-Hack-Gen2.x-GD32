@@ -7,8 +7,8 @@
 
 // LED defines
 //#define LED_GREEN 			TODO_PIN	//GPIO_PIN_13	// lerwinDE: in conflict with flash pins DIO and CLK !!!
-#define LED_ORANGE 			PF1	// UPPER_LED with 4x blue led
-//#define LED_RED 				TODO_PIN	//GPIO_PIN_14	// lerwinDE: in conflict with flash pins DIO and CLK !!!
+//#define LED_ORANGE 			
+#define LED_RED 				PF1	// UPPER_LED with 4x blue led //GPIO_PIN_14	// lerwinDE: in conflict with flash pins DIO and CLK !!!
 
 //#define UPPER_LED 	TODO_PIN	
 //#define LOWER_LED 	TODO_PIN	

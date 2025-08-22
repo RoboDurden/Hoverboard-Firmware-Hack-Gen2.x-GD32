@@ -1,7 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define REMOTE_AUTODETECT
+//#define REMOTE_AUTODETECT
 				// ONLY test with 1-2A constant current power supply !!!! The charger with 1.5A might also do :-)
 				// will drive the motor without hall input to detect the hall pins..
 
@@ -13,7 +13,7 @@
 																	//	0 is usually PB6/PB7 and the empty header close to the flash-header
 																	//	2 is usually PB10/PB11 on stm32f103 boards
 																	
-	#define PIN_PACKAGE 64	//  GD32F103Rx LQFP64
+	//#define PIN_PACKAGE 64	//  GD32F103Rx LQFP64
 																	
 #else
 
@@ -35,7 +35,7 @@
 	#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden. 
 	#define BLDC_SINE_BOOSTER		// can boost speed by 15% starting from 87% throttle.
 	
-	#define DRIVING_MODE 1	//  0=pwm, 1=speed in revs/s*1024, 2=torque in NewtonMeter*1024, 3=iOdometer
+	#define DRIVING_MODE 0	//  0=pwm, 1=speed in revs/s*1024, 2=torque in NewtonMeter*1024, 3=iOdometer
 	
 	#define SPEED_AsRevsPerSec		// Will overflow at 327 revs/s = 19620 rpm. Hoverboard motor: 14 rpm/V * 50V = 700 rpm
 	

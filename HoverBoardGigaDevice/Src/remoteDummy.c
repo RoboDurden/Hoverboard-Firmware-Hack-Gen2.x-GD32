@@ -1,7 +1,6 @@
 #include "../Inc/defines.h"
 #include "../Inc/it.h"
 
-#include "SEGGER_RTT.h"
 
 #ifdef REMOTE_DUMMY
 
@@ -15,17 +14,6 @@ extern uint8_t iDrivingMode;	//  0=pwm, 1=speed in revs*1024, (not yet: 3=torque
 uint32_t iTimeRTT = 0;
 void RemoteUpdate(void)
 {
-	if (millis() > iTimeRTT)
-	{
-		iTimeRTT = millis() + 500;
-		SEGGER_RTT_WriteString(0, "Hello RTT :-)\r\n");
-	}
-	int ch = SEGGER_RTT_GetKey();   // non-blocking, returns -1 if no char
-	if (ch >= 0) {
-			SEGGER_RTT_PutChar(0, ch);  // echo back
-	}
-	
-	
 	int32_t iMax = 0;
 	switch(iDrivingMode)	//  0=pwm, 1=speed in revs*1024, (not yet: 3=torque, 4=iOdometer)
 	{

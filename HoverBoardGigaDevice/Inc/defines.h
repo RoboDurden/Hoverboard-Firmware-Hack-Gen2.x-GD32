@@ -64,6 +64,10 @@
 	#undef CHARGE_STATE
 #endif
 
+#if defined(TEST_HALL2LED) && !defined(LED_RED)
+	#undef TEST_HALL2LED
+#endif
+
 #ifdef BLDC_SINE
 	#if PWM_FREQ > 12000
 		#undef PWM_FREQ

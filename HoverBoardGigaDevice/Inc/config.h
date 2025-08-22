@@ -6,11 +6,11 @@
 				// will drive the motor without hall input to detect the hall pins..
 
 #ifdef REMOTE_AUTODETECT
-	//#define WINDOWS_RN		// adds a \r before every \n
+	#define WINDOWS_RN		// adds a \r before every \n
 	
-	#define RTT_REMOTE
+	//#define RTT_REMOTE
 
-#define REMOTE_USART				0 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
+	#define REMOTE_USART				0 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
 																	//	0 is usually PB6/PB7 and the empty header close to the flash-header
 																	//	2 is usually PB10/PB11 on stm32f103 boards
 																	
@@ -40,9 +40,9 @@
 
 	#define BAT_CELLS         	10        // battery number of cells. Normal Hoverboard battery: 10s
 	//#define BATTERY_LOW_SHUTOFF		// will shut off the board below BAT_LOW_DEAD = BAT_CELLS * CELL_LOW_DEAD, 
-	//#define BATTERY_LOW_BEEP		// will start beeping for different battery low lwevels
+	#define BATTERY_LOW_BEEP		// will start beeping for different battery low lwevels
 
-	//#define BEEP_BACKWARDS
+	#define BEEP_BACKWARDS
 
 	//#define DEBUG_LED		// uncomment to activate DEBUG_LedSet(bSet,iColor) macro. iCol: 0=green, 1=organge, 2=red
 
