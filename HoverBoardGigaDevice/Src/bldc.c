@@ -250,6 +250,10 @@ void CalculateBLDC(void)
 		#endif
 		digitalWrite(LED_RED,hall_c);
 	#endif
+	
+	#ifdef PILOT_CALCULATE
+		PilotCalculate();
+	#endif
 
 	// Determine current position based on hall sensors
 	#ifdef REMOTE_AUTODETECT

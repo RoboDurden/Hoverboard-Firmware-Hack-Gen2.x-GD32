@@ -11,6 +11,7 @@ extern uint8_t iBug8;
 extern uint8_t bPilotTimeout;
 extern MPU_Data mpuData;	
 extern float currentDC; 									// global variable for current dc
+extern int32_t revs32;					// revs/s *1024
 extern int32_t speed;
 
 
@@ -54,6 +55,48 @@ int16_t iir_hpf_update(IIR_HPF *filter, int16_t input) {
 }
 
 //----------- Deepseek end
+
+extern uint16_t buzzerTimer;	// fastest timer available, counts upwards with PWM_FREQ, limited to 12 kHz for BLDC_SINE
+
+#define PAS_TOOSLOW (PWM_FREQ>>0)	// (PWM_FREQ/12)*3 = 3 turns/sec : PAS has 12 magnets so 1 Hz cycling will be 1/12 second
+
+int8_t iPhotoL = -1, iPhotoR = -1;
+uint16_t iTimePAS = 0, iSpeedPAS = PAS_TOOSLOW, iSpeedPAS_LP = PAS_TOOSLOW;		// PAS = pedal assist sensor
+uint32_t iSpeedPAS_LP_reg = 0;
+uint16_t iSpeedTest = 0;
+
+void PilotCalculate()
+{
+	
+	iSpeedTest = buzzerTimer-iTimePAS;
+	
+	int8_t iPhotoLNew = digitalRead(PHOTO_L);
+	if (iPhotoLNew != iPhotoL)
+	{
+		if (!iPhotoLNew)	// falling slope = hall sensor triggered
+		{
+			if (iTimePAS)	
+			{
+				if (iSpeedTest > (PWM_FREQ>>5))		// if less than 1/32 second than artifact. 
+				{
+					iSpeedPAS = iSpeedTest;
+					iTimePAS = buzzerTimer;
+				}
+			}
+			else	iTimePAS = buzzerTimer;
+		}
+		iPhotoL = iPhotoLNew;
+	}
+	else if (iTimePAS)
+	{
+		if (iSpeedTest > PAS_TOOSLOW)
+		{
+			iTimePAS = 0;
+			iSpeedPAS = PAS_TOOSLOW;	// 0 = invalid/tooslow instead of PAS_TOOSLOW
+		}
+	}
+	iPhotoR = digitalRead(PHOTO_R);
+}
 
 
 int16_t iSample, iSampleHP;
@@ -164,7 +207,7 @@ iterm1 = term1;
 iterm2 = term2;
 iterm3_intermediate = term3_intermediate;
 iterm3 = term3;
-iGoert3 = imag_sq = mag_sq;
+//iGoert3 = imag_sq = mag_sq;
 				
 				
         // Check if the energy at this frequency bin is above the threshold
@@ -199,12 +242,31 @@ uint8_t PilotInit()
 
 #define SAMPLETIME (1000/GOERTZEL_FS)	// every 40 ms = 25 Hz
 
+int32_t  iBrake_reg = 0, iBrake=0;
+#define COUNTER_GO 250
+uint16_t iCounterGo = COUNTER_GO;
+
 uint32_t iTimeLastSample,iTimeNextSample = 0;
 uint16_t iMpuRetries = 0;
 int8_t iClipState=0;
-void 	Pilot(int16_t* pPwmMaster, int16_t* pPwmSlave)
+void Pilot(int16_t* pPwmMaster, int16_t* pPwmSlave)
 {
-	*pPwmMaster = -speed;		// just forward speed from RemoteUart for now.
+	#define RANK_SpeedPAS 4
+	iSpeedPAS_LP_reg = iSpeedPAS_LP_reg - (iSpeedPAS_LP_reg >> RANK_SpeedPAS) + iSpeedPAS;
+	iSpeedPAS_LP = iSpeedPAS_LP_reg >> RANK_SpeedPAS;
+	
+	//speed = 1000;
+	*pPwmMaster = 0;
+	if (iSpeedPAS_LP < (PAS_TOOSLOW-200))
+	{
+		if (iCounterGo)
+		{
+			iCounterGo--;
+		}
+		else // if (revs32 >300)	// 1km/h = 0.3 m/s =(180cm) 1/6 revs_wheel =(1:3) 1/2 revs = 512 revs32
+			*pPwmMaster = -speed;		// just forward speed from RemoteUart for now.
+	}
+	iGoert3 = -*pPwmMaster;
 	
 	uint32_t iNow = millis();
 	if (iNow < iTimeNextSample)
@@ -230,6 +292,19 @@ void 	Pilot(int16_t* pPwmMaster, int16_t* pPwmSlave)
 	iBug = iNow-iTimeLastSample;
 	iTimeLastSample = iNow;
 	iTimeNextSample = iNow + SAMPLETIME;
+
+	
+	#define BRAKE_SHIFT 3
+	iBrake_reg += (((int32_t)mpuData.accel.x - iBrake_reg) >> BRAKE_SHIFT);	// High-pass residual
+	iGoert2 = iBrake = ((int32_t)mpuData.accel.x - iBrake_reg);
+	//iBrake >>= 1;	// downscale
+	if (iBrake > 800) 
+	{
+		iCounterGo = COUNTER_GO;	// will set speed to 0 on next Pilot() call
+	}
+		
+
+
 	
 	if (bPilotInit)	PilotInit();
 
@@ -240,7 +315,7 @@ void 	Pilot(int16_t* pPwmMaster, int16_t* pPwmSlave)
 	if (iSampleHP >= CLIP_THR_HI)       iClipState = +1;
 	else if (iSampleHP <= CLIP_THR_LO)  iClipState = -1;
 	
-	iGoert2 = iClipState;
+	//iGoert2 = iClipState;
 	//iGoert1 = iSample;
 
 	int8_t iResult = Goertzel_AddSample(&pedaling_detector, iClipState);

@@ -55,8 +55,8 @@
 	#if defined(MASTER) || defined(SINGLE)
 		
 		// choose only one 'remote' to control the motor
-		#define REMOTE_DUMMY
-		//#define REMOTE_UART
+		//#define REMOTE_DUMMY
+		#define REMOTE_UART
 		//#define REMOTE_UARTBUS	// ESP32 as master and multiple boards as multiple slaves ESP.tx-Hovers.rx and ESP.rx-Hovers.tx
 		//#define REMOTE_CRSF		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/26
 		//#define REMOTE_ROS2		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/122
@@ -81,7 +81,7 @@
 
 		//#define SEND_IMU_DATA // send the IMU data with RemoteUart or RemoteUartBus. Tested for 2.1.20 !
 
-		//#define PILOT_HOVERBIKE	// very experimental pedal detection with chatGpt5 :-/
+		#define PILOT_HOVERBIKE	// very experimental pedal detection with chatGpt5 :-/
 		 #define SPEED_COEFFICIENT   -1	// only used if no PILOT_XY is defined
 		 #define STEER_COEFFICIENT   1		// only used if no PILOT_XY is defined
 		

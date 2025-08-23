@@ -15,7 +15,8 @@
 
 void 	Pilot(int16_t* pPwmMaster, int16_t* pPwmSlave);
 
-
+#define PILOT_CALCULATE	// uncomment this activate PilotCalculate(); in bldc.c:calculateBLDC()
+void PilotCalculate();
 
 /* Gemini 2.5 pro:
 

@@ -247,6 +247,14 @@ void GPIO_init(void)
 				pinModePull(CHARGE_STATE,GPIO_MODE_INPUT, GPIO_PUPD_PULLUP);
 			#endif
 		#endif
+		
+		#ifdef PHOTO_L
+			pinModePull(PHOTO_L,GPIO_MODE_INPUT,GPIO_PUPD_PULLUP);
+		#endif
+		#ifdef PHOTO_R
+			pinModePull(PHOTO_R,GPIO_MODE_INPUT,GPIO_PUPD_PULLUP);
+		#endif
+		
 	#endif // 	#ifndef REMOTE_AUTODETECT
 
 }

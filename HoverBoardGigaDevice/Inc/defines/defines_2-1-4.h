@@ -134,8 +134,8 @@
 //#define CHARGE_STATE	TODO_PIN
 
 // photo diodes / light barriers on the backside
-#define PHOTO_L_PIN		PC15
-#define PHOTO_R_PIN		PC14
+#define PHOTO_L		PC15
+#define PHOTO_R		PC14
 
 #define DATA_PIN		PB11	// empty header to the left/down has only one data pin :-/
 													// could be used as I2C1_SDA (AF1 = alternate function 1)
