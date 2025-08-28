@@ -142,7 +142,8 @@ void SetFilter(uint8_t iNew)
 
 extern uint32_t steerCounter;								// Steer counter for setting update rate
 extern uint32_t iBug;
-
+extern uint32_t msTicks;
+uint32_t iBuzzCounter = 0, iBuzzTime=0, iBuzzRate=0;
 
 // Calculation-Routine for BLDC => calculates with 16kHz
 void CalculateBLDC(void)
@@ -177,6 +178,17 @@ void CalculateBLDC(void)
 		
 	
   buzzerTimer++;	// also used to calculate battery voltage :-/
+		
+	iBug = PWM_FREQ;
+	if (msTicks > iBuzzTime)
+	{
+		iBuzzTime = msTicks + 1000;
+		iBuzzRate = iBuzzCounter;
+		iBuzzCounter = 0;
+	}
+	else iBuzzCounter++;
+		
+		
 #ifdef BUZZER
 	// Create square wave for buzzer
   if (buzzerFreq != 0 && (buzzerTimer / PWM_FREQ) % (buzzerPattern + 1) == 0)

@@ -6,14 +6,13 @@
 				// will drive the motor without hall input to detect the hall pins..
 
 #ifdef REMOTE_AUTODETECT
-	//#define WINDOWS_RN		// adds a \r before every \n
+	#define WINDOWS_RN		// adds a \r before every \n
 	
-	#define RTT_REMOTE
-	//#define REMOTE_USART				1 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
+	//#define RTT_REMOTE
+
+	#define REMOTE_USART				0 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
 																	//	0 is usually PB6/PB7 and the empty header close to the flash-header
 																	//	2 is usually PB10/PB11 on stm32f103 boards
-																	
-	//#define PIN_PACKAGE 64	//  GD32F103Rx LQFP64
 																	
 #else
 
@@ -21,29 +20,29 @@
 	// and then set your layout below
 	// Gen2-target-layout is included in defines.h
 	#ifdef GD32F130		// TARGET = 1
-		#define LAYOUT 20
+		#define LAYOUT 1
 		#define LAYOUT_SUB 1	// Layout 2.1.7 exisits as 2.1.7.0 and 2.1.7.1
 	#elif GD32F103		// TARGET = 2
 		#define LAYOUT 1
 	#elif GD32E230		// TARGET = 3
-		#define LAYOUT 2
+		#define LAYOUT 1
 	#elif MM32SPIN05	// TARGET = 4
 		#define LAYOUT 1
 	#endif
+
+	#define BLDC_BC			// old block commutation bldc control
+	//#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden. 
+	//#define BLDC_SINE_BOOSTER		// can boost speed by 15% starting from 87% throttle.
 	
-	//#define BLDC_BC			// old block commutation bldc control
-	#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden. 
-	#define BLDC_SINE_BOOSTER		// can boost speed by 15% starting from 87% throttle.
-	
-	#define DRIVING_MODE 0	//  0=pwm, 1=speed in revs/s*1024, 2=torque in NewtonMeter*1024, 3=iOdometer
-	
-	#define SPEED_AsRevsPerSec		// Will overflow at 327 revs/s = 19620 rpm. Hoverboard motor: 14 rpm/V * 50V = 700 rpm
-	
+	#define DRIVING_MODE 1	//  0=pwm, 1=speed in revs/s*1024, 2=torque in NewtonMeter*1024, 3=iOdometer
+
+	//#define SPEED_AsRevsPerSec		// Will overflow at 327 revs/s = 19620 rpm. Hoverboard motor: 14 rpm/V * 50V = 700 rpm
+
 	#define BAT_CELLS         	7        // battery number of cells. Normal Hoverboard battery: 10s
 	//#define BATTERY_LOW_SHUTOFF		// will shut off the board below BAT_LOW_DEAD = BAT_CELLS * CELL_LOW_DEAD, 
-	//#define BATTERY_LOW_BEEP		// will start beeping for different battery low lwevels
+	#define BATTERY_LOW_BEEP		// will start beeping for different battery low lwevels
 
-	//#define BEEP_BACKWARDS
+	#define BEEP_BACKWARDS
 
 	//#define DEBUG_LED		// uncomment to activate DEBUG_LedSet(bSet,iColor) macro. iCol: 0=green, 1=organge, 2=red
 
@@ -55,8 +54,8 @@
 	#if defined(MASTER) || defined(SINGLE)
 		
 		// choose only one 'remote' to control the motor
-		//#define REMOTE_DUMMY
-		#define REMOTE_UART
+		#define REMOTE_DUMMY
+		//#define REMOTE_UART
 		//#define REMOTE_UARTBUS	// ESP32 as master and multiple boards as multiple slaves ESP.tx-Hovers.rx and ESP.rx-Hovers.tx
 		//#define REMOTE_CRSF		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/26
 		//#define REMOTE_ROS2		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/122
@@ -74,22 +73,23 @@
 		#endif
 		#ifdef REMOTE_DUMMY
 			//#define SLOW_SINE	// 9 second period instead of 3 seconds
-			//#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
+			#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
 		#else
 			//#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
 		#endif
 
 		//#define SEND_IMU_DATA // send the IMU data with RemoteUart or RemoteUartBus. Tested for 2.1.20 !
 
-		#define PILOT_HOVERBIKE	// very experimental pedal detection with chatGpt5 :-/
-		 #define SPEED_COEFFICIENT   -1	// only used if no PILOT_XY is defined
-		 #define STEER_COEFFICIENT   1		// only used if no PILOT_XY is defined
+		//#define PILOT_USER	// uncomment if you want to extend the firmware with custom code :-)
+		//#define PILOT_HOVERBIKE	// very experimental pedal detection with chatGpt5 :-/
+		#define SPEED_COEFFICIENT   -1	// only used if no PILOT_XY is defined
+		#define STEER_COEFFICIENT   1		// only used if no PILOT_XY is defined
 		
 		//#define DISABLE_BUTTON	// this is the opposite of former CHECK_BUTTON define.
 															// remove '//' if you use a slave board as master 
 															// or if you turn the boards on/off by injecting a postive voltage into the input pin of the 2pin BUTTON header
 
-		#define DISABLE_CHARGESTATE	//active this if you test with the charger plugged in as the power supply with max 1.5A
+		//#define DISABLE_CHARGESTATE	//active this if you test with the charger plugged in as the power supply with max 1.5A
 
 		#define MASTER_OR_SINGLE
 	#endif
@@ -101,7 +101,7 @@
 	#endif
 	
 	#if defined(REMOTE_UART) || defined(REMOTE_UARTBUS) || defined(REMOTE_CRSF) || defined(REMOTE_ROS2)
-		#define REMOTE_USART				1 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
+		#define REMOTE_USART				0 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
 																		//	0 is usually PB6/PB7 and the empty header close to the flash-header
 																		//	2 is usually PB10/PB11 on stm32f103 boards
 	#endif
