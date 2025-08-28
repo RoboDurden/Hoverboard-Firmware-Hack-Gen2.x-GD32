@@ -69,7 +69,7 @@
 #endif
 
 #ifdef BLDC_SINE
-	#if PWM_FREQ > 12000
+	#if PWM_FREQ > 120000	// no longer needed 
 		#undef PWM_FREQ
 		#define PWM_FREQ	12000		// 16 kHz seems to be to fast for the longer CalculateBLDC code execution and the 3 hall interrupts
 	#endif

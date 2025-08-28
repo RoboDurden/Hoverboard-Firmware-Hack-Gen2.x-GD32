@@ -490,7 +490,7 @@ void ADC_initOld(void)
 	TARGET_dma_deinit(DMA_CH0);
 	
 	uint16_t iCountAdc = sizeof(adc_buffer)/2;	// array of uint16_t
-	//iCountAdc = 4;
+	//iCountAdc = 1;
 	
 	dma_init_struct_adc.direction = DMA_PERIPHERAL_TO_MEMORY;
 	dma_init_struct_adc.memory_addr = (uint32_t)&adc_buffer;
