@@ -390,7 +390,7 @@ void PWM_init(void)
 	timerBldc_paramter_struct.alignedmode = TIMER_COUNTER_CENTER_BOTH;	//changed to TIMER_COUNTER_CENTER_BOTH from TIMER_COUNTER_CENTER_DOWN by deepseek for SVM;
 	timerBldc_paramter_struct.period = BLDC_TIMER_PERIOD;
 	timerBldc_paramter_struct.clockdivision = TIMER_CKDIV_DIV1;
-	timerBldc_paramter_struct.repetitioncounter = 0;
+	timerBldc_paramter_struct.repetitioncounter = 1;
 	timer_auto_reload_shadow_disable(TIMER_BLDC);
 	
 	// Initialize timer with basic parameter struct
@@ -436,6 +436,28 @@ void PWM_init(void)
   timer_channel_output_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_B, &timerBldc_oc_parameter_struct);
 	timer_channel_output_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, &timerBldc_oc_parameter_struct);
 
+#define ADCTRIGGER_CHATGPT
+#ifdef ADCTRIGGER_GEMINI
+		// Configure Channel 3 to create a trigger event at the PWM peak
+		timer_channel_output_mode_config(TIMER_BLDC, TIMER_CH_3, TIMER_OC_MODE_INACTIVE);	// Set the channel to a mode that does not affect the output pin
+		timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_CH_3, BLDC_TIMER_PERIOD);	// Set the compare value to the period. In center-aligned mode, the counter only reaches this value once at the very peak of the cycle.
+		// Configure the timer's master mode to send the trigger
+		timer_master_output_trigger_source_select(TIMER_BLDC,TIMER_TRI_OUT_SRC_O3CPRE);
+		//timer_master_output_trigger_source_config(TIMER_BLDC, TIMER_TRIG_OUT_SRC_O3CPRE);	// Select the Output Compare 3 event as the trigger source (TRGO)
+#endif
+#ifdef ADCTRIGGER_CHATGPT
+	
+	timer_channel_output_mode_config(TIMER_BLDC, TIMER_CH_3, TIMER_OC_MODE_INACTIVE);	// Use channel 3 compare to define the trigger point (PWM peak in center-aligned mode)
+	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_CH_3, BLDC_TIMER_PERIOD);
+	timer_master_output_trigger_source_select(TIMER_BLDC, TIMER_TRI_OUT_SRC_UPDATE);	// Route OC3 event to TRGO
+	/*  
+	timer_channel_output_mode_config(TIMER_BLDC, TIMER_CH_0, TIMER_OC_MODE_INACTIVE);	// dedicate CH0 for ADC trigger timing
+	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_CH_0, BLDC_TIMER_PERIOD - 50);	// compare value slightly before ARR (peak) to avoid switching noise
+	timer_master_output_trigger_source_select(TIMER_BLDC, TIMER_TRI_OUT_SRC_CH0);	// Route CH0 compare to TRGO
+	*/
+	
+#endif
+
 	// Set up the break parameter struct
 	timerBldc_break_parameter_struct.runoffstate			= TIMER_ROS_STATE_ENABLE;
 	timerBldc_break_parameter_struct.ideloffstate 		= TIMER_IOS_STATE_DISABLE;
@@ -470,77 +492,35 @@ void PWM_init(void)
 	timer_enable(TIMER_BLDC);
 }
 
-/*
-//----------------------------------------------------------------------------
-// Initializes the ADC
-//----------------------------------------------------------------------------
-void ADC_initOld(void)
+#ifdef ADCTRIGGER_CHATGPT
+
+void ADC_init(void)
 {
 	// Enable ADC and DMA clock
 	rcu_periph_clock_enable(RCU_ADC);
-	rcu_periph_clock_enable(RCU_DMA);
+//	rcu_periph_clock_enable(RCU_DMA);
 	
   // Configure ADC clock (APB2 clock is DIV1 -> 72MHz, ADC clock is DIV6 -> 12MHz)
 	rcu_adc_clock_config(RCU_ADCCK_APB2_DIV6);
-	
-	// Interrupt channel 0 enable
-	TARGET_nvic_irq_enable(DMA_Channel0_IRQn, 1, 0);
-	
-	// Initialize DMA channel 0 for ADC
-	TARGET_dma_deinit(DMA_CH0);
-	
-	uint16_t iCountAdc = sizeof(adc_buffer)/2;	// array of uint16_t
-	//iCountAdc = 4;
-	
-	dma_init_struct_adc.direction = DMA_PERIPHERAL_TO_MEMORY;
-	dma_init_struct_adc.memory_addr = (uint32_t)&adc_buffer;
-	dma_init_struct_adc.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
-	dma_init_struct_adc.memory_width = DMA_MEMORY_WIDTH_16BIT;
-	dma_init_struct_adc.number = iCountAdc;
-	
-	dma_init_struct_adc.periph_addr = (uint32_t)&TARGET_ADC_RDATA;
-	dma_init_struct_adc.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
-	dma_init_struct_adc.periph_width = DMA_PERIPHERAL_WIDTH_16BIT;
-	dma_init_struct_adc.priority = DMA_PRIORITY_ULTRA_HIGH;
-	TARGET_dma_init(DMA_CH0, &dma_init_struct_adc);
-	
-	// Configure DMA mode
-	TARGET_dma_circulation_enable(DMA_CH0);
-	TARGET_dma_memory_to_memory_disable(DMA_CH0);
-	
-	// Enable DMA transfer complete interrupt
-	TARGET_dma_interrupt_enable(DMA_CH0, DMA_CHXCTL_FTFIE);
-	
-	// At least clear number of remaining data to be transferred by the DMA 
-	TARGET_dma_transfer_number_config(DMA_CH0, iCountAdc);		// 2
-	
-	// Enable DMA channel 0
-	TARGET_dma_channel_enable(DMA_CH0);
-	
-	
-	#ifdef REMOTE_AUTODETECT
-		adc_channel_length_config(ADC_REGULAR_CHANNEL, 1);
-		adc_regular_channel_config(0, PIN_TO_CHANNEL(TODO_PIN), ADC_SAMPLETIME_13POINT5);
-			// for some reason, the adc channel 1 used for VBat (3.3V) has to be set to TODO_PIN = PF4
-	#else
-		TARGET_adc_channel_length_config(ADC_REGULAR_CHANNEL, iCountAdc);	// 2
-		#ifdef VBATT
-			TARGET_adc_regular_channel_config(0, PIN_TO_CHANNEL(VBATT), ADC_SAMPLETIME_13POINT5);
-		#endif
-		#ifdef CURRENT_DC
-			TARGET_adc_regular_channel_config(1, PIN_TO_CHANNEL(CURRENT_DC), ADC_SAMPLETIME_13POINT5);
-		#endif
-		#ifdef REMOTE_ADC
-			adc_regular_channel_config(2, PIN_TO_CHANNEL(PA2), ADC_SAMPLETIME_13POINT5);
-			adc_regular_channel_config(3, PIN_TO_CHANNEL(PA3), ADC_SAMPLETIME_13POINT5);
-		#endif
-	#endif
-	
+
 	TARGET_adc_data_alignment_config(ADC_DATAALIGN_RIGHT);
-	
-	// Set trigger of ADC
-	TARGET_adc_external_trigger_config(ADC_REGULAR_CHANNEL, ENABLE);
-	TARGET_adc_external_trigger_source_config(ADC_REGULAR_CHANNEL, ADC_EXTTRIG_REGULAR_NONE);
+
+		/* Select TIMER0_TRGO as external trigger for inserted channels */
+		TARGET_adc_external_trigger_source_config(ADC_INSERTED_CHANNEL, TARGET_ADC_EXTTRIG_INSERTED_T0_TRGO);
+
+		/* Enable external trigger */
+		TARGET_adc_external_trigger_config(ADC_INSERTED_CHANNEL, ENABLE);
+
+		/* set inserted sequence length to 2 (slots 0 and 1) */
+		//adc_inserted_channel_length_config(2);
+		TARGET_adc_channel_length_config(ADC_INSERTED_CHANNEL, 2);
+		
+		/* Configure inserted channel(s) */
+		TARGET_adc_inserted_channel_config(0, PIN_TO_CHANNEL(VBATT), ADC_SAMPLETIME_41POINT5);	// instead of ADC_SAMPLETIME_13POINT5 to push sampling slightly off the noise edge. 
+		TARGET_adc_inserted_channel_offset_config(0, 0);
+		TARGET_adc_inserted_channel_config(1, PIN_TO_CHANNEL(CURRENT_DC), ADC_SAMPLETIME_41POINT5);
+		TARGET_adc_inserted_channel_offset_config(1, 0);
+
 
 	// Disable the temperature sensor, Vrefint and vbat channel
 	adc_tempsensor_vrefint_disable();
@@ -557,13 +537,15 @@ void ADC_initOld(void)
 	// Calibrate ADC values
 	TARGET_adc_calibration_enable();
 	
-	// Enable DMA request
-	TARGET_adc_dma_mode_enable();
-    
+	/* clear flag before enabling interrupt */
+	TARGET_adc_interrupt_flag_clear(ADC_INT_FLAG_EOIC);
+	TARGET_adc_interrupt_enable(ADC_INT_EOIC);	// enable end-of-inserted conversion interrupt
+	nvic_irq_enable(TARGET_ADC_CMP_IRQn, 1, 0);	// GD32F1x0 ADC IRQ name
+
 	// Set ADC to scan mode
 	TARGET_adc_special_function_config(ADC_SCAN_MODE, ENABLE);
 }
-*/
+#else
 
 void ADC_init(void)
 {
@@ -609,6 +591,9 @@ void ADC_init(void)
 	TARGET_dma_channel_enable(DMA_CH0);
 	
 	
+	
+	TARGET_adc_data_alignment_config(ADC_DATAALIGN_RIGHT);
+
 	#ifdef REMOTE_AUTODETECT
 		TARGET_adc_channel_length_config(ADC_REGULAR_CHANNEL, 1);
 		TARGET_adc_regular_channel_config(0, PIN_TO_CHANNEL(TODO_PIN), ADC_SAMPLETIME_13POINT5);
@@ -627,11 +612,19 @@ void ADC_init(void)
 		#endif
 	#endif
 	
-	TARGET_adc_data_alignment_config(ADC_DATAALIGN_RIGHT);
+		// Set trigger of ADC
+		TARGET_adc_external_trigger_config(ADC_REGULAR_CHANNEL, ENABLE);
+		TARGET_adc_external_trigger_source_config(ADC_REGULAR_CHANNEL, ADC_EXTTRIG_REGULAR_NONE);
 	
-	// Set trigger of ADC
-	TARGET_adc_external_trigger_config(ADC_REGULAR_CHANNEL, ENABLE);
-	TARGET_adc_external_trigger_source_config(ADC_REGULAR_CHANNEL, ADC_EXTTRIG_REGULAR_NONE);
+	
+		// Select TIMER0_TRGO as the external trigger for regular ADC conversions
+		adc_external_trigger_source_config(ADC_REGULAR_CHANNEL, ADC_EXTTRIG_REGULAR_T0_TRGO);
+
+		// Enable the external trigger for regular channels
+		adc_external_trigger_config(ADC_REGULAR_CHANNEL, ENABLE);
+
+		// You no longer need to call adc_software_trigger_enable() anywhere.
+
 
 	// Disable the temperature sensor, Vrefint and vbat channel
 	adc_tempsensor_vrefint_disable();
@@ -654,7 +647,7 @@ void ADC_init(void)
 	// Set ADC to scan mode
 	TARGET_adc_special_function_config(ADC_SCAN_MODE, ENABLE);
 }
-
+#endif
 
 void USART0_Init(uint32_t iBaud)
 {

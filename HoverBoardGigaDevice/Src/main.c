@@ -118,6 +118,9 @@ int main (void)
 	//SystemClock_Config();
   SystemCoreClockUpdate();
   SysTick_Config(SystemCoreClock / 1000);	//  Configure SysTick to generate an interrupt every millisecond
+
+	Delay(1000);
+
 	
 	if (	Watchdog_init() == ERROR)	// Init watchdog
 		while(1);	// If an error accours with watchdog initialization do not start device
@@ -129,6 +132,7 @@ int main (void)
 		// Init timeout timer
 		TimeoutTimer_init();
 	#endif
+	
 
 	// Init GPIOs
 	GPIO_init();

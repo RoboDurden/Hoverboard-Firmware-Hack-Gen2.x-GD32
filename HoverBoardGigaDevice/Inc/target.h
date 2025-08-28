@@ -242,6 +242,22 @@
 	#define TARGET_dma_interrupt_flag_get(a,b)	dma_interrupt_flag_get(DMA0,a,b)
 	#define TARGET_dma_interrupt_flag_clear(a,b)	dma_interrupt_flag_clear(DMA0,a,b)
 	
+	// inserted adc
+	#define TARGET_ADC_IDATA0 ADC_IDATA0(ADC0)
+	#define TARGET_ADC_IDATA1 ADC_IDATA1(ADC0)
+	#define TARGET_adc_interrupt_flag_get(a) adc_interrupt_flag_get(ADC0,a)
+					
+	#define TARGET_ADC_EXTTRIG_INSERTED_T0_TRGO	ADC0_1_EXTTRIG_INSERTED_T0_TRGO
+	#define TARGET_adc_external_trigger_source_config(a,b)	adc_external_trigger_source_config(ADC0,a,b)
+	#define TARGET_adc_external_trigger_config(a,b)	adc_external_trigger_config(ADC0,a,b)
+	#define TARGET_adc_channel_length_config(a,b)	adc_channel_length_config(ADC0,a,b)
+	#define TARGET_adc_inserted_channel_config(a,b,c)	adc_inserted_channel_config(ADC0,a,b,c)
+	#define TARGET_adc_inserted_channel_offset_config(a,b)	adc_inserted_channel_offset_config(ADC0,a,b)
+	#define TARGET_adc_interrupt_flag_clear(a)	adc_interrupt_flag_clear(ADC0,a);
+	#define TARGET_adc_interrupt_enable(a)	adc_interrupt_enable(ADC0,a)
+	#define TARGET_ADC_CMP_IRQn	ADC0_1_IRQn
+	#define TARGET_ADC_CMP_IRQHandler ADC0_1_IRQHandler
+
 	
 #else
 	#include "gd32f1x0.h"
@@ -299,8 +315,25 @@
 	//#define USART0_DATA_RX_ADDRESS ((uint32_t)0x40013824)
 	//#define USART1_DATA_RX_ADDRESS ((uint32_t)0x40004424)
 
+	// inserted adc
+	#define TARGET_ADC_IDATA0 ADC_IDATA0
+	#define TARGET_ADC_IDATA1 ADC_IDATA1
+	#define TARGET_adc_interrupt_flag_get(a) adc_interrupt_flag_get(a)
+					
+	#define TARGET_ADC_EXTTRIG_INSERTED_T0_TRGO	ADC_EXTTRIG_INSERTED_T0_TRGO
+	#define TARGET_adc_external_trigger_source_config(a,b)	adc_external_trigger_source_config(a,b)
+	#define TARGET_adc_external_trigger_config(a,b)	adc_external_trigger_config(a,b)
+	#define TARGET_adc_channel_length_config(a,b)	adc_channel_length_config(a,b)
+	#define TARGET_adc_inserted_channel_config(a,b,c)	adc_inserted_channel_config(a,b,c)
+	#define TARGET_adc_inserted_channel_offset_config(a,b)	adc_inserted_channel_offset_config(a,b)
+	#define TARGET_adc_interrupt_flag_clear(a)	adc_interrupt_flag_clear(a);
+	#define TARGET_adc_interrupt_enable(a)	adc_interrupt_enable(a)
+	#define TARGET_ADC_CMP_IRQn	ADC_CMP_IRQn
+	#define TARGET_ADC_CMP_IRQHandler ADC_CMP_IRQHandler
+	
 	
 #endif
+
 
 
 #ifndef pinMode

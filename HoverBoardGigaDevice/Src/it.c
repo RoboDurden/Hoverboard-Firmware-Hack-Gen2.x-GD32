@@ -135,7 +135,7 @@ void TARGET_TIMER0_BRK_UP_TRG_COM_IRQHandler(void)
 	{
 		static uint8_t interrupt_toggle = 0;	// Static variable to keep track of calls; by Gemini2.5pro
 		interrupt_toggle = 1 - interrupt_toggle;	// Invert the toggle on each entry
-		if (interrupt_toggle)		// Only execute every second call as libray/hardware will trigger on up AND down, ignoring timerBldc_paramter_struct.alignedmode = TIMER_COUNTER_CENTER_DOWN
+		if (1)//(interrupt_toggle)		// Only execute every second call as libray/hardware will trigger on up AND down, ignoring timerBldc_paramter_struct.alignedmode = TIMER_COUNTER_CENTER_DOWN
 		{
 			if (msTicks > iPwmTime)
 			{
@@ -146,7 +146,7 @@ void TARGET_TIMER0_BRK_UP_TRG_COM_IRQHandler(void)
 			else iPwmCounter++;
 
 			// Start ADC conversion
-			TARGET_adc_software_trigger_enable(ADC_REGULAR_CHANNEL);
+			//TARGET_adc_software_trigger_enable(ADC_REGULAR_CHANNEL);
 			//adc_software_trigger_enable(ADC0, ADC_REGULAR_CHANNEL); //jma: ADC0 added for GD32F103
 		}
 		// Clear timer update interrupt flag
@@ -184,12 +184,37 @@ void TARGET_DMA_Channel0_IRQHandler(void)
 		}
 		else iAdcCounter++;
 		
-		
 		CalculateBLDC(); //moved behind flag_clear by Deepseek, Safe: NVIC blocks re-entrancy
-			TARGET_dma_interrupt_flag_clear(DMA_CH0, DMA_INT_FLAG_FTF);
+		
+		TARGET_dma_interrupt_flag_clear(DMA_CH0, DMA_INT_FLAG_FTF);
 	}	
 }
 
+extern adc_buf_t adc_buffer;
+#ifndef TARGET_ADC_CMP_IRQHandler
+	#error "TARGET_ADC_CMP_IRQHandler not defined for active target in target.h"
+#endif
+void TARGET_ADC_CMP_IRQHandler(void)
+{
+		if (msTicks > iAdcTime)
+		{
+			iAdcTime = msTicks + 1000;
+			iAdcRate = iAdcCounter;
+			iAdcCounter = 0;
+		}
+		else iAdcCounter++;
+
+	if (TARGET_adc_interrupt_flag_get(ADC_INT_FLAG_EOIC)) 
+	{
+		adc_buffer.v_batt = TARGET_ADC_IDATA0;	// first inserted channel result
+		adc_buffer.current_dc = TARGET_ADC_IDATA1;	// second inserted channel result
+
+		
+		CalculateBLDC(); //moved behind flag_clear by Deepseek, Safe: NVIC blocks re-entrancy
+		
+		TARGET_adc_interrupt_flag_clear(ADC_INT_FLAG_EOIC);
+	}
+}
 
 uint32_t iCounterUsart0 = 0;
 uint32_t iCounter2Usart0 = 0;
