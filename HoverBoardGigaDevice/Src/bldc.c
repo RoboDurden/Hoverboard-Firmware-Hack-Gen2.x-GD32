@@ -117,7 +117,7 @@ void SetBldcInput(int32_t input)
 		iBldcInput =  CLAMP(iBldcInput,-BLDC_TIMER_MID_VALUE, BLDC_TIMER_MID_VALUE); 	
 		return;
 	case 1:	// speed in revs*1024 = revs<<10
-		iBldcInput = input << 0;//(REVS32_SHIFT-10);
+		iBldcInput = input << (REVS32_SHIFT-10);//(REVS32_SHIFT-10);
 		return;
 	case 2:	// torque in Nm*1024 = torque<<10
 		iBldcInput = input;

@@ -75,7 +75,8 @@
 	#endif
 #endif
 
-#define BLDC_TIMER_PERIOD       (72000000u / 2u / PWM_FREQ) // = 2250 for 16 kHz and 3000 for 12 kHz
+#define BLDC_TIMER_PERIOD       (SystemCoreClock  / 2u / PWM_FREQ) // = 2250 for 16 kHz and 3000 for 12 kHz ; SystemCoreClock = 72000000u = 
+//#define BLDC_TIMER_PERIOD      (SystemCoreClock / PWM_FREQ - 1)		// Gemini testing alignedmode = TIMER_COUNTER_UP
 
 #ifndef TIMER_BLDC	// these defines should be equal for all Gen2 boards as they only have on bldc capable TIMER = TIMER0
 	#define TIMER_BLDC 		TIMER0

@@ -20,7 +20,7 @@
 	// and then set your layout below
 	// Gen2-target-layout is included in defines.h
 	#ifdef GD32F130		// TARGET = 1
-		#define LAYOUT 1
+		#define LAYOUT 4
 		#define LAYOUT_SUB 1	// Layout 2.1.7 exisits as 2.1.7.0 and 2.1.7.1
 	#elif GD32F103		// TARGET = 2
 		#define LAYOUT 1
@@ -72,7 +72,7 @@
 			#define SLAVE_ID	0		// must be unique for all hoverboards connected to the bus
 		#endif
 		#ifdef REMOTE_DUMMY
-			//#define SLOW_SINE	// 9 second period instead of 3 seconds
+			#define SLOW_SINE	// 9 second period instead of 3 seconds
 			#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
 		#else
 			//#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
@@ -85,7 +85,7 @@
 		#define SPEED_COEFFICIENT   -1	// only used if no PILOT_XY is defined
 		#define STEER_COEFFICIENT   1		// only used if no PILOT_XY is defined
 		
-		//#define DISABLE_BUTTON	// this is the opposite of former CHECK_BUTTON define.
+		#define DISABLE_BUTTON	// this is the opposite of former CHECK_BUTTON define.
 															// remove '//' if you use a slave board as master 
 															// or if you turn the boards on/off by injecting a postive voltage into the input pin of the 2pin BUTTON header
 

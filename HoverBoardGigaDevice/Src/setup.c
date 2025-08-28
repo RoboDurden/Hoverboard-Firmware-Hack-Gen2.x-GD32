@@ -387,7 +387,7 @@ void PWM_init(void)
 	// Set up the basic parameter struct for the timer
 	timerBldc_paramter_struct.counterdirection = TIMER_COUNTER_UP;
 	timerBldc_paramter_struct.prescaler = 0;
-	timerBldc_paramter_struct.alignedmode = TIMER_COUNTER_CENTER_BOTH;	//changed from TIMER_COUNTER_CENTER_DOWN by deepseek for SVM;
+	timerBldc_paramter_struct.alignedmode = TIMER_COUNTER_CENTER_BOTH;	//changed to TIMER_COUNTER_CENTER_BOTH from TIMER_COUNTER_CENTER_DOWN by deepseek for SVM;
 	timerBldc_paramter_struct.period = BLDC_TIMER_PERIOD;
 	timerBldc_paramter_struct.clockdivision = TIMER_CKDIV_DIV1;
 	timerBldc_paramter_struct.repetitioncounter = 0;
