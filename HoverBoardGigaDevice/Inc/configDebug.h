@@ -23,7 +23,7 @@
 		#define LAYOUT 4
 		#define LAYOUT_SUB 1	// Layout 2.1.7 exisits as 2.1.7.0 and 2.1.7.1
 	#elif GD32F103		// TARGET = 2
-		#define LAYOUT 1
+		#define LAYOUT 7
 	#elif GD32E230		// TARGET = 3
 		#define LAYOUT 2
 	#elif MM32SPIN05	// TARGET = 4
@@ -36,7 +36,7 @@
 	
 	#define DRIVING_MODE 1	//  0=pwm, 1=speed in revs/s*1024, 2=torque in NewtonMeter*1024, 3=iOdometer
 
-	//#define SPEED_AsRevsPerSec		// Will overflow at 327 revs/s = 19620 rpm. Hoverboard motor: 14 rpm/V * 50V = 700 rpm
+	#define SPEED_AsRevsPerSec		// Will overflow at 327 revs/s = 19620 rpm. Hoverboard motor: 14 rpm/V * 50V = 700 rpm
 
 	#define BAT_CELLS         	7        // battery number of cells. Normal Hoverboard battery: 10s
 	//#define BATTERY_LOW_SHUTOFF		// will shut off the board below BAT_LOW_DEAD = BAT_CELLS * CELL_LOW_DEAD, 

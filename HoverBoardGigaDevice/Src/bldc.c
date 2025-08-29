@@ -1,4 +1,3 @@
-
 //#include "../Inc/defines.h"
 #include "../Inc/bldc.h"
 #include <stdio.h>
@@ -122,7 +121,7 @@ void SetBldcInput(int32_t input)
 	case 2:	// torque in Nm*1024 = torque<<10
 		iBldcInput = input;
 		return;
-	case 3:	// iOdom position in hall steps = 4°
+	case 3:	// iOdom position in hall steps = 4ï¿½
 		iBldcInput = input;
 		return;
 	}
@@ -177,8 +176,7 @@ void CalculateBLDC(void)
 	*/
 		
 	
-  buzzerTimer++;	// also used to calculate battery voltage :-/
-		
+  	buzzerTimer++;	// also used to calculate battery voltage :-/
 	iBug = PWM_FREQ;
 	if (msTicks > iBuzzTime)
 	{
@@ -223,14 +221,14 @@ void CalculateBLDC(void)
 			timer_automatic_output_disable(TIMER_BLDC);		
 		}
 		//DEBUG_LedSet((steerCounter%20) > 10,2);	// macro. iCol: 0=green, 1=organge, 2=red
-  }
+  	}
 	else
 	{
 		timer_automatic_output_enable(TIMER_BLDC);
 		SetFilter(FILTER_SHIFT);
 		iDrivingModeOverride = iDrivingMode;
 		//DEBUG_LedSet(hall_c == 0,0)
-  }
+  	}
 
 	//if (timedOut == SET)	DEBUG_LedSet((steerCounter%2) < 1,0)		
 	
@@ -304,9 +302,9 @@ void CalculateBLDC(void)
 	iOdom = iOdom - up_or_down(lastPos, pos); // int32 will overflow at +-2.147.483.648
 	
 	if(speedCounterSlow < 4000) speedCounterSlow++;	// No speed after 250ms
-	if (iOdomLast != iOdom)	// one hall step is 4°
+	if (iOdomLast != iOdom)	// one hall step is 4ï¿½
 	{
-		//if (speedCounterSlow > 600)	// idea was to use the 24° step of realSpeed calculation for better revs32 at higher speeds. But doesn' work for some unkown reason
+		//if (speedCounterSlow > 600)	// idea was to use the 24ï¿½ step of realSpeed calculation for better revs32 at higher speeds. But doesn' work for some unkown reason
 		{
 			int32_t revs32Now =  (iOdom-iOdomLast) * (revs32ScaleSlow / speedCounterSlow) ;		// warning, (iOdom-iOdomLast) might give wrong result when iOdom overflows
 			
@@ -315,17 +313,18 @@ void CalculateBLDC(void)
 
 			revs32 = (speedCounterSlow < 1000) ? revs32_reg >> RANK_revs32 : revs32Now;
 			
-			//  torque = (fEff * V * I * 60) / (RPM * 2p)
-			// rpm = 60* (PWM_FREQ/(speedCounterSlow/(iOdom-iOdomLast)) )/90;
-			// iTorque = 0.8 * batteryVoltage * currentDC * (90/2*PI) *speedCounterSlow / (PWM_FREQ  *(iOdom-iOdomLast))
-			// iTorque = 11.459 * batteryVoltage * currentDC *speedCounterSlow / (PWM_FREQ  *(iOdom-iOdomLast))
-			int32_t torque32Now = ((((int32_t)(11.459 * batteryVoltage * currentDC))<<10) / (PWM_FREQ  *(iOdom-iOdomLast))) * speedCounterSlow;
+			#if defined(CURRENT_DC) && defined(VBATT)
+				//  torque = (fEff * V * I * 60) / (RPM * 2p)
+				// rpm = 60* (PWM_FREQ/(speedCounterSlow/(iOdom-iOdomLast)) )/90;
+				// iTorque = 0.8 * batteryVoltage * currentDC * (90/2*PI) *speedCounterSlow / (PWM_FREQ  *(iOdom-iOdomLast))
+				// iTorque = 11.459 * batteryVoltage * currentDC *speedCounterSlow / (PWM_FREQ  *(iOdom-iOdomLast))
+				int32_t torque32Now = ((((int32_t)(11.459 * batteryVoltage * currentDC))<<10) / (PWM_FREQ  *(iOdom-iOdomLast))) * speedCounterSlow;
 
-			#define RANK_torque32 3 	// Calculate low-pass filter for pwm value
-			torque32_reg = torque32_reg - (torque32_reg >> RANK_torque32) + torque32Now;
-			
-			torque32 = (speedCounterSlow < 1000) ? torque32_reg >> RANK_torque32 : torque32Now;
-			
+				#define RANK_torque32 3 	// Calculate low-pass filter for pwm value
+				torque32_reg = torque32_reg - (torque32_reg >> RANK_torque32) + torque32Now;
+				
+				torque32 = (speedCounterSlow < 1000) ? torque32_reg >> RANK_torque32 : torque32Now;
+			#endif			
 		}
 		speedCounterSlowLog = speedCounterSlow;		// for logging with StmStudio
 		speedCounterSlow = 0;
@@ -342,7 +341,7 @@ void CalculateBLDC(void)
 	
 		realSpeed	= (realSpeed32_reg >> RANK_realSpeed32) / 1024.0;
 	#else
-		// Every time position reaches value 1, one (electrical 360°) round = 24° mechanical angle is performed (rising edge)
+		// Every time position reaches value 1, one (electrical 360ï¿½) round = 24ï¿½ mechanical angle is performed (rising edge)
 		if (lastPos != 1 && pos == 1)
 		{
 			realSpeed = 1991.81f / (float)speedCounter; //[km/h]		// robo 2025: should get changed to rpm ?

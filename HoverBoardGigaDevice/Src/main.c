@@ -97,7 +97,7 @@ uint32_t iTimeNextLoop = 0;
 //----------------------------------------------------------------------------
 // MAIN function
 //----------------------------------------------------------------------------
-#if defined(PLATFORMIO) && TARGET==2
+#if defined(PLATFORMIO) && TARGET==22	// no longer neccessary for target 2
 	uint32_t SystemCoreClock = 72000000;  // Define the missing symbol
 #endif
 int main (void)

@@ -186,7 +186,7 @@ void TARGET_DMA_Channel0_IRQHandler(void)
 		
 		
 		CalculateBLDC(); //moved behind flag_clear by Deepseek, Safe: NVIC blocks re-entrancy
-			TARGET_dma_interrupt_flag_clear(DMA_CH0, DMA_INT_FLAG_FTF);
+		TARGET_dma_interrupt_flag_clear(DMA_CH0, DMA_INT_FLAG_FTF);
 	}	
 }
 
