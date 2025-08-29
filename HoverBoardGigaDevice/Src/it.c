@@ -125,6 +125,8 @@ uint32_t iPwmTicks = 0, iPwmTicks0 = 0, iPwmCounter = 0, iPwmTime=0, iPwmRate=0;
 uint32_t iAdcTicks = 0, iAdcTicks0 = 0, iAdcCounter = 0, iAdcTime=0, iAdcRate=0;
 #define COUNT_Irqs 1000
 
+#ifdef OLD_DMA
+
 //void TIMER0_UP_IRQHandler(void)	//JMA must match the name in startup_gd32f10x_hd.s
 #ifndef TARGET_TIMER0_BRK_UP_TRG_COM_IRQHandler
 	#error "TIMER0_BRK_UP_TRG_COM_IRQHandler not defined for active target in target.h"
@@ -189,6 +191,7 @@ void TARGET_DMA_Channel0_IRQHandler(void)
 		TARGET_dma_interrupt_flag_clear(DMA_CH0, DMA_INT_FLAG_FTF);
 	}	
 }
+#endif
 
 extern adc_buf_t adc_buffer;
 #ifndef TARGET_ADC_CMP_IRQHandler

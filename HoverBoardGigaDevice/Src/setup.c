@@ -496,54 +496,47 @@ void PWM_init(void)
 
 void ADC_init(void)
 {
-	// Enable ADC and DMA clock
+	// Enable ADC clock
 	rcu_periph_clock_enable(RCU_ADC);
-//	rcu_periph_clock_enable(RCU_DMA);
-	
-  // Configure ADC clock (APB2 clock is DIV1 -> 72MHz, ADC clock is DIV6 -> 12MHz)
-	rcu_adc_clock_config(RCU_ADCCK_APB2_DIV6);
-
+	rcu_adc_clock_config(RCU_ADCCK_APB2_DIV6);	// Configure ADC clock (APB2 clock is DIV1 -> 72MHz, ADC clock is DIV6 -> 12MHz)
 	TARGET_adc_data_alignment_config(ADC_DATAALIGN_RIGHT);
+	TARGET_adc_external_trigger_source_config(ADC_INSERTED_CHANNEL, TARGET_ADC_EXTTRIG_INSERTED_T0_TRGO);	// Select TIMER0_TRGO as external trigger for inserted channels
+	TARGET_adc_external_trigger_config(ADC_INSERTED_CHANNEL, ENABLE);	// Enable external trigger
 
-		/* Select TIMER0_TRGO as external trigger for inserted channels */
-		TARGET_adc_external_trigger_source_config(ADC_INSERTED_CHANNEL, TARGET_ADC_EXTTRIG_INSERTED_T0_TRGO);
-
-		/* Enable external trigger */
-		TARGET_adc_external_trigger_config(ADC_INSERTED_CHANNEL, ENABLE);
-
-		/* set inserted sequence length to 2 (slots 0 and 1) */
-		//adc_inserted_channel_length_config(2);
-		TARGET_adc_channel_length_config(ADC_INSERTED_CHANNEL, 2);
-		
-		/* Configure inserted channel(s) */
-		TARGET_adc_inserted_channel_config(0, PIN_TO_CHANNEL(VBATT), ADC_SAMPLETIME_41POINT5);	// instead of ADC_SAMPLETIME_13POINT5 to push sampling slightly off the noise edge. 
+	#ifdef REMOTE_AUTODETECT
+		TARGET_adc_channel_length_config(ADC_INSERTED_CHANNEL, 1);
+		TARGET_adc_inserted_channel_config(0, PIN_TO_CHANNEL(TODO_PIN), ADC_SAMPLETIME_41POINT5);	// instead of ADC_SAMPLETIME_13POINT5 to push sampling slightly off the noise edge. 
 		TARGET_adc_inserted_channel_offset_config(0, 0);
-		TARGET_adc_inserted_channel_config(1, PIN_TO_CHANNEL(CURRENT_DC), ADC_SAMPLETIME_41POINT5);
-		TARGET_adc_inserted_channel_offset_config(1, 0);
-
-
-	// Disable the temperature sensor, Vrefint and vbat channel
-	adc_tempsensor_vrefint_disable();
-	#ifndef REMOTE_AUTODETECT
+	#else
+		uint16_t iCountAdc = sizeof(adc_buffer)/2;	// array of uint16_t
+		//iCountAdc = 4;
+		TARGET_adc_channel_length_config(ADC_INSERTED_CHANNEL, iCountAdc);
+		
+		#ifdef VBATT
+			TARGET_adc_inserted_channel_config(0, PIN_TO_CHANNEL(VBATT), ADC_SAMPLETIME_41POINT5);	// instead of ADC_SAMPLETIME_13POINT5 to push sampling slightly off the noise edge. 
+			TARGET_adc_inserted_channel_offset_config(0, 0);
+		#endif
+		#ifdef CURRENT_DC
+			TARGET_adc_inserted_channel_config(1, PIN_TO_CHANNEL(CURRENT_DC), ADC_SAMPLETIME_41POINT5);
+			TARGET_adc_inserted_channel_offset_config(1, 0);
+		#endif
+		#ifdef REMOTE_ADC
+			TARGET_adc_inserted_channel_config(2, PIN_TO_CHANNEL(PA2), ADC_SAMPLETIME_41POINT5);
+			TARGET_adc_inserted_channel_offset_config(2, 0);
+			TARGET_adc_inserted_channel_config(3, PIN_TO_CHANNEL(PA3), ADC_SAMPLETIME_41POINT5);
+			TARGET_adc_inserted_channel_offset_config(3, 0);
+		#endif
 		TARGET_adc_vbat_disable();
 	#endif
-	
-	// ADC analog watchdog disable
-	TARGET_adc_watchdog_disable();
-	
-	// Enable ADC (must be before calibration)
-	TARGET_adc_enable();
-	
-	// Calibrate ADC values
-	TARGET_adc_calibration_enable();
-	
-	/* clear flag before enabling interrupt */
-	TARGET_adc_interrupt_flag_clear(ADC_INT_FLAG_EOIC);
+
+	adc_tempsensor_vrefint_disable();	// Disable the temperature sensor
+	TARGET_adc_watchdog_disable();	// ADC analog watchdog disable
+	TARGET_adc_enable();	// Enable ADC (must be before calibration)
+	TARGET_adc_calibration_enable();	// Calibrate ADC values
+	TARGET_adc_interrupt_flag_clear(ADC_INT_FLAG_EOIC);	// clear flag before enabling interrupt
 	TARGET_adc_interrupt_enable(ADC_INT_EOIC);	// enable end-of-inserted conversion interrupt
 	nvic_irq_enable(TARGET_ADC_CMP_IRQn, 1, 0);	// GD32F1x0 ADC IRQ name
-
-	// Set ADC to scan mode
-	TARGET_adc_special_function_config(ADC_SCAN_MODE, ENABLE);
+	TARGET_adc_special_function_config(ADC_SCAN_MODE, ENABLE);	// Set ADC to scan mode
 }
 #else
 
