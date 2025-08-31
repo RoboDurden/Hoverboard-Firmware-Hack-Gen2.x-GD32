@@ -92,7 +92,6 @@ void ShowBatteryState(int8_t iLevel);
 		int16_t pwmSlave = 0;
 
 	
-
 uint32_t iTimeNextLoop = 0;
 //----------------------------------------------------------------------------
 // MAIN function
@@ -100,11 +99,17 @@ uint32_t iTimeNextLoop = 0;
 #if defined(PLATFORMIO) && TARGET==22	// no longer neccessary for target 2
 	uint32_t SystemCoreClock = 72000000;  // Define the missing symbol
 #endif
+
 int main (void)
 {
 	iBug = 1;
 	ConfigRead();		// reads oConfig defined in defines.h from flash
 	
+	Clock_init();		// GD32F103 allows for 72MHz, STM32F103 only for 64 MHz internal clock
+	SysTick_Config(SystemCoreClock / 1000);	//  Configure SysTick to generate an interrupt every millisecond
+	//Clock_test();		// 72Mhz: iTestClock=12000, 64Mhz=13500, 48Mhz=18000 = 18 seconds fron power on to startup melody. 124Mhz = 7000
+						// PlatformIO binary: 72 Mhz=11000=11seconds, 64MHz=12380, 124Mhz=6388=6.4s . Better assembler code ?
+		
 	#ifdef MASTER_OR_SINGLE
 		FlagStatus chargeStateLowActive = SET;
 		int16_t pwmMaster = 0;
@@ -115,10 +120,7 @@ int main (void)
 		float xScale = 0;
 	#endif
 	
-	//SystemClock_Config();
-  SystemCoreClockUpdate();
-  SysTick_Config(SystemCoreClock / 1000);	//  Configure SysTick to generate an interrupt every millisecond
-	
+		
 	if (	Watchdog_init() == ERROR)	// Init watchdog
 		while(1);	// If an error accours with watchdog initialization do not start device
 	

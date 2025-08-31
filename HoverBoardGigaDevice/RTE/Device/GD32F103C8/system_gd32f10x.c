@@ -62,6 +62,7 @@ OF SUCH DAMAGE.
 #define SEL_HXTAL       0x01U
 #define SEL_PLL         0x02U
 
+
 /* set the system clock frequency and declare the system clock configuration function */
 #ifdef __SYSTEM_CLOCK_48M_PLL_IRC8M
 uint32_t SystemCoreClock = __SYSTEM_CLOCK_48M_PLL_IRC8M;

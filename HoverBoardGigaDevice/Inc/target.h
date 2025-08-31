@@ -88,8 +88,8 @@
 	#define TARGET_ADC_RDATA ADC_RDATA
 
 #elif defined GD32F103
+	
 	#include "gd32f10x.h"
-
 	/* GD32F103
 		#define GPIO_PIN_15 	BIT(15)		// same as gd32f130
 	

@@ -23,7 +23,9 @@
 		#define LAYOUT 4
 		#define LAYOUT_SUB 1	// Layout 2.1.7 exisits as 2.1.7.0 and 2.1.7.1
 	#elif GD32F103		// TARGET = 2
-		#define LAYOUT 7
+		#define LAYOUT 1
+		//#define STM32F103 	// uncomment if your board has stm32f103 instead of gd32f103. Will give the max 64 Mhz for STM32
+			// Warning: will overclock gd32f103 mcu to 124 MHz and doubling current consumption. Keep GD32 to its 72 Mhz.
 	#elif GD32E230		// TARGET = 3
 		#define LAYOUT 2
 	#elif MM32SPIN05	// TARGET = 4

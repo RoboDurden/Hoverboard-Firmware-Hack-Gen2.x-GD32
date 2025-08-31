@@ -1035,4 +1035,70 @@ void ConfigRead(void)  	// made compatible for 32kB and 64kB mcu versions by Dee
 	}
 }
 
+uint32_t dev_id = 0;	
+uint32_t pll_mul = 0;
+void Clock_init(void)
+{
+	#define DBGMCU_IDCODE   (*(volatile uint32_t*)0xE0042000)
+	#define DEV_ID_MASK     0x00000FFF
+	#define STM32F103_DEV   0x410   // STM32F103
+	// GD32F103 will read as something else (typically 0x419)
+	dev_id = DBGMCU_IDCODE & DEV_ID_MASK;		// will be 1044 for GD32F103RC and 1040=0x410 for GD32F103C8 :-(
+	//if (dev_id == STM32F103_DEV) 	// not working 
+	#ifdef STM32F103
+		/* 0. SAFETY FIRST: Switch system clock back to IRC8M(HSI) if it's using the PLL */
+		/* Read the current clock source */
+		uint32_t reg = RCU_CFG0;
+		uint32_t sw = reg & 0x3;
 
+		/* If the system clock is currently sourced from the PLL... */
+		if (sw == RCU_CKSYSSRC_PLL) {
+				/* Switch it back to IRC8M(HSI) */
+				RCU_CFG0 = (reg & ~0x3) | RCU_CKSYSSRC_IRC8M; // Clear SW bits, set to IRC8M(HSI)
+				/* Wait until the switch is complete */
+				while (((RCU_CFG0 >> 2) & 0x3) != 0); // Wait for SWS to become 0 (HSI)
+		}
+
+		/* Now it's safe to disable the PLL */
+		RCU_CTL &= ~RCU_CTL_PLLEN;       // Disable PLL
+		
+		/* 1. Enable internal 8 MHz oscillator (IRC8M = HSI) */
+		RCU_CTL |= RCU_CTL_IRC8MEN;
+		while((RCU_CTL & RCU_CTL_IRC8MSTB) == 0);
+
+		/* 2. Configure Flash wait states for 64 MHz 
+			 (2 wait states needed for 48–72 MHz range) */
+		FMC_WS &= ~0x7;   // clear WSCNT[2:0]
+		FMC_WS |= 0x2;    // 2 wait states
+
+		/* 3. Configure PLL: IRC8M / 2 * 16 = 64 MHz */
+		RCU_CFG0 &= ~(RCU_CFG0_PLLMF | RCU_CFG0_PLLSEL);
+		RCU_CFG0 |= (RCU_PLLSRC_IRC8M_DIV2 | RCU_PLL_MUL16);
+
+		/* 4. Set prescalers: 
+					AHB = /1 (64 MHz), 
+					APB1 = /2 (32 MHz, must be =36 MHz), 
+					APB2 = /1 (64 MHz) */
+		RCU_CFG0 &= ~(RCU_CFG0_AHBPSC | RCU_CFG0_APB1PSC | RCU_CFG0_APB2PSC);
+		RCU_CFG0 |= (RCU_AHB_CKSYS_DIV1 | RCU_APB1_CKAHB_DIV2 | RCU_APB2_CKAHB_DIV1);
+
+		/* 5. Enable PLL */
+		RCU_CTL |= RCU_CTL_PLLEN;
+		while((RCU_CTL & RCU_CTL_PLLSTB) == 0);
+
+		/* 6. Switch system clock to PLL */
+		RCU_CFG0 &= ~RCU_CFG0_SCS;
+		RCU_CFG0 |= RCU_CKSYSSRC_PLL;
+		while((RCU_CFG0 & RCU_SCSS_PLL) == 0);
+	#endif
+	SystemCoreClockUpdate();
+	pll_mul = (RCU_CFG0 & RCU_CFG0_PLLMF) >> 18;  // bits differ per header, check what value you actually get		
+}
+
+uint32_t iTestClock = 0;
+void Clock_test(void)
+{
+	uint32_t iTimeStart = millis();
+	for (volatile uint32_t i = 72000000; i > 0; i--);	// 72000000 NOP operations would take 1000 ms at 72 MHz ?
+	iTestClock = millis()-iTimeStart;
+}

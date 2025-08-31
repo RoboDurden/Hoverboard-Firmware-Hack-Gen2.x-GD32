@@ -39,65 +39,21 @@
 	void pinMode(uint32_t pin, uint32_t mode);
 #endif
 
-
-
-
-/*
-#define USART_MASTERSLAVE_RX_BUFFERSIZE 1
-#define USART_MASTERSLAVE_DATA_RX_ADDRESS ((uint32_t)0x40004424)
-
-#define USART_STEER_COM_RX_BUFFERSIZE 1
-#define USART_STEER_COM_DATA_RX_ADDRESS ((uint32_t)0x40013824)	//((uint32_t)0x40013824)
-// HarlebBob #define USART1_TDATA_ADDRESS    	((uint32_t)0x40004428)
-*/
-
-//----------------------------------------------------------------------------
-// Initializes the interrupts
-//----------------------------------------------------------------------------
-void Interrupt_init(void);
-
-
-//----------------------------------------------------------------------------
-// Initializes the watchdog
-//----------------------------------------------------------------------------
-ErrStatus Watchdog_init(void);
-
-//----------------------------------------------------------------------------
-// Initializes the timeout timer
-//----------------------------------------------------------------------------
-void TimeoutTimer_init(void);
-
-//----------------------------------------------------------------------------
-// Initializes the GPIOs
-//----------------------------------------------------------------------------
-void GPIO_init(void);
-
-//----------------------------------------------------------------------------
-// Initializes the PWM
-//----------------------------------------------------------------------------
-void PWM_init(void);
-
-//----------------------------------------------------------------------------
-// Initializes the ADC
-//----------------------------------------------------------------------------
-void ADC_init(void);
-
+void Clock_init(void);
+void Clock_test(void);
+void Interrupt_init(void);	// Initializes the interrupts
+ErrStatus Watchdog_init(void);	// Initializes the watchdog
+void TimeoutTimer_init(void);	// Initializes the timeout timer
+void GPIO_init(void);	// Initializes the GPIOs
+void PWM_init(void);	// Initializes the PWM
+void ADC_init(void);	// Initializes the ADC
 
 void USART0_Init(uint32_t iBaud);
 void USART1_Init(uint32_t iBaud);
 void USART2_Init(uint32_t iBaud);
+void USART_MasterSlave_init(void);	// Initializes the usart master slave
 
-
-
-//----------------------------------------------------------------------------
-// Initializes the usart master slave
-//----------------------------------------------------------------------------
-void USART_MasterSlave_init(void);
-
-//----------------------------------------------------------------------------
-// Initializes the steer/bluetooth usart
-//----------------------------------------------------------------------------
-void USART_Steer_COM_init(void);
+//void USART_Steer_COM_init(void);	// Initializes the steer/bluetooth usart
 
 
 void ConfigReset(void);

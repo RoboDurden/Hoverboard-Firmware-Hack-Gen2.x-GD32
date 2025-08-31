@@ -45,3 +45,5 @@
 // GD32F130 USART1 GD32F130 TX/RX: (PA14/PA15)AF1 , (PA2,PA3)AF1	, (PA8/PB0)AlternateFunction4
 #define USART1_TX		PA2
 #define USART1_RX		PA3
+
+#define I2C_PB8PB9		// IMU found at i2c address 0x68 but MPU_ReadAll() only reads zeros. So not mpu6050 compatible ?

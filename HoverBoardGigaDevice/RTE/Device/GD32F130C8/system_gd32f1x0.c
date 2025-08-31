@@ -49,7 +49,6 @@
 #define SEL_IRC8M       0x00
 #define SEL_HXTAL       0x01
 #define SEL_PLL         0x02
-
 /* set the system clock frequency and declare the system clock configuration function */
 #ifdef __SYSTEM_CLOCK_8M_HXTAL
 uint32_t SystemCoreClock = __SYSTEM_CLOCK_8M_HXTAL;
