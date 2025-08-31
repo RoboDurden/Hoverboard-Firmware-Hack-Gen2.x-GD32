@@ -14,7 +14,7 @@
 #include "string.h"
 #include <math.h>     
 //#include "arm_math.h" 
-#ifdef MPU_6050
+#ifdef IMU_ENABLE
 	#include "../Inc/mpu6050.h"
 	extern ErrStatus    mpuStatus;                  // holds the MPU-6050 status: SUCCESS or ERROR
 #endif
@@ -161,11 +161,11 @@ int main (void)
 
 	#ifdef I2C_ENABLE
 		I2C_Init();
-		i2c_scanner();
-		dump_i2c_registers(0x68);
+		uint8_t iAddr = i2c_scanner();
+		if (iAddr>0)	dump_i2c_registers(iAddr);		// 0x68
 	#endif 
 
-	#ifdef MPU_6050
+	#ifdef IMU_ENABLE
 		MPU_Init();
 	#endif
 
@@ -278,7 +278,13 @@ iBug = 10;
 				RemoteUpdate();
 				//DEBUG_LedSet(RESET,0)
 			}
-			
+/*
+			if ((steerCounter % 1000) == 0)
+			{
+				uint8_t iAddr = i2c_scanner();
+				if (iAddr>0)	dump_i2c_registers(iAddr);
+			}
+*/			
 			if (speedShutoff)	speed = ShutOff();
 			
 			#ifdef PILOT_DEFAULT

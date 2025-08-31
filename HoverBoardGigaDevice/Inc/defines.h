@@ -41,6 +41,16 @@
 
 #include "../Inc/setup.h"
 
+#ifdef RTT_REMOTE
+	#include "stdio.h"
+	#include "../Src/SEGGER_RTT.h"
+	#define RTT_PRINTF(size,string,v1) {char s[size];sprintf(s,string,v1);SEGGER_RTT_WriteString(0, s);}
+	#define RTT_PRINTF2(size,string,v1,v2) {char s[size];sprintf(s,string,v1,v2);SEGGER_RTT_WriteString(0, s);}
+#else
+	#define RTT_PRINTF(size,string,v1)
+	#define RTT_PRINTF2(size,string,v1,v2)
+#endif
+
 // ----------- #include framework end ------------------------------
 
 
@@ -273,13 +283,8 @@ typedef struct
 	#pragma pack(pop)
 #endif
 
-#ifdef SEND_IMU_DATA
-	#ifndef MPU_6050
-		#define MPU_6050
-	#endif
-#endif
-	
-#ifdef MPU_6050		// RemoteUart and RemoteUartBus need to access mpuData
+
+#if defined(MPU_6050) || defined(BMI_160)		// RemoteUart and RemoteUartBus need to access mpuData
 
 	#if (!defined(I2C_PB6PB7) && !defined(I2C_PB8PB9))
 		#error "neither I2C_PB6PB7 nor I2C_PB8PB9 defined in your defines_2-t-l.h file"
@@ -290,6 +295,7 @@ typedef struct
 	
 	
 	#define I2C_ENABLE
+	#define IMU_ENABLE
 	
 	typedef struct{
 		int16_t     x;

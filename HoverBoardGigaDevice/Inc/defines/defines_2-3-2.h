@@ -46,4 +46,7 @@
 #define USART1_TX		PA2
 #define USART1_RX		PA3
 
+//#define MPU_6050		// Gemini tried for clones..
+//#define MPU_6050old	
+//#define BMI_160		// not working
 #define I2C_PB8PB9		// IMU found at i2c address 0x68 but MPU_ReadAll() only reads zeros. So not mpu6050 compatible ?

@@ -260,9 +260,10 @@ int8_t i2c_readBit(uint32_t i2c_periph, uint8_t slaveAddr, uint8_t regAddr, uint
     return status;
 }
 
+
 int8_t iFound = -1;
 int8_t aiFound[10] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};		// room for 10 defices found. Monitor with StmStudio
-int8_t i2c_scanner(void) 
+uint8_t i2c_scanner(void) 
 {
 	iFound = 0;
 	for (uint8_t addr = 0x08; addr <= 0x77; addr++) 
@@ -270,38 +271,28 @@ int8_t i2c_scanner(void)
 		int8_t result = i2c_writeByte(I2C_PERIPH, addr, 0x00, 0x00);	// Try to write a dummy byte to the device
 		if (result == 0) // Success means device ACK'd
 		{
-			aiFound[iFound++] = addr;	//printf("Device found at: 0x%02X\r\n", addr);
+            if (iFound <10) aiFound[iFound] = addr;
+            iFound++;
+            RTT_PRINTF2(64,"\n%i found at: 0x%02X\n",iFound,addr)
 		}
 		for (volatile int i = 0; i < 1000; i++);	// Short delay between probes (adjust based on system clock)
 	}
-	return iFound;	//printf("Scan complete. Found %d device(s).\r\n", found);
+    RTT_PRINTF(64,"I2c scan complete. Found: %i\n",iFound)
+	return iFound>0 ? aiFound[iFound] : 0;	//printf("Scan complete. Found %d device(s).\r\n", found);
 }
 
-int16_t aiDump[128];	// monitor with StmStudio
+#define MAX_REGISTERS 0x88
+int16_t aiDump[MAX_REGISTERS];	// monitor with StmStudio
 void dump_i2c_registers(uint8_t slaveAddr) 
 {
-	// Wake up device and use gyro X as clock reference
-	i2c_writeByte(I2C_PERIPH, slaveAddr, 0x6B, 0x01); Delay(10);
-	// Enable all sensors (disable sleep)
-	i2c_writeByte(I2C_PERIPH, slaveAddr, 0x6C, 0x00);	Delay(10);
-	// Set sample rate divider (optional)
-	i2c_writeByte(I2C_PERIPH, slaveAddr, 0x19, 0x07);Delay(10);
-	// Set DLPF (low pass filter)
-	i2c_writeByte(I2C_PERIPH, slaveAddr, 0x1A, 0x06);Delay(10);
-	// Set gyro range (±1000°/s)
-	i2c_writeByte(I2C_PERIPH, slaveAddr, 0x1B, 0x10);Delay(10);
-	// Set accel range (±8g)
-	i2c_writeByte(I2C_PERIPH, slaveAddr, 0x1C, 0x10);Delay(10);
-	
-	Delay(10);
 	uint8_t data;
 	int8_t result;
-	
-	for (uint8_t regAddr= 0; regAddr<= 0x70; regAddr++) 
-	//for (uint8_t regAddr= 76; regAddr<=88; regAddr++) 
+	for (uint8_t regAddr= 0; regAddr< MAX_REGISTERS; regAddr++) 
 	{
 		result = i2c_readByte(I2C_PERIPH, slaveAddr, regAddr, &data);
 		aiDump[regAddr] = (result == 0) ? data : -1;
+        //RTT_PRINTF2(32,"%02X = %02X\n",regAddr,aiDump[regAddr])
+        RTT_PRINTF2(32,((regAddr%16<15) ? "%02X=%02X  " : "%02X: %02X\n"),regAddr,aiDump[regAddr])
 		Delay(1);
 	}
 }

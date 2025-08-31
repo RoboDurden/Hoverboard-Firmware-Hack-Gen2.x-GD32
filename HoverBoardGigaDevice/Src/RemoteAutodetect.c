@@ -9,9 +9,6 @@ uint16_t i;
 
 #ifdef REMOTE_AUTODETECT
 
-#ifdef RTT_REMOTE
-	#include "SEGGER_RTT.h"
-#endif
 
 extern ConfigData oConfig;
 

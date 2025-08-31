@@ -44,7 +44,7 @@
 #define I2C_ERR  -1
 
 // diagnostic tools
-int8_t i2c_scanner(void);
+uint8_t i2c_scanner(void);
 void dump_i2c_registers(uint8_t slaveAddr) ;
 
 void I2C_Init(void);

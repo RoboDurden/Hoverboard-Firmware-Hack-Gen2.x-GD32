@@ -42,7 +42,10 @@
 #define USART1_TX		PA2
 #define USART1_RX		PA3
 
+#define MPU_6050		// Gemini tried for clones..
+#define MPU_6050old	
 #define I2C_PB6PB7	// IMU
+
 
 
 #endif

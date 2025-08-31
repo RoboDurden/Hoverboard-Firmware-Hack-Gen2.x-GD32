@@ -1035,16 +1035,18 @@ void ConfigRead(void)  	// made compatible for 32kB and 64kB mcu versions by Dee
 	}
 }
 
-uint32_t dev_id = 0;	
-uint32_t pll_mul = 0;
+uint32_t dev_id = 0;		// for debugging with StmStudio (or McuViewer)
+uint32_t pll_mul = 0;		// for debugging with StmStudio (or McuViewer)
 void Clock_init(void)
 {
-	#define DBGMCU_IDCODE   (*(volatile uint32_t*)0xE0042000)
-	#define DEV_ID_MASK     0x00000FFF
-	#define STM32F103_DEV   0x410   // STM32F103
-	// GD32F103 will read as something else (typically 0x419)
-	dev_id = DBGMCU_IDCODE & DEV_ID_MASK;		// will be 1044 for GD32F103RC and 1040=0x410 for GD32F103C8 :-(
-	//if (dev_id == STM32F103_DEV) 	// not working 
+	#if TARGET != 3		// reading DBGMCU_IDCODE on gd32e230 will call HardFault_Handler handler and while(1){} foreve
+		#define DBGMCU_IDCODE   (*(volatile uint32_t*)0xE0042000)
+		#define DEV_ID_MASK     0x00000FFF
+		#define STM32F103_DEV   0x410   // STM32F103
+		// GD32F103 will read as something else (typically 0x419)
+		dev_id = DBGMCU_IDCODE & DEV_ID_MASK;		// will be 1044 for GD32F103RC and 1040=0x410 for GD32F103C8 :-(
+		//if (dev_id == STM32F103_DEV) 	// not working 
+	#endif
 	#ifdef STM32F103
 		/* 0. SAFETY FIRST: Switch system clock back to IRC8M(HSI) if it's using the PLL */
 		/* Read the current clock source */
@@ -1067,7 +1069,7 @@ void Clock_init(void)
 		while((RCU_CTL & RCU_CTL_IRC8MSTB) == 0);
 
 		/* 2. Configure Flash wait states for 64 MHz 
-			 (2 wait states needed for 48–72 MHz range) */
+			 (2 wait states needed for 48ï¿½72 MHz range) */
 		FMC_WS &= ~0x7;   // clear WSCNT[2:0]
 		FMC_WS |= 0x2;    // 2 wait states
 
@@ -1095,7 +1097,7 @@ void Clock_init(void)
 	pll_mul = (RCU_CFG0 & RCU_CFG0_PLLMF) >> 18;  // bits differ per header, check what value you actually get		
 }
 
-uint32_t iTestClock = 0;
+uint32_t iTestClock = 0;	// for debugging with StmStudio (or McuViewer)
 void Clock_test(void)
 {
 	uint32_t iTimeStart = millis();

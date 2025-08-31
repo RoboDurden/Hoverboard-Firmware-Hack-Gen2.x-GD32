@@ -1,9 +1,12 @@
 /**
+  * This is a driver for an MPU-6050 or a compatible clone.
+  * It has been modified to detect non-standard WHO_AM_I values,
+  * specifically 0x45, as found on some devices.
+  *
   * Copyright (C) 2020-2021 Emanuel FERU <aerdronix@gmail.com>
-  * Copyright (C) 2011-2012 InvenSense Corporation, All Rights Reserved.
+  * Copyright (C) 2011-2022 InvenSense Corporation, All Rights Reserved.
   * Copyright (C) 2025 Hoverboard Havoc
-  * 
-  * This program is free software: you can redistribute it and/or modify
+  * * This program is free software: you can redistribute it and/or modify
   * it under the terms of the GNU General Public License as published by
   * the Free Software Foundation, either version 3 of the License, or
   * (at your option) any later version.
@@ -26,12 +29,11 @@
 #include "../Inc/it.h" // for Delay()
 #include "../Inc/mpu6050.h"
 
-#ifdef MPU_6050old
-
+#ifdef MPU_6050
 
 extern uint32_t iBug;
 
-MPU_Data mpuData;                                       // holds the MPU-6050 data
+MPU_Data mpuData;                                       // holds the MPU data
 
 int32_t aiLowPass[sizeof(mpuData)/2];		// mpuData only contain 16bit integers !
 void DoLowPass(uint8_t iFilterShift, int16_t i, int32_t* aiState, int16_t* aiNew, uint8_t iShiftRight)
@@ -44,7 +46,7 @@ void DoLowPass(uint8_t iFilterShift, int16_t i, int32_t* aiState, int16_t* aiNew
 }
 
 
-ErrStatus    mpuStatus;                  // holds the MPU-6050 status: SUCCESS or ERROR
+ErrStatus    mpuStatus;                  // holds the MPU status: SUCCESS or ERROR
 
 int mpu_config(void);
 
@@ -154,77 +156,26 @@ enum clock_sel_e {
     NUM_CLK
 };
 
-#define BIT_I2C_MST_VDDIO   (0x80)
-#define BIT_FIFO_EN         (0x40)
-#define BIT_DMP_EN          (0x80)
-#define BIT_FIFO_RST        (0x04)
-#define BIT_DMP_RST         (0x08)
-#define BIT_FIFO_OVERFLOW   (0x10)
-#define BIT_DATA_RDY_EN     (0x01)
-#define BIT_DMP_INT_EN      (0x02)
-#define BIT_MOT_INT_EN      (0x40)
-#define BITS_FSR            (0x18)
-#define BITS_LPF            (0x07)
-#define BITS_HPF            (0x07)
-#define BITS_CLK            (0x07)
-#define BIT_FIFO_SIZE_1024  (0x40)
-#define BIT_FIFO_SIZE_2048  (0x80)
-#define BIT_FIFO_SIZE_4096  (0xC0)
 #define BIT_RESET           (0x80)
-#define BIT_SLEEP           (0x40)
-#define BIT_S0_DELAY_EN     (0x01)
-#define BIT_S2_DELAY_EN     (0x04)
-#define BITS_SLAVE_LENGTH   (0x0F)
-#define BIT_SLAVE_BYTE_SW   (0x40)
-#define BIT_SLAVE_GROUP     (0x10)
-#define BIT_SLAVE_EN        (0x80)
-#define BIT_I2C_READ        (0x80)
-#define BITS_I2C_MASTER_DLY (0x1F)
-#define BIT_AUX_IF_EN       (0x20)
-#define BIT_ACTL            (0x80)
 #define BIT_LATCH_EN        (0x20)
 #define BIT_ANY_RD_CLR      (0x10)
-#define BIT_BYPASS_EN       (0x02)
-#define BITS_WOM_EN         (0xC0)
-#define BIT_LPA_CYCLE       (0x20)
-#define BIT_STBY_XA         (0x20)
-#define BIT_STBY_YA         (0x10)
-#define BIT_STBY_ZA         (0x08)
-#define BIT_STBY_XG         (0x04)
-#define BIT_STBY_YG         (0x02)
-#define BIT_STBY_ZG         (0x01)
-#define BIT_STBY_XYZA       (BIT_STBY_XA | BIT_STBY_YA | BIT_STBY_ZA)
-#define BIT_STBY_XYZG       (BIT_STBY_XG | BIT_STBY_YG | BIT_STBY_ZG)
-
+#define BIT_DATA_RDY_EN     (0x01)
 
 const struct gyro_reg_s reg = {
     .who_am_i       = 0x75,
     .rate_div       = 0x19,
     .lpf            = 0x1A, // Set to 0x03
-    .prod_id        = 0x0C,
     .user_ctrl      = 0x6A,
     .fifo_en        = 0x23,
     .gyro_cfg       = 0x1B, // Set to 0x00  GYRO_CONFIG: FS_SEL = 0 → ±250 °/s
     .accel_cfg      = 0x1C, // // ACCEL_CONFIG: AFS_SEL = 0 → ±2 g
-    .motion_thr     = 0x1F,
-    .motion_dur     = 0x20,
-    .fifo_count_h   = 0x72,
-    .fifo_r_w       = 0x74,
     .raw_gyro       = 0x43,
     .raw_accel      = 0x3B,
     .temp           = 0x41,
     .int_enable     = 0x38,
-    .dmp_int_status = 0x39,
-    .int_status     = 0x3A,
     .pwr_mgmt_1     = 0x6B, // PWR_MGMT_1: clear sleep bit
     .pwr_mgmt_2     = 0x6C,
     .int_pin_cfg    = 0x37,
-    .mem_r_w        = 0x6F,
-    .accel_offs     = 0x06,
-    .i2c_mst        = 0x24,
-    .bank_sel       = 0x6D,
-    .mem_start_addr = 0x6E,
-    .prgm_start_h   = 0x70
 };
 const struct hw_s hw = {
     .addr           = 0x68,
@@ -243,79 +194,58 @@ static struct gyro_state_s st = {
 
 int mpu_config(void)
 {
-    // This is mine
     int8_t rc;
+    uint8_t who_am_i;
 
-    // 1) Wake up & switch clock to PLL on X-gyro
-    //    INV_CLK_PLL == 1 → CLKSEL = 1
-    rc = i2c_writeByte(MPU_I2C,
-                       hw.addr,
-                       reg.pwr_mgmt_1,
-                       INV_CLK_PLL   /* bits[2:0] = 001 */ 
-                       /* sleep bit (6) is 0 by default */ );
+    // 0) Check WHO_AM_I register
+    rc = i2c_readBytes(MPU_I2C, hw.addr, reg.who_am_i, 1, &who_am_i);
+    if (rc) return -1; // I2C read failed
+
+    // Accept standard MPU6050 (0x68) or the clone ID (0x45)
+    if (who_am_i != 0x68 && who_am_i != 0x45) {
+        return -2; // Chip ID mismatch
+    }
+
+    // 1) Reset the device and wait for it to come back up.
+    rc = i2c_writeByte(MPU_I2C, hw.addr, reg.pwr_mgmt_1, BIT_RESET);
+    if (rc) return rc;
+    Delay(100); // Wait for reset to complete
+
+    // 2) Wake up device and set clock source to PLL.
+    rc = i2c_writeByte(MPU_I2C, hw.addr, reg.pwr_mgmt_1, INV_CLK_PLL);
+    if (rc) return rc;
+		
+    // 3) Explicitly power on all sensor axes by writing 0 to PWR_MGMT_2.
+    rc = i2c_writeByte(MPU_I2C, hw.addr, reg.pwr_mgmt_2, 0x00);
+    if (rc) return rc;
+    Delay(10); // small delay for settings to apply
+
+    // 4) Disable DMP & FIFO
+    rc = i2c_writeByte(MPU_I2C, hw.addr, reg.user_ctrl, 0);
+    if (rc) return rc;
+    rc = i2c_writeByte(MPU_I2C, hw.addr, reg.fifo_en, 0);
     if (rc) return rc;
 
-    // small delay for the oscillator to stabilize
-    Delay(10);
-
-    // 2) Disable DMP & FIFO
-    rc = i2c_writeByte(MPU_I2C,
-                       hw.addr,
-                       reg.user_ctrl,
-                       0 /* BIT_DMP_EN=0, BIT_FIFO_EN=0 */);
+    // 5) Sample rate divider: 1 kHz/(1 + DIV) → here DIV = 4 → 200 Hz
+    rc = i2c_writeByte(MPU_I2C, hw.addr, reg.rate_div, 4);
     if (rc) return rc;
 
-    rc = i2c_writeByte(MPU_I2C,
-                       hw.addr,
-                       reg.fifo_en,
-                       0 /* no gyro/accel to FIFO */);
+    // 6) Configure DLPF_CFG to 42 Hz
+    rc = i2c_writeByte(MPU_I2C, hw.addr, reg.lpf, INV_FILTER_42HZ);
     if (rc) return rc;
 
-    // 3) Sample rate divider: 1 kHz/(1 + DIV) → here DIV = 4 → 200 Hz
-    //    Use the raw value; there’s no enum for SMPLRT_DIV
-    rc = i2c_writeByte(MPU_I2C,
-                       hw.addr,
-                       reg.rate_div,
-                       4);
+    // 7) Full-scale ranges
+    rc = i2c_writeByte(MPU_I2C, hw.addr, reg.gyro_cfg, (INV_FSR_250DPS << 3));
+    if (rc) return rc;
+    rc = i2c_writeByte(MPU_I2C, hw.addr, reg.accel_cfg, (INV_FSR_2G << 3));
     if (rc) return rc;
 
-    // 4) Configure DLPF_CFG to 42 Hz
-    //    INV_FILTER_42HZ == 3 → bits[2:0] = 011
-    rc = i2c_writeByte(MPU_I2C,
-                       hw.addr,
-                       reg.lpf,
-                       INV_FILTER_42HZ /* 3 */);
+    // 8) INT pin: active-high, push-pull, latch until cleared
+    rc = i2c_writeByte(MPU_I2C, hw.addr, reg.int_pin_cfg, BIT_LATCH_EN | BIT_ANY_RD_CLR);
     if (rc) return rc;
 
-    // 5) Full-scale ranges
-    //    Gyro FS_SEL bits[4:3] ← INV_FSR_250DPS << 3
-    rc = i2c_writeByte(MPU_I2C,
-                       hw.addr,
-                       reg.gyro_cfg,
-                       (INV_FSR_250DPS << 3));  // 0 << 3 = 0
-    if (rc) return rc;
-
-    //    Accel AFS_SEL bits[4:3] ← INV_FSR_2G << 3
-    rc = i2c_writeByte(MPU_I2C,
-                       hw.addr,
-                       reg.accel_cfg,
-                       (INV_FSR_2G << 3));      // 0 << 3 = 0
-    if (rc) return rc;
-
-    // 6) INT pin: active-high, push-pull, latch until cleared
-    //    BIT_ACTL=0, BIT_LATCH_EN=1<<5, BIT_ANY_RD_CLR=1<<4
-    rc = i2c_writeByte(MPU_I2C,
-                       hw.addr,
-                       reg.int_pin_cfg,
-                       BIT_LATCH_EN | BIT_ANY_RD_CLR);
-    if (rc) return rc;
-
-    // 7) Enable only the Data Ready interrupt
-    //    BIT_DATA_RDY_EN = 1<<0
-    rc = i2c_writeByte(MPU_I2C,
-                       hw.addr,
-                       reg.int_enable,
-                       BIT_DATA_RDY_EN);
+    // 9) Enable only the Data Ready interrupt
+    rc = i2c_writeByte(MPU_I2C, hw.addr, reg.int_enable, BIT_DATA_RDY_EN);
     if (rc) return rc;
 
     return 0;
@@ -331,8 +261,6 @@ int MPU_ReadAll()
 		uint8_t buf[14];
 
 		// burst‐read accel(6) + temp(2) + gyro(6)
-		// auto‐increment register address in MPU-6050
-
 		if (i2c_readBytes(MPU_I2C, st.hw->addr, st.reg->raw_accel, 14, buf) != I2C_OK) 
 		{	// handle I2C error here if you need to
 				return ERROR;
@@ -356,4 +284,5 @@ int MPU_ReadAll()
 	return mpuStatus;
 }
 
-#endif // MPU_6050
+#endif // CUSTOM_IMU
+

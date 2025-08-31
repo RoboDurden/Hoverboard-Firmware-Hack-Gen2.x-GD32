@@ -480,6 +480,16 @@
               <FilePath>.\Src\mpu6050.c</FilePath>
             </File>
             <File>
+              <FileName>imuMPU6050.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\imuMPU6050.c</FilePath>
+            </File>
+            <File>
+              <FileName>bmi160.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\bmi160.c</FilePath>
+            </File>
+            <File>
               <FileName>PilotHoverbike.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\PilotHoverbike.c</FilePath>
@@ -1256,6 +1266,16 @@
               <FileName>mpu6050.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\mpu6050.c</FilePath>
+            </File>
+            <File>
+              <FileName>imuMPU6050.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\imuMPU6050.c</FilePath>
+            </File>
+            <File>
+              <FileName>bmi160.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\bmi160.c</FilePath>
             </File>
             <File>
               <FileName>PilotHoverbike.c</FileName>
@@ -2036,6 +2056,16 @@
               <FilePath>.\Src\mpu6050.c</FilePath>
             </File>
             <File>
+              <FileName>imuMPU6050.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\imuMPU6050.c</FilePath>
+            </File>
+            <File>
+              <FileName>bmi160.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\bmi160.c</FilePath>
+            </File>
+            <File>
               <FileName>PilotHoverbike.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\PilotHoverbike.c</FilePath>
@@ -2812,6 +2842,16 @@
               <FileName>mpu6050.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\mpu6050.c</FilePath>
+            </File>
+            <File>
+              <FileName>imuMPU6050.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\imuMPU6050.c</FilePath>
+            </File>
+            <File>
+              <FileName>bmi160.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\bmi160.c</FilePath>
             </File>
             <File>
               <FileName>PilotHoverbike.c</FileName>
