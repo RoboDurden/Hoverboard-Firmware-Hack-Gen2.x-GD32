@@ -284,7 +284,7 @@ typedef struct
 #endif
 
 
-#if defined(MPU_6050) || defined(BMI_160)		// RemoteUart and RemoteUartBus need to access mpuData
+#if defined(MPU_6050) || defined(MPU_6050old) || defined(BMI_160)		// RemoteUart and RemoteUartBus need to access mpuData
 
 	#if (!defined(I2C_PB6PB7) && !defined(I2C_PB8PB9))
 		#error "neither I2C_PB6PB7 nor I2C_PB8PB9 defined in your defines_2-t-l.h file"
