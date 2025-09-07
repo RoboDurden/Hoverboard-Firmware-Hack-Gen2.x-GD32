@@ -7,6 +7,8 @@
 
 #ifdef REMOTE_ROS2
 
+//#define REMOTE_ROS2_PID_TUNING
+
 #pragma pack(1)
 
 // Only master communicates with steerin device
@@ -31,6 +33,25 @@ extern DataSlave oDataSlave;
 extern uint8_t  wStateSlave;
 extern uint8_t  wState;
 
+// From driver.c:
+typedef struct PIDController PIDController;
+extern PIDController pid;
+void PID_Init(PIDController *pid, float kp, float ki, float kd,
+              int16_t min_pwm, int16_t max_pwm, float max_i);
+
+// main.c
+extern uint8_t iDrivingMode;	//  0=pwm, 1=speed in revs/s*1024, 2=torque in NewtonMeter*1024, 3=iOdometer
+extern int16_t pwmSlave;
+
+// From bldc.c:
+extern int32_t revs32;
+extern uint8_t nFILTER_SHIFT;
+extern int32_t bldc_inputFilterPwm;
+extern int32_t bldc_outputFilterPwm;
+extern uint16_t buzzerTimer;
+extern uint32_t speedCounterSlowLog;
+
+
 // from https://github.com/alex-makarov/hoverboard-firmware-hack-FOC/blob/master/Src/bldc.c
 // Changed to input int32_t since iOdom is int32_t.
 int16_t modulo32(int32_t m, int16_t rest_classes)
@@ -43,13 +64,27 @@ int16_t modulo32(int32_t m, int16_t rest_classes)
 #define START_FRAME_LSB 0xCD
 
 typedef struct {
-   uint16_t start;
+   uint16_t start; // START_FRAME 0xABCD
    int16_t  steer;
    int16_t  speed;
    uint16_t checksum;
 } SerialCommand;
 
-static uint8_t aReceiveBuffer[sizeof(SerialCommand)];
+#define START_FRAME_PID 0xEFCD
+#define START_FRAME_PID_MSB 0xEF
+#define START_FRAME_PID_LSB START_FRAME_LSB
+
+typedef struct {
+   uint16_t start; // START_FRAME_PID 0xEFCD
+   int16_t  kp;    // kp*1000  (fixed-point)
+   int16_t  ki;    // ki*1000  (fixed-point)
+   int16_t  kd;    // kd*10000 (fixed-point)
+   int16_t  fs;    // FILTER_SHIFT [0..13]
+   int16_t  iDrivingMode; //0=pwm, 1=speed in revs/s*1024, 2=torque in NewtonMeter*1024, 3=iOdometer
+   uint16_t checksum;
+} SerialPidConfig;
+
+static uint8_t aReceiveBuffer[sizeof(SerialPidConfig)]; // SerialPidConfig is larger than SerialCommand
 
 #define ENCODER_MAX 9000 // Max value of wheelR_cnt/wheelL_cnt before it wraps to 0
 
@@ -90,24 +125,34 @@ void RemoteUpdate(void)
 	//Send feedback to ROS2
 	SerialFeedback feedback;
 	feedback.start = START_FRAME;
-	feedback.cmd1 = 0; // Not used
-	feedback.cmd2 = 0; // Not used
+	feedback.cmd1 = bldc_inputFilterPwm;  // Not used by ROS2 hoverboard-driver
+	feedback.cmd2 = bldc_outputFilterPwm; // Not used by ROS2 hoverboard-driver
+	feedback.cmdLed = speed;              // Not used by ROS2 hoverboard-driver
+#ifndef REMOTE_ROS2_PID_TUNING
 	feedback.batVoltage = (int16_t) (batteryVoltage * 100);
 	feedback.boardTemp = 250; // Dummy value (250 => 25 degrees)
-	feedback.cmdLed = 0; // Not used
 	feedback.speedL_meas = (int16_t) (realSpeed * 100); // TODO: Need to scale? 100 is just a guess...
 	feedback.wheelL_cnt = modulo32(iOdom, ENCODER_MAX);
 	feedback.left_dc_curr = (int16_t) (currentDC * 100);
-
-#ifdef MASTER
+ #ifdef MASTER
 	feedback.speedR_meas = (int16_t) (oDataSlave.realSpeed * 100); // TODO: Need to scale? 100 is just a guess... 
 	feedback.wheelR_cnt = modulo32(oDataSlave.iOdom, ENCODER_MAX);
 	feedback.right_dc_curr = (int16_t) (oDataSlave.currentDC * 100);
-#else // SINGLE (SLAVE not possible due to ifdef MASTER_OR_SINGLE at top of this file)
+ #else // SINGLE (SLAVE not possible due to ifdef MASTER_OR_SINGLE at top of this file)
 	feedback.speedR_meas = (int16_t) (realSpeed * 100); // Fake both wheels with same speed for single. TODO: Need to scale?
 	feedback.wheelR_cnt = modulo32(iOdom, ENCODER_MAX); // Fake both wheels with same speed for single.
 	feedback.right_dc_curr = 0;
-#endif
+ #endif
+#else // ifdef REMOTE_ROS2_PID_TUNING
+	feedback.batVoltage = speedCounterSlowLog;
+	feedback.boardTemp = millis();
+	feedback.speedL_meas = revs32 >> 2;
+	feedback.wheelL_cnt = iOdom;
+	feedback.left_dc_curr = (int16_t) (currentDC * 1000);
+	feedback.speedR_meas = revs32;
+	feedback.wheelR_cnt = buzzerTimer;
+	feedback.right_dc_curr = pwmSlave;
+#endif // REMOTE_ROS2_PID_TUNING
 
 	feedback.checksum = (uint16_t)(
 		feedback.start ^
@@ -126,6 +171,8 @@ void RemoteUpdate(void)
 }
 
 
+uint16_t messageSize = 0;
+
 // Update USART steer input
 void RemoteCallback(void)
 {
@@ -139,7 +186,15 @@ void RemoteCallback(void)
 		}
 	}
 	else if (iReceivePos==1) {
-		if (cRead != START_FRAME_MSB) { // Second Start character NOT captured, start over
+		if (cRead == START_FRAME_MSB) {
+			messageSize = sizeof(SerialCommand);
+		}
+#ifdef REMOTE_ROS2_PID_TUNING
+		else if (cRead == START_FRAME_PID_MSB) {
+			messageSize = sizeof(SerialPidConfig);
+		}
+#endif
+		else { // Second Start character NOT captured, start over
 			iReceivePos=-1;
 		}
 	}
@@ -147,24 +202,45 @@ void RemoteCallback(void)
 	// Data reading has begun, save in aReceiveBuffer until whole message is received, then compare checksum.
 	if (iReceivePos >= 0) {
 		aReceiveBuffer[iReceivePos++] = cRead;
-		if (iReceivePos == sizeof(SerialCommand))
+		if (iReceivePos == messageSize)
 		{
-			SerialCommand* pData = (SerialCommand*) aReceiveBuffer;
-			uint16_t checksum = (uint16_t)(pData->start ^ pData->steer ^ pData->speed);
-			if (pData->checksum == checksum)
+			if (aReceiveBuffer[1] == START_FRAME_MSB)
 			{
-				iTimeLastRx = millis();
-				bRemoteTimeout = 0;
-				speed = pData->speed * 3; // TODO: What is the range/unit received? Need any scaling?
-				steer = pData->steer * 3; // TODO: What is the range/unit received? Need any scaling?
-				
-				speed = CLAMP(speed , -1000, 1000); // Sanity check: Range for speed is +-1000
-				steer = CLAMP(steer , -1000, 1000); // Sanity check: Range for steer is +-1000
-				
-				//if (speed > 300) speed = 300;	else if (speed < -300) speed = -300;		// for testing this function
+				SerialCommand* pData = (SerialCommand*) aReceiveBuffer;
+				uint16_t checksum = (uint16_t)(pData->start ^ pData->steer ^ pData->speed);
+				if (pData->checksum == checksum)
+				{
+					iTimeLastRx = millis();
+					bRemoteTimeout = 0;
 
-				ResetTimeout();	// Reset the pwm timout to avoid stopping motors
+					speed = pData->speed;
+					steer = pData->steer;
+
+					ResetTimeout();	// Reset the pwm timout to avoid stopping motors
+				}
 			}
+#ifdef REMOTE_ROS2_PID_TUNING
+			else if (aReceiveBuffer[1] == START_FRAME_PID_MSB)
+			{
+				SerialPidConfig* pData = (SerialPidConfig*) aReceiveBuffer;
+				uint16_t checksum = (uint16_t)(pData->start ^ pData->kp ^ pData->ki ^ pData->kd ^ pData->fs ^ pData->iDrivingMode);
+				if (pData->checksum == checksum)
+				{
+					float kp = pData->kp/1000.0f;
+					float ki = pData->ki/1000.0f;
+					float kd = pData->kd/10000.0f;
+					PID_Init(&pid, kp, ki, kd, -BLDC_TIMER_MID_VALUE, BLDC_TIMER_MID_VALUE, BLDC_TIMER_MID_VALUE);
+
+					uint8_t iNew = (uint8_t) pData->iDrivingMode;
+					iNew = CLAMP(iNew , 0, 4); // Sanity check: Range [0..4]
+					iDrivingMode = iNew;
+
+					iNew = pData->fs;
+					iNew = CLAMP(iNew , 0, 13); // Sanity check: Range [0..13]
+					nFILTER_SHIFT = iNew;
+				}
+			}
+#endif // REMOTE_ROS2_PID_TUNING
 			iReceivePos = -1;
 		}
 	}	
@@ -173,12 +249,23 @@ void RemoteCallback(void)
 
 #endif // MASTER_OR_SINGLE
 
-/*
+
+#ifndef REMOTE_ROS2_PID_TUNING
+  #if DRIVING_MODE != 1
+    #error "RemoteROS2 assumes DRIVING_MODE == 1"
+  #endif
+#endif
+// Outputs pPwmMaster and pPwmSlave in revs/s*1024 (fixed-point with 10 bit fraction)
 void 	Pilot(int16_t* pPwmMaster, int16_t* pPwmSlave)
 {
-	*pPwmMaster = CLAMP(speed + steer,-1000,+1000);	// or something like that
-	*pPwmMaster = CLAMP(speed - steer,-1000,1000);	// or something like that
+#ifndef REMOTE_ROS2_PID_TUNING
+	*pPwmMaster = ( (speed + (steer/2)) *1024) / 60;	// speed and steer in some kind of RPM
+	*pPwmSlave  = ( (speed - (steer/2)) *1024) / 60;	// speed and steer in some kind of RPM
+#else // ifdef REMOTE_ROS2_PID_TUNING
+	*pPwmMaster = speed;
+	*pPwmSlave  = speed;
+#endif
 }
-*/
+
 
 #endif // REMOTE_ROS2

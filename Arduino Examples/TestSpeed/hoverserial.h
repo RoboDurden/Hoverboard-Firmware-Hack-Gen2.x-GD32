@@ -56,6 +56,11 @@ uint16_t CalcCRC(uint8_t *ptr, int count)
     //DEBUGN(oData.iSlave, sizeof(oData)); 
   }
 
+  template <typename O,typename D> void HoverSendRawData(O& oSerial, D& oData)
+  {
+    oSerial.write((uint8_t*) &oData, sizeof(oData));
+  }
+
 #ifdef REMOTE_UARTBUS
   typedef struct __attribute__((packed, aligned(1))) {
      uint16_t cStart = START_FRAME;    //  = '/';
@@ -121,8 +126,97 @@ uint16_t CalcCRC(uint8_t *ptr, int count)
     DEBUGT("\tiAmp",(float)oData.iAmp/100.0);
     DEBUGN("\tiVolt",(float)oData.iVolt/100.0);
   }
+#elif defined (REMOTE_ROS2)
 
-#else
+  typedef struct __attribute__((packed, aligned(1))) {
+    uint16_t start;         // START_FRAME 0xABCD
+    int16_t  cmd1;          // Not used
+    int16_t  cmd2;          // Not used
+    int16_t  speedR_meas;   // Unit: RPM
+    int16_t  speedL_meas;   // Unit: RPM
+    int16_t  wheelR_cnt;    // Range: 0-ENCODER_MAX
+    int16_t  wheelL_cnt;    // Range: 0-ENCODER_MAX
+    int16_t  left_dc_curr;  // Unit: 0.01 A
+    int16_t  right_dc_curr; // Unit: 0.01 A
+    int16_t  batVoltage;    // Unit: 0.01 V
+    int16_t  boardTemp;     // Unit: 0.1 degrees
+    uint16_t cmdLed;        // Not used
+    uint16_t checksum;      // checksum of all other attributes
+  } SerialFeedback;
+  typedef SerialFeedback SerialHover2Server;
+
+  typedef struct __attribute__((packed, aligned(1))) {
+   uint16_t start; // START_FRAME_PID 0xEFCD
+   int16_t  kp;    // kp*1000  (fixed-point)
+   int16_t  ki;    // ki*1000  (fixed-point)
+   int16_t  kd;    // kd*10000 (fixed-point)
+   int16_t  fs;    // FILTER_SHIFT [10..13]
+   int16_t  iDrivingMode; //0=pwm, 1=speed in revs/s*1024, 2=torque in NewtonMeter*1024, 3=iOdometer
+   uint16_t checksum;
+  } SerialPidConfig;
+
+  typedef struct __attribute__((packed, aligned(1))) {
+   uint16_t start; // START_FRAME 0xABCD
+   int16_t  steer;
+   int16_t  speed;
+   uint16_t checksum;
+  } SerialCommand;
+
+  // Copy from REMOTE_UART (not supported to send yet, just for storing data locally on ESP32)
+  typedef struct __attribute__((packed, aligned(1))) {
+     uint8_t cStart     = '/';      //  unique id for this data struct
+     uint8_t  iDataType = 2;  //  unique id for this data struct
+     float  fBattFull     = 42.0;    // 10s LiIon = 42.0;
+     float  fBattEmpty    = 27.0;    // 10s LiIon = 27.0;
+     uint8_t  iDriveMode  = 0;      //  MM32: 0=COM_VOLT, 1=COM_SPEED, 2=SINE_VOLT, 3=SINE_SPEED
+     uint16_t checksum;
+  } SerialServer2HoverConfig;
+
+  template <typename O,typename I> void HoverSend(O& oSerial, I iSteer, I iSpeed,uint8_t  wStateMaster=32, uint8_t  wStateSlave=0)
+  {
+    //DEBUGT("iSteer",iSteer);DEBUGN("iSpeed",iSpeed);
+    SerialCommand oData;
+    oData.start    = START_FRAME;
+    oData.speed    = (int16_t)iSpeed;
+    oData.steer    = (int16_t)iSteer;
+    oData.checksum = (uint16_t)(oData.start ^ oData.steer ^ oData.speed);
+    oSerial.write((uint8_t*) &oData, sizeof(SerialCommand));
+    //DebugOut((uint8_t*) &oData, sizeof(oData));
+  }
+
+  void HoverLog(SerialHover2Server& oData)
+  {
+    /*
+    unsigned long iNow = millis();
+    DEBUGT("iNow",iNow);
+    DEBUGT("cmd1",oData.cmd1);
+    DEBUGT("cmd2",oData.cmd2);
+    DEBUGT("speedR_meas",oData.speedR_meas);
+    DEBUGT("speedL_meas",oData.speedL_meas);
+    DEBUGT("wheelR_cnt",oData.wheelR_cnt);
+    DEBUGT("wheelL_cnt",oData.wheelL_cnt);
+    DEBUGT("left_dc_curr",oData.left_dc_curr);
+    DEBUGT("right_dc_curr",oData.right_dc_curr);
+    DEBUGT("batVoltage",oData.batVoltage);
+    DEBUGT("boardTemp",oData.boardTemp);
+    DEBUGN("cmdLed",oData.cmdLed);
+    */
+
+    DEBUGT("speed",oData.cmdLed);
+    DEBUGT("iOdom",oData.wheelL_cnt);
+    DEBUGT("revs32",oData.speedL_meas);//DEBUGT("revs32x1024",oData.speedL_meas);
+    DEBUGT("inputFilterPwm",oData.cmd1);
+    DEBUGT("outputFilterPwm",oData.cmd2);
+    DEBUGT("revs32",oData.speedR_meas);//DEBUGT("revs32x4096",oData.speedR_meas);
+    DEBUGT("sCSLog",oData.batVoltage);//DEBUGT("speedCounterSlowLog",oData.batVoltage);
+    DEBUGT("pwmSlave",oData.right_dc_curr);
+    DEBUGT("currentDC",oData.left_dc_curr);//DEBUGT("currentDC1000",oData.left_dc_curr);
+    DEBUGT("buzzerTimer",oData.wheelR_cnt);
+    DEBUGN("msTicks",oData.boardTemp);
+  }
+
+
+#else //REMOTE_UART
 
   typedef struct __attribute__((packed, aligned(1))) {
      uint16_t cStart = START_FRAME;    //  = '/';
@@ -302,7 +396,13 @@ template <typename O,typename OF> boolean Receive(O& oSerial, OF& Feedback)
           //HoverLog(tmpFeedback);
         #endif
 
+        #ifdef REMOTE_ROS2
+        uint16_t checksum = START_FRAME ^  tmpFeedback.cmd1 ^ tmpFeedback.cmd2 ^ tmpFeedback.speedR_meas ^ tmpFeedback.speedL_meas ^
+          tmpFeedback.wheelR_cnt ^ tmpFeedback.wheelL_cnt ^ tmpFeedback.left_dc_curr ^ tmpFeedback.right_dc_curr ^ tmpFeedback.batVoltage ^
+          tmpFeedback.boardTemp ^ tmpFeedback.cmdLed;
+        #else
         uint16_t checksum = CalcCRC((byte *)&tmpFeedback, sizeof(SerialHover2Server)-2);
+        #endif
         if (checksum == tmpFeedback.checksum)
         {
             memcpy(&Feedback, &tmpFeedback, sizeof(SerialHover2Server));

@@ -44,6 +44,7 @@ int32_t bldc_inputFilterPwm = 0;
 int32_t bldc_outputFilterPwm = 0;
 uint8_t iDrivingModeOverride = 0;
 int32_t filter_reg;
+uint8_t nFILTER_SHIFT = FILTER_SHIFT;
 uint8_t iFILTER_SHIFT = FILTER_SHIFT;
 uint16_t buzzerTimer = 0;	// also used to calculate battery voltage :-/
 int16_t offsetcount = 0;
@@ -60,11 +61,14 @@ uint8_t buzzerPattern = 0;
 // robo23 odometer support
 // from https://github.com/alex-makarov/hoverboard-firmware-hack-FOC/blob/master/Src/bldc.c
 int32_t iOdom = 0;
-int32_t iOdomLast = 0;
+//int32_t iOdomLast = 0;
 int16_t modulo(int16_t m, int16_t rest_classes)
 {
   return (((m % rest_classes) + rest_classes) %rest_classes);
 }
+// JW: Could be simplified by assuming max stepping up or down 1 step per bldc loop (16kHz => 62.5us).
+// Rotating wheel more than 4° (1 step) per 62.5us is unrealistic for a hoverboard.
+// 1 step in 62.5us for a 6.5 inch wheel hoverboard corresponds to the hoverboard moving at ~332km/h!
 int16_t up_or_down(int16_t vorher, int16_t nachher)
 {
   uint16_t up_down[6] = {0,-1,-2,0,2,1};
@@ -225,7 +229,7 @@ void CalculateBLDC(void)
 	else
 	{
 		timer_automatic_output_enable(TIMER_BLDC);
-		SetFilter(FILTER_SHIFT);
+		SetFilter(nFILTER_SHIFT);
 		iDrivingModeOverride = iDrivingMode;
 		//DEBUG_LedSet(hall_c == 0,0)
   	}
@@ -299,26 +303,27 @@ void CalculateBLDC(void)
 	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, CLAMP(y + BLDC_TIMER_MID_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
 
 	// robo23
-	iOdom = iOdom - up_or_down(lastPos, pos); // int32 will overflow at +-2.147.483.648
+	int32_t iOdomDelta = up_or_down(lastPos, pos);
+	iOdom = iOdom - iOdomDelta; // int32 will overflow at +-2.147.483.648 (4°=~0.005763m for a 6.5 inch wheel. overflow after ~12376km)
 	
 	if(speedCounterSlow < 4000) speedCounterSlow++;	// No speed after 250ms
-	if (iOdomLast != iOdom)	// one hall step is 4�
+	if (iOdomDelta != 0)	// one hall step is 4°
 	{
 		//if (speedCounterSlow > 600)	// idea was to use the 24� step of realSpeed calculation for better revs32 at higher speeds. But doesn' work for some unkown reason
 		{
-			int32_t revs32Now =  (iOdom-iOdomLast) * (revs32ScaleSlow / speedCounterSlow) ;		// warning, (iOdom-iOdomLast) might give wrong result when iOdom overflows
+			int32_t revs32Now =  (-iOdomDelta) * (revs32ScaleSlow / speedCounterSlow);
 			
 			#define RANK_revs32 2 	// Calculate low-pass filter for pwm value
-			revs32_reg = revs32_reg - (revs32_reg >> RANK_revs32) + revs32Now ;		// warning, (iOdom-iOdomLast) might give wrong result when iOdom overflows
+			revs32_reg = revs32_reg - (revs32_reg >> RANK_revs32) + revs32Now;
 
 			revs32 = (speedCounterSlow < 1000) ? revs32_reg >> RANK_revs32 : revs32Now;
 			
 			#if defined(CURRENT_DC) && defined(VBATT)
 				//  torque = (fEff * V * I * 60) / (RPM * 2p)
-				// rpm = 60* (PWM_FREQ/(speedCounterSlow/(iOdom-iOdomLast)) )/90;
-				// iTorque = 0.8 * batteryVoltage * currentDC * (90/2*PI) *speedCounterSlow / (PWM_FREQ  *(iOdom-iOdomLast))
-				// iTorque = 11.459 * batteryVoltage * currentDC *speedCounterSlow / (PWM_FREQ  *(iOdom-iOdomLast))
-				int32_t torque32Now = ((((int32_t)(11.459 * batteryVoltage * currentDC))<<10) / (PWM_FREQ  *(iOdom-iOdomLast))) * speedCounterSlow;
+				// rpm = 60* (PWM_FREQ/(speedCounterSlow/(-iOdomDelta)) )/90;
+				// iTorque = 0.8 * batteryVoltage * currentDC * (90/2*PI) *speedCounterSlow / (PWM_FREQ  *(-iOdomDelta))
+				// iTorque = 11.459 * batteryVoltage * currentDC *speedCounterSlow / (PWM_FREQ  *(-iOdomDelta))
+				int32_t torque32Now = ((((int32_t)(11.459 * batteryVoltage * currentDC))<<10) / (PWM_FREQ  *(-iOdomDelta))) * speedCounterSlow;
 
 				#define RANK_torque32 3 	// Calculate low-pass filter for pwm value
 				torque32_reg = torque32_reg - (torque32_reg >> RANK_torque32) + torque32Now;
@@ -329,10 +334,10 @@ void CalculateBLDC(void)
 		speedCounterSlowLog = speedCounterSlow;		// for logging with StmStudio
 		speedCounterSlow = 0;
 	}
-	else if (speedCounterSlow >= 4000)	revs32 = torque32 = 0;
+	else if (speedCounterSlow >= 4000)	revs32 = revs32_reg = torque32 = torque32_reg = 0;
 		
 	// Increments with 62.5us
-	if(speedCounter < 8000) speedCounter++;	// No speed after 250ms
+	if(speedCounter < 8000) speedCounter++;	// No speed after 500ms
 	
 	#ifdef SPEED_AsRevsPerSec
 	
@@ -345,6 +350,7 @@ void CalculateBLDC(void)
 		if (lastPos != 1 && pos == 1)
 		{
 			realSpeed = 1991.81f / (float)speedCounter; //[km/h]		// robo 2025: should get changed to rpm ?
+			                                                        // JW: km/h calculation assumes 6.5 inch wheel. For 10 inch wheel, replace 1991.81f with 3064.32f. rpm or revs would be better since it is independent of wheel dimension.
 			revs32x =  revs32Scale / speedCounter;
 			if (lastPos == 2)	
 				realSpeed *= -1;
@@ -359,7 +365,6 @@ void CalculateBLDC(void)
 	
 	//if (speedCounterSlowLog <= 600)	revs32 = revs32x;		// that doesn't work as motor begins to oscillate
 	
-	// Safe last position
+	// Save last position
 	lastPos = pos;
-	iOdomLast = iOdom;
 }

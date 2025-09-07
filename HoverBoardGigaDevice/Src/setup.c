@@ -126,7 +126,7 @@ void TimeoutTimer_init(void)
 	timeoutTimer_paramter_struct.counterdirection 	= TIMER_COUNTER_UP;
 	timeoutTimer_paramter_struct.prescaler 					= 0;
 	timeoutTimer_paramter_struct.alignedmode 				= TIMER_COUNTER_CENTER_DOWN;
-	timeoutTimer_paramter_struct.period							= 72000000 / 2 / TIMEOUT_FREQ;
+	timeoutTimer_paramter_struct.period							= SystemCoreClock / 2 / TIMEOUT_FREQ;
 	timeoutTimer_paramter_struct.clockdivision 			= TIMER_CKDIV_DIV1;
 	timeoutTimer_paramter_struct.repetitioncounter 	= 0;
 	timer_auto_reload_shadow_disable(TIMER_TIMEOUT);

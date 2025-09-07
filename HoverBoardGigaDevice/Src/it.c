@@ -121,8 +121,8 @@ void TIMEOUT_IrqHandler(void)
 // -> pwm of timer0 running with 16kHz -> interrupt every 31,25us
 //----------------------------------------------------------------------------
 extern uint32_t steerCounter;								// Steer counter for setting update rate
-uint32_t iPwmTicks = 0, iPwmTicks0 = 0, iPwmCounter = 0, iPwmTime=0, iPwmRate=0;
-uint32_t iAdcTicks = 0, iAdcTicks0 = 0, iAdcCounter = 0, iAdcTime=0, iAdcRate=0;
+uint32_t iPwmCounter = 0, iPwmTime=0, iPwmRate=0;
+uint32_t iAdcCounter = 0, iAdcTime=0, iAdcRate=0;
 #define COUNT_Irqs 1000
 
 //void TIMER0_UP_IRQHandler(void)	//JMA must match the name in startup_gd32f10x_hd.s
@@ -164,15 +164,6 @@ void TARGET_TIMER0_BRK_UP_TRG_COM_IRQHandler(void)
 #endif
 void TARGET_DMA_Channel0_IRQHandler(void)
 {
-/*
-	
-	if (COUNT_Irqs == ++iAdcCounter)
-	{
-		iAdcTicks = msTicks - iAdcTicks0;
-		iAdcTicks0 = msTicks;
-		iAdcCounter = 0;
-	}
-	*/
 
 	if (TARGET_dma_interrupt_flag_get(DMA_CH0, DMA_INT_FLAG_FTF))
 	{

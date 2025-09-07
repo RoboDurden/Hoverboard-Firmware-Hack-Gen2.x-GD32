@@ -8,7 +8,11 @@
 
 #define ESP32       // comment out if using Arduino
 
+// Choose 'remote' used in hoverboard firmware
+// If neither REMOTE_UARTBUS nor REMOTE_ROS2 is defined, REMOTE_UART is used by default
+#define REMOTE_UART       // Default
 //#define REMOTE_UARTBUS  // one serial bus to control them all :-)
+//#define REMOTE_ROS2     // ROS2 serial protocol is uses
 
 //#define MPU_Data    // uncomment if your hoverboard:config.h has active: #define SEND_IMU_DATA
 
@@ -22,12 +26,14 @@
 
 #ifndef LED_BUILTIN
   #define LED_BUILTIN 4   // ESP32_2432S028 like "HoverBike CYD LVGL"
+  //#define LED_BUILTIN 2   // ESP32-WROOM-32
 #endif
 
 #ifdef ESP32
   //const int pinRX = 39, pinTX = 37;   // Wemos S2 Mini
   //const int pinRX = 16, pinTX = 17;    // Wemos Lolin32
   const int pinRX = 16, pinTX = 17;    // ESP32-2432S028
+  //const int pinRX = 16, pinTX = 17;    // ESP32-WROOM-32
   
   #define oSerialHover Serial1    // ESP32
 #else
@@ -124,6 +130,35 @@ boolean CheckConsole()
   {
     iPeriod = CLAMP(abs(ShiftValue(sReceived, "\n").toInt()),1,30);
   }
+#ifdef REMOTE_ROS2
+  else if (sCmd == "pid")
+  {
+    SerialPidConfig oData;
+    oData.start = 0xEFCD;
+    oData.kp = abs(ShiftValue(sReceived, " ").toInt());
+    oData.ki = abs(ShiftValue(sReceived, " ").toInt());
+    oData.kd = abs(ShiftValue(sReceived, " ").toInt());
+    oData.fs = abs(ShiftValue(sReceived, " ").toInt());
+    oData.iDrivingMode = abs(ShiftValue(sReceived, " ").toInt());
+    oData.checksum = (uint16_t)(oData.start ^ oData.kp ^ oData.ki ^ oData.kd ^ oData.fs ^ oData.iDrivingMode);
+    if (oData.iDrivingMode < 4)
+    {
+      oHoverConfig.iDriveMode = oData.iDrivingMode;
+      if (oHoverConfig.iDriveMode == 0) iMax = CLAMP(iMax,-1000,1000);
+      HoverSendRawData(oSerialHover,oData);
+      DEBUGT("kp",oData.kp);
+      DEBUGT("ki",oData.ki);
+      DEBUGT("kd",oData.kd);
+      DEBUGT("fs",oData.fs);
+      DEBUGN("iDrivingMode",oData.iDrivingMode);
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }
+#endif
   else
   {
     Serial.print("unkown command: "); 
