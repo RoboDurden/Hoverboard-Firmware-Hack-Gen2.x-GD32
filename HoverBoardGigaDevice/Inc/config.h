@@ -57,8 +57,15 @@
 		
 		// choose only one 'remote' to control the motor
 		#define REMOTE_DUMMY
+				#ifdef REMOTE_DUMMY
+					#define REMOTE_PERIOD 6 // 3 = 3 seconds period of the zigzag curve
+					#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
+				#endif
 		//#define REMOTE_UART
 		//#define REMOTE_UARTBUS	// ESP32 as master and multiple boards as multiple slaves ESP.tx-Hovers.rx and ESP.rx-Hovers.tx
+				#ifdef REMOTE_UARTBUS
+					#define SLAVE_ID	0		// must be unique for all hoverboards connected to the bus
+				#endif
 		//#define REMOTE_CRSF		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/26
 		//#define REMOTE_ROS2		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/122
 		//#define REMOTE_ADC	// speed is PA2=TX and steer is PA3=RX of the masterslave header. Get 3.3V from the flash header
@@ -68,17 +75,14 @@
 												// Then release the button and leave the joystick (the two potentiometers) in neutral position.
 												// When the melody returns for 2 seconds, push speed to max.
 												// After another 5 seconds + 2 seconds melody: push speed to min. Then steer to max. Finally steer to min
-		
-		
-		#ifdef REMOTE_UARTBUS
-			#define SLAVE_ID	0		// must be unique for all hoverboards connected to the bus
-		#endif
-		#ifdef REMOTE_DUMMY
-			//#define SLOW_SINE	// 9 second period instead of 3 seconds
-			#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
-		#else
-			//#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
-		#endif
+		//#define REMOTE_OPTIMIZEPID		// will zigzag motor and optimize pid parameters for 1=speed or 3=iOdometer.
+		// monitor with StmStudio/McuViewer or via ST-Link usb dongle RTT and openocd_rtt_32f1x.bat or PlatformIO RTT_Task
+				#ifdef REMOTE_OPTIMIZEPID
+					#define WINDOWS_RN		// adds a \r before every \n		
+				#endif
+
+
+		//#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
 
 		//#define RTT_REMOTE		// uncoment for i2c_scanner and dump_i2c_registers to print to rtt :-)
 			// needs either I2C_PB8PB9 or I2C_PB6PB7 and MPU_6050 or MPU_6050old or BMI_160 in your defines_2-x-y.h file
@@ -130,7 +134,7 @@
 #define PWM_FREQ         		16000     // PWM frequency in Hz
 
 
-#define FILTER_SHIFT 13 						// Low-pass filter for pwm, rank k=12
+#define FILTER_SHIFT 12 						// Low-pass filter for pwm, rank k=12
 					// With PWM_FREQ = 1000, 12 will take over 4s to mostly adapt to a sudden change in input. So only 250 ms for 16 kHz !
 					// 19 and 16 kHz would be 32 seconds for the motor to reach 63% of its new target speed (Gemini 2.5pro)
 

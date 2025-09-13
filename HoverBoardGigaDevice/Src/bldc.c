@@ -177,7 +177,6 @@ void CalculateBLDC(void)
 		
 	
   	buzzerTimer++;	// also used to calculate battery voltage :-/
-	iBug = PWM_FREQ;
 	if (msTicks > iBuzzTime)
 	{
 		iBuzzTime = msTicks + 1000;
@@ -214,7 +213,7 @@ void CalculateBLDC(void)
 	//DEBUG_LedSet((steerCounter%20) > 10,2);	// macro. iCol: 0=green, 1=organge, 2=red
 	if (currentDC > DC_CUR_LIMIT  || bldc_enable == RESET  || timedOut == SET)	//		
 	{
-		iDrivingModeOverride = bldc_inputFilterPwm = 0;
+		iDrivingModeOverride = bldc_inputFilterPwm = iBldcInput = 0;
 		SetFilter(FILTER_SHIFT + 2);	// soft brake
 		if (ABS(bldc_outputFilterPwm)<100)
 		{
@@ -281,8 +280,8 @@ void CalculateBLDC(void)
 			return;
 	}
 
-	//if (buzzerTimer%20==0)	
-	bldc_inputFilterPwm = Driver(iDrivingModeOverride,iBldcInput);		// interpret the input as pwm/speed/torque/position.
+	if (buzzerTimer%16==0)	
+		bldc_inputFilterPwm = Driver(iDrivingModeOverride,iBldcInput);		// interpret the input as pwm/speed/torque/position.
 	
 	// Calculate low-pass filter for pwm value
 	filter_reg = filter_reg - (filter_reg >> iFILTER_SHIFT) + bldc_inputFilterPwm;
@@ -305,9 +304,11 @@ void CalculateBLDC(void)
 	if (iOdomLast != iOdom)	// one hall step is 4�
 	{
 		//if (speedCounterSlow > 600)	// idea was to use the 24� step of realSpeed calculation for better revs32 at higher speeds. But doesn' work for some unkown reason
+		if (speedCounterSlow > 10)	// 2.1.11 does not debounce hall inputs :-((((
 		{
 			int32_t revs32Now =  (iOdom-iOdomLast) * (revs32ScaleSlow / speedCounterSlow) ;		// warning, (iOdom-iOdomLast) might give wrong result when iOdom overflows
-			
+			// revs32ScaleSlow = (PWM_FREQ/90)<<REVS32_SHIFT;	// REVS32_SHIFT-bit fractional precision
+
 			#define RANK_revs32 2 	// Calculate low-pass filter for pwm value
 			revs32_reg = revs32_reg - (revs32_reg >> RANK_revs32) + revs32Now ;		// warning, (iOdom-iOdomLast) might give wrong result when iOdom overflows
 
@@ -329,7 +330,7 @@ void CalculateBLDC(void)
 		speedCounterSlowLog = speedCounterSlow;		// for logging with StmStudio
 		speedCounterSlow = 0;
 	}
-	else if (speedCounterSlow >= 4000)	revs32 = torque32 = 0;
+	else if (speedCounterSlow >= 4000)	revs32 = revs32_reg = torque32 = torque32_reg = 0;
 		
 	// Increments with 62.5us
 	if(speedCounter < 8000) speedCounter++;	// No speed after 250ms

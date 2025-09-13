@@ -39,6 +39,10 @@
 	#include INCLUE_FILE(TARGET , LAYOUT)	// "defines_2-target-version.h"
 #endif
 
+#ifdef CONFIGDEBUG_H
+	#undef CHARGE_STATE	// motors will stop if charger is pluged in. disable if you use the charger to power the board
+#endif
+
 #include "../Inc/setup.h"
 
 #ifdef RTT_REMOTE

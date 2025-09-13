@@ -504,6 +504,11 @@
               <FileType>1</FileType>
               <FilePath>.\Src\SEGGER_RTT.c</FilePath>
             </File>
+            <File>
+              <FileName>remoteOptimizePID.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\remoteOptimizePID.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1291,6 +1296,11 @@
               <FileName>SEGGER_RTT.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\SEGGER_RTT.c</FilePath>
+            </File>
+            <File>
+              <FileName>remoteOptimizePID.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\remoteOptimizePID.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2080,6 +2090,11 @@
               <FileType>1</FileType>
               <FilePath>.\Src\SEGGER_RTT.c</FilePath>
             </File>
+            <File>
+              <FileName>remoteOptimizePID.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\remoteOptimizePID.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -2867,6 +2882,11 @@
               <FileName>SEGGER_RTT.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\SEGGER_RTT.c</FilePath>
+            </File>
+            <File>
+              <FileName>remoteOptimizePID.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\remoteOptimizePID.c</FilePath>
             </File>
           </Files>
         </Group>

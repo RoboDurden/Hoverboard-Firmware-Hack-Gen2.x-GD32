@@ -146,36 +146,69 @@ extern int32_t iOdom;
 
 PIDController pid;	// PID controller instance
 
+
+PIDInit aoPIDInit[3] = {
+	// float kp; float ki; float kd;	int16_t min_pwm; int16_t max_pwm; float max_i;
+	{0.1f, 8.0f, 0.0005f, -1250, 1250, 1250},		// constant speed in revs*1024
+	{0.2f, 1.0f, 0.0005f, -1250, 1250, 1250},		// max torque
+	{4.0f, 1.1f, 0.01f, -1250, 1250, 1250}			// position = iOdom
+		};	// BLDC_TIMER_MID_VALUE = 1250 only for 16 kHz !!
+
 void DriverInit(uint8_t iDrivingModeNew) 	// Initialize controller (tune these values for your system)
 {
 	iDrivingMode = iDrivingModeNew;
-	switch (iDrivingMode)
-	{
-	case 1:	// input will be taken as revs/s 
-		PID_Init(&pid, 0.2f, 1.0f, 0.0005f, -BLDC_TIMER_MID_VALUE, BLDC_TIMER_MID_VALUE, BLDC_TIMER_MID_VALUE);		
-		return;
-	case 2:	// input will be taken as NewtonMeter * 1024 
-		PID_Init(&pid, 0.2f, 1.0f, 0.0005f, -BLDC_TIMER_MID_VALUE, BLDC_TIMER_MID_VALUE, BLDC_TIMER_MID_VALUE);		
-		return;
-	case 3:	// input will be iOdom position in hall steps = 4°
-		PID_Init(&pid, 50.0f, 1.0f, 0.005f, -BLDC_TIMER_MID_VALUE, BLDC_TIMER_MID_VALUE, BLDC_TIMER_MID_VALUE);		
-		return;
-	}
+	if (iDrivingMode==0)	return;
+	
+	PIDInit* p = &aoPIDInit[iDrivingMode-1];
+	PID_Init(&pid, p->kp, p->ki, p->kd, p->min_pwm, p->max_pwm, p->max_i);		
 }
+
+#ifdef REMOTE_OPTIMIZEPID
+	static inline uint32_t uabs32(int32_t x) {
+			int32_t mask = x >> 31;          // 0 if x >= 0, -1 if x < 0
+			return (uint32_t)((x ^ mask) - mask);
+	}
+	uint32_t iOptimizeErrors = 0;
+	uint32_t iOptimizeTotal = 0;
+	int32_t iError32Test=1;
+	uint16_t iOptimizeThreshold = 33;	// 100% error would 1024, 5% error = 51, 2% == 33
+	uint16_t bError = 0;
+	extern int32_t iRemoteMax;
+#endif
 
 int16_t	Driver(uint8_t iDrivingMode, int32_t input)		// pwm/speed/torque/position as input and returns pwm value to get a low pass filter in bldc.c
 {
-		switch (iDrivingMode)
+	#ifdef REMOTE_OPTIMIZEPID
+		//iError32Test = (uabs32(pid.prev_error)<<10)/uabs32(input);
+		uint16_t bErrorSet = 5000;
+		if(iDrivingMode == 3)
 		{
-		case 0:	// interpret as simple pwm value
-			return input;
-		case 1:	// input will be taken as revs/s*1024 
-			return PID_Update(&pid, input, revs32);
-		case 2:	// input will be taken as Nm*1024 
-			return PID_Update(&pid, input, torque32);
-		case 3:	// input will be iOdom
-			return PID_Update(&pid, input, iOdom);
+			iError32Test = uabs32(pid.prev_error);		// error is absolute displacement from target iOdom
+			bErrorSet = 500;
 		}
+		else 
+			iError32Test = uabs32((pid.prev_error*1024)/input);
+		if (	iError32Test > iOptimizeThreshold)
+		{		
+			iOptimizeErrors++;		// 100% error would 1024, 5% error = 51
+			bError = iRemoteMax+10;	//bErrorSet;
+		}
+		else bError = 0;
+		iOptimizeTotal++;
+	#endif
+
+	switch (iDrivingMode)
+	{
+	case 0:	// interpret as simple pwm value
+		return input;
+	case 1:	// input will be taken as revs/s*1024 
+		return PID_Update(&pid, input, revs32);
+	case 2:	// input will be taken as Nm*1024 
+		return PID_Update(&pid, input, torque32);
+	case 3:	// input will be iOdom
+		return PID_Update(&pid, input, iOdom);
+	}
+
 	return 0;	// error, unkown drive mode
 }
 

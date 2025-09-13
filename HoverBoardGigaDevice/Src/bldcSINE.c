@@ -4,6 +4,7 @@
 #ifdef BLDC_SINE
 #include <math.h>
 
+extern uint32_t iBug;
 
 // Precomputed sine table for 0-360° (1° steps) in Q15 format
 #define SIN_TABLE_SIZE 360
@@ -147,11 +148,15 @@ void _HandleEXTI(int8_t iIrq)
 	if (exti_interrupt_flag_get(aHallEXTI[i])!= RESET)
 	{
 		bInterrupt = 1;
-		hall_time_step = buzzerTimer>hall_time_last ? buzzerTimer-hall_time_last : buzzerTimer + (0x00010000-hall_time_last);
-		hall_time_last = buzzerTimer;  // PWM_FREQ (16 kHz)
-		hall_last = hall;
-		hall = digitalRead(HALL_A) + digitalRead(HALL_B)*2 + digitalRead(HALL_C)*4;		
-		//aHallCountEXTI[i]++;
+		uint16_t hall_time_stepNew = buzzerTimer>hall_time_last ? buzzerTimer-hall_time_last : buzzerTimer + (0x00010000-hall_time_last);
+		if (hall_time_stepNew > 10)	// 2.1.11 does not debounce hall inputs :-(((( So skip impossibly fast hall steps
+		{
+			hall_time_step = hall_time_stepNew;
+			hall_time_last = buzzerTimer;  // PWM_FREQ (16 kHz)
+			hall_last = hall;
+			hall = digitalRead(HALL_A) + digitalRead(HALL_B)*2 + digitalRead(HALL_C)*4;		
+			//aHallCountEXTI[i]++;
+		}
 		exti_interrupt_flag_clear(aHallEXTI[i]);
 	}
 }
@@ -298,10 +303,15 @@ void _HandleEXTI()
 	if (exti_interrupt_flag_get(aHallEXTI[i]) != RESET)
 	{
 		bInterrupt = 1;
-		hall_time_step = buzzerTimer>hall_time_last ? buzzerTimer-hall_time_last : buzzerTimer + (0x00010000-hall_time_last);
-		hall_time_last = buzzerTimer;  // PWM_FREQ (16 kHz)
-		hall_last = hall;
-		hall = digitalRead(HALL_A) + digitalRead(HALL_B)*2 + digitalRead(HALL_C)*4;		
+		uint16_t hall_time_stepNew = buzzerTimer>hall_time_last ? buzzerTimer-hall_time_last : buzzerTimer + (0x00010000-hall_time_last);
+		if (hall_time_stepNew > 10)	// 2.1.11 does not debounce hall inputs :-(((( So skip impossibly fast hall steps
+		{
+			hall_time_step = hall_time_stepNew;
+			hall_time_last = buzzerTimer;  // PWM_FREQ (16 kHz)
+			hall_last = hall;
+			hall = digitalRead(HALL_A) + digitalRead(HALL_B)*2 + digitalRead(HALL_C)*4;		
+		}
+		//else iBug++;
 		exti_flag_clear(aHallEXTI[i]);
 	}
 }
