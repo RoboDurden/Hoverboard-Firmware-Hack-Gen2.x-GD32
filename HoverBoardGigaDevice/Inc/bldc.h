@@ -40,6 +40,7 @@
 #define BLDC_TIMER_MIN_VALUE  (int16_t)10
 #define BLDC_TIMER_MAX_VALUE  (BLDC_TIMER_PERIOD - 10) // = 2240
 
+#define REVS32_SHIFT 12
 
 typedef struct {
 	float kp; float ki; float kd;	int16_t min_pwm; int16_t max_pwm; float max_i;

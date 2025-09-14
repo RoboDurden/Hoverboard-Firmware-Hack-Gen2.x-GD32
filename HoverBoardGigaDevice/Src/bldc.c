@@ -17,7 +17,6 @@ int32_t revs32 = 0;
 int32_t torque32 = 0;
 int32_t revs32_reg = 0, torque32_reg = 0, realSpeed32_reg = 0;
 int32_t revs32x = 0;
-#define REVS32_SHIFT 12
 int32_t revs32Scale = (PWM_FREQ/15)<<REVS32_SHIFT;			// REVS32_SHIFT-bit fractional precision
 int32_t revs32ScaleSlow = (PWM_FREQ/90)<<REVS32_SHIFT;	// REVS32_SHIFT-bit fractional precision
 

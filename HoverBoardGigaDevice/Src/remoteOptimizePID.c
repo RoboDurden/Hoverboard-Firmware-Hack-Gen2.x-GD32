@@ -101,24 +101,6 @@ static unsigned int buffer_index = 0;	// Index to keep track of the current posi
 	#endif
 #endif
 
-char cCommand = 0;
-char cRxLast = ' ';
-void _RemoteReceived(unsigned char cRead)
-{
-	if (	(cRead == 13) || (cRead == 10) )
-	{
-		cCommand = cRxLast;
-	}
-	else
-		cRxLast = cRead;
-		
-	//sprintf(sMessage, "rx: %c\n",cRead);
-
-	//DEBUG_LedSet((steerCounter%20) < 10,0)	// 	
-	
-}
-
-
 #define REMOTE_PERIOD 3
 
 
@@ -127,7 +109,6 @@ extern int32_t speed;
 extern uint32_t msTicks;
 extern uint8_t iDrivingMode;	//  0=pwm, 1=speed in revs*1024, (not yet: 3=torque, 4=iOdometer)
 extern float batteryVoltage;
-//#define SLOW_SINE
 uint32_t iTimeRTT = 0;
 uint8_t bRemoteInit = 1;
 

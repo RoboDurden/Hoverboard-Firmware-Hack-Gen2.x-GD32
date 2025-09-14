@@ -1,6 +1,8 @@
 // Gen2.2.3  https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/84
 // a.k.a. SMART-L-V2.0 (used in Andersson 3.1 and Andersson 3.2 with 10 inch wheels)
 
+#define STM32F103 // Configure system clock to 64 MHz (maximum supported with High Speed Internal (HSI) oscilator as clock source for STM32F103)
+
 #ifdef MASTER_OR_SINGLE		// layout 2.2 and 2.7 have buzzer on the slave board.
 	#define HAS_BUZZER
 #endif

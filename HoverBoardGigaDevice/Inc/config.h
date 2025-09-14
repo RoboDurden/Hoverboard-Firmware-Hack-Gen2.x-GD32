@@ -60,6 +60,8 @@
 				#ifdef REMOTE_DUMMY
 					#define REMOTE_PERIOD 6 // 3 = 3 seconds period of the zigzag curve
 					#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
+					#define RTT_REMOTE	// log and set via ST-Link dongle
+						#define WINDOWS_RN		// adds a \r before every \n to RTT log
 				#endif
 		//#define REMOTE_UART
 		//#define REMOTE_UARTBUS	// ESP32 as master and multiple boards as multiple slaves ESP.tx-Hovers.rx and ESP.rx-Hovers.tx

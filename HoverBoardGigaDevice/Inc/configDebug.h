@@ -55,10 +55,12 @@
 	#if defined(MASTER) || defined(SINGLE)
 		
 		// choose only one 'remote' to control the motor
-		//#define REMOTE_DUMMY
+		#define REMOTE_DUMMY
 		#ifdef REMOTE_DUMMY
 			#define REMOTE_PERIOD 6 // 3 = 3 seconds period of the zigzag curve
 			#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
+			#define RTT_REMOTE	// log and set via ST-Link dongle
+				#define WINDOWS_RN		// adds a \r before every \n to RTT log
 		#endif
 		//#define REMOTE_UART
 		//#define REMOTE_UARTBUS	// ESP32 as master and multiple boards as multiple slaves ESP.tx-Hovers.rx and ESP.rx-Hovers.tx
@@ -74,10 +76,10 @@
 												// Then release the button and leave the joystick (the two potentiometers) in neutral position.
 												// When the melody returns for 2 seconds, push speed to max.
 												// After another 5 seconds + 2 seconds melody: push speed to min. Then steer to max. Finally steer to min
-		#define REMOTE_OPTIMIZEPID		// will zigzag motor and optimize pid parameters for 1=speed or 3=iOdometer.
+		//#define REMOTE_OPTIMIZEPID		// will zigzag motor and optimize pid parameters for 1=speed or 3=iOdometer.
 		// monitor with StmStudio/McuViewer or via ST-Link usb dongle RTT and openocd_rtt_32f1x.bat or PlatformIO RTT_Task
 		#ifdef REMOTE_OPTIMIZEPID
-			#define WINDOWS_RN		// adds a \r before every \n		
+			#define WINDOWS_RN		// adds a \r before every \n	to RTT log
 		#endif
 		
 		

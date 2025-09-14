@@ -151,7 +151,8 @@ PIDInit aoPIDInit[3] = {
 	// float kp; float ki; float kd;	int16_t min_pwm; int16_t max_pwm; float max_i;
 	{0.1f, 8.0f, 0.0005f, -1250, 1250, 1250},		// constant speed in revs*1024
 	{0.2f, 1.0f, 0.0005f, -1250, 1250, 1250},		// max torque
-	{4.0f, 1.1f, 0.01f, -1250, 1250, 1250}			// position = iOdom
+	//{4.0f, 1.1f, 0.01f, -1250, 1250, 1250}			// position = iOdom
+	{20.0f, 0.0f, 1.0f, -1250, 1250, 1250}			// position = iOdom
 		};	// BLDC_TIMER_MID_VALUE = 1250 only for 16 kHz !!
 
 void DriverInit(uint8_t iDrivingModeNew) 	// Initialize controller (tune these values for your system)
