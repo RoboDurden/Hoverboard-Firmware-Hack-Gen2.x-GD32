@@ -60,4 +60,6 @@ void ConfigReset(void);
 void ConfigWrite(void);
 void ConfigRead(void);
 
+void add_cr_before_lf_inplace(char* str, uint16_t buffer_size);
+
 #endif

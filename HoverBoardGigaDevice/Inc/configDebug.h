@@ -6,7 +6,7 @@
 				// will drive the motor without hall input to detect the hall pins..
 
 #ifdef REMOTE_AUTODETECT
-	//#define WINDOWS_RN		// adds a \r before every \n
+	#define WINDOWS_RN		// adds a \r before every \n
 	
 	#define RTT_REMOTE
 	//#define REMOTE_USART				0 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
@@ -35,7 +35,7 @@
 	#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden. 
 	//#define BLDC_SINE_BOOSTER		// can boost speed by 15% starting from 87% throttle.
 	
-	#define DRIVING_MODE 1	//  0=pwm, 1=speed in revs/s*1024, 2=torque in NewtonMeter*1024, 3=iOdometer
+	#define DRIVING_MODE 0	//  0=pwm, 1=speed in revs/s*1024, 2=torque in NewtonMeter*1024, 3=iOdometer
 
 	#define SPEED_AsRevsPerSec		// Will overflow at 327 revs/s = 19620 rpm. Hoverboard motor: 14 rpm/V * 50V = 700 rpm
 

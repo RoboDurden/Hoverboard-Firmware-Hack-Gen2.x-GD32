@@ -1104,3 +1104,50 @@ void Clock_test(void)
 	for (volatile uint32_t i = 72000000; i > 0; i--);	// 72000000 NOP operations would take 1000 ms at 72 MHz ?
 	iTestClock = millis()-iTimeStart;
 }
+
+
+#ifdef WINDOWS_RN
+void add_cr_before_lf_inplace(char* str, uint16_t buffer_size) 
+{
+	if (str == NULL || buffer_size == 0)
+			return;
+
+	// 1. Calculate original length and count newlines in a single pass.
+	size_t original_len = 0;
+	int newline_count = 0;
+	for (original_len = 0; str[original_len] != '\0'; original_len++) {
+			if (str[original_len] == '\n') {
+					newline_count++;
+			}
+	}
+
+	size_t new_len = original_len + newline_count;
+	// 2. Check if the new string (including null terminator) will fit.
+	if (new_len + 1 > buffer_size) {
+			//fprintf(stderr, "Error: Not enough buffer space for in-place modification.\n");
+			return;
+	}
+	// 3. Work backwards from the end of the string to insert '\r'.
+	// Use signed types for indices to safely decrement to -1.
+	int16_t read_idx = original_len - 1;
+	int16_t write_idx = new_len - 1;
+
+	// Place the new null terminator first.
+	str[new_len] = '\0';
+
+	while (read_idx >= 0) 
+	{
+		if (str[read_idx] == '\n') 
+		{
+			str[write_idx--] = '\n';
+			str[write_idx--] = '\r';
+
+		}
+		else 
+		{
+			str[write_idx--] = str[read_idx];
+		}
+		read_idx--;
+	}
+}
+#endif
