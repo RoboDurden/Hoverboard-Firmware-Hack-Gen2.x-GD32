@@ -1301,6 +1301,7 @@ uint8_t AutodetectBldc(uint8_t posNew,uint16_t buzzerTimer)
 				{
 					//HallList();
 					ListFound(0,3);
+					wMenuStage |= AUTODETECT_Stage_HallOrder;
 					AutoDetectNextStage();
 				}
 				break;

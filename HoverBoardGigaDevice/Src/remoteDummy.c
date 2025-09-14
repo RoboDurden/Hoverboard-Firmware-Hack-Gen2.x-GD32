@@ -42,8 +42,34 @@ int8_t iOldRemotePeriod = REMOTE_PERIOD;
 	static char message_buffer[BUFFER_SIZE];	// Static buffer to store the incoming RTT message
 	static unsigned int buffer_index = 0;	// Index to keep track of the current position in the buffer
 
+	uint8_t _TestKey(const char* s, char* sKey, float* pf)
+	{
+		uint8_t i = 0;
+		while (sKey[i]) {
+			if (s[i] != sKey[i]) return 0;
+			i++;
+		}
+		if (s[i] != '=') return 0;
+
+		char sValue[10];
+		uint8_t j = 0;
+		do {
+			if (j >= sizeof(sValue) - 1) return 0; // prevent overflow
+			sValue[j++] = s[++i];	// no need to add '\0', it was copied from s already
+		} while (s[i]);
+
+		char *endptr;
+		float val = strtof(sValue, &endptr);
+		if (endptr == sValue) return 0; // conversion failed
+
+		*pf = val;
+		return 1;
+	}
+
 	void parse_message(const char *message) 
 	{
+		float f = 0.0f;
+
 		char asKey[][10] = {"max","period","p","i","d","drive"};
 		int8_t iKey = sizeof(asKey)/10-1;
 		if (strcmp(message, "help") == 0)
@@ -54,13 +80,9 @@ int8_t iOldRemotePeriod = REMOTE_PERIOD;
 			return;
 		}
 		sprintf(sMessage, "received: '%s'\n",message);
-		float f = 0.0f;
 		for (; iKey>=0; iKey--)
 		{
-			char sScan[15];
-			sprintf(sScan, "%s=%%f",asKey[iKey]);
-			if (sscanf(message, sScan, &f) == 1) 	// Use sscanf to parse the string. It returns the number of items successfully read.
-				break;
+			if (_TestKey(message,asKey[iKey],&f))	break;
 		}
 		PIDInit* pPID = &aoPIDInit[iDrivingMode-1];
 		switch (iKey)

@@ -450,6 +450,11 @@
               <FilePath>.\Src\remoteUartBus.c</FilePath>
             </File>
             <File>
+              <FileName>remoteOptimizePID.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\remoteOptimizePID.c</FilePath>
+            </File>
+            <File>
               <FileName>commsMasterSlave.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\commsMasterSlave.c</FilePath>
@@ -503,11 +508,6 @@
               <FileName>SEGGER_RTT.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\SEGGER_RTT.c</FilePath>
-            </File>
-            <File>
-              <FileName>remoteOptimizePID.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Src\remoteOptimizePID.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1243,6 +1243,11 @@
               <FilePath>.\Src\remoteUartBus.c</FilePath>
             </File>
             <File>
+              <FileName>remoteOptimizePID.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\remoteOptimizePID.c</FilePath>
+            </File>
+            <File>
               <FileName>commsMasterSlave.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\commsMasterSlave.c</FilePath>
@@ -1296,11 +1301,6 @@
               <FileName>SEGGER_RTT.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\SEGGER_RTT.c</FilePath>
-            </File>
-            <File>
-              <FileName>remoteOptimizePID.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Src\remoteOptimizePID.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2036,6 +2036,11 @@
               <FilePath>.\Src\remoteUartBus.c</FilePath>
             </File>
             <File>
+              <FileName>remoteOptimizePID.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\remoteOptimizePID.c</FilePath>
+            </File>
+            <File>
               <FileName>commsMasterSlave.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\commsMasterSlave.c</FilePath>
@@ -2089,11 +2094,6 @@
               <FileName>SEGGER_RTT.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\SEGGER_RTT.c</FilePath>
-            </File>
-            <File>
-              <FileName>remoteOptimizePID.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Src\remoteOptimizePID.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2829,6 +2829,11 @@
               <FilePath>.\Src\remoteUartBus.c</FilePath>
             </File>
             <File>
+              <FileName>remoteOptimizePID.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Src\remoteOptimizePID.c</FilePath>
+            </File>
+            <File>
               <FileName>commsMasterSlave.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\commsMasterSlave.c</FilePath>
@@ -2882,11 +2887,6 @@
               <FileName>SEGGER_RTT.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Src\SEGGER_RTT.c</FilePath>
-            </File>
-            <File>
-              <FileName>remoteOptimizePID.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Src\remoteOptimizePID.c</FilePath>
             </File>
           </Files>
         </Group>
