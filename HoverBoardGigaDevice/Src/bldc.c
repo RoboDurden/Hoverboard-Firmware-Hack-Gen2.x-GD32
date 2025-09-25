@@ -43,13 +43,14 @@ int32_t bldc_inputFilterPwm = 0;
 int32_t bldc_outputFilterPwm = 0;
 uint8_t iDrivingModeOverride = 0;
 int32_t filter_reg;
-uint8_t iFILTER_SHIFT = FILTER_SHIFT;
+uint8_t iFILTER_SHIFT = FILTER_SHIFT, iFILTER_SHIFTDo=FILTER_SHIFT;
 uint16_t buzzerTimer = 0;	// also used to calculate battery voltage :-/
 int16_t offsetcount = 0;
 int16_t offsetdc = 2000;
 uint32_t speedCounter = 0, speedCounterSlow=0;
 uint32_t speedCounterLog = 0, speedCounterSlowLog = 0;
 
+uint16_t iDriverDo = 1;
 #ifdef BUZZER
 FlagStatus buzzerToggle = RESET;
 uint8_t buzzerFreq = 0;
@@ -213,7 +214,7 @@ void CalculateBLDC(void)
 	if (currentDC > DC_CUR_LIMIT  || bldc_enable == RESET  || timedOut == SET)	//		
 	{
 		iDrivingModeOverride = bldc_inputFilterPwm = iBldcInput = 0;
-		SetFilter(FILTER_SHIFT + 2);	// soft brake
+		SetFilter(14);	// soft brake	old: FILTER_SHIFT + 2
 		if (ABS(bldc_outputFilterPwm)<100)
 		{
 			timer_automatic_output_disable(TIMER_BLDC);		
@@ -223,7 +224,7 @@ void CalculateBLDC(void)
 	else
 	{
 		timer_automatic_output_enable(TIMER_BLDC);
-		SetFilter(FILTER_SHIFT);
+		SetFilter(iFILTER_SHIFTDo);	// FILTER_SHIFT
 		iDrivingModeOverride = iDrivingMode;
 		//DEBUG_LedSet(hall_c == 0,0)
   	}
@@ -279,7 +280,8 @@ void CalculateBLDC(void)
 			return;
 	}
 
-	if (buzzerTimer%16==0)	
+	extern uint16_t iDriverDoEvery;		// set in Driver:DriverInit()
+	if (buzzerTimer%iDriverDoEvery==0)	
 		bldc_inputFilterPwm = Driver(iDrivingModeOverride,iBldcInput);		// interpret the input as pwm/speed/torque/position.
 	
 	// Calculate low-pass filter for pwm value

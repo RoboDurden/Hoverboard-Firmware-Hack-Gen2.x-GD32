@@ -161,6 +161,7 @@ void RemoteUpdate(void)
 				case 3: iRemoteMax = 90; break;	// 90 = 360�
 			}
 			fRemoteScaleMax = 1.6*(CLAMP(iRemotePeriod,3,9)/9.0);  // to flatten the zigzag curve to send constant iRemoteMax for some time
+			//fRemoteScaleMax = 10;		// to get near rectangle +-iRemoteMax 
 		}
 	
 		steer = 0;

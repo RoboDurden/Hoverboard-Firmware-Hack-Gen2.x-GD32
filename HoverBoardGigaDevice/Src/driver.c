@@ -22,6 +22,8 @@ This shall be the update function being called at 12 kHz: int16_t PID_Update(PID
 
 // Gemini 2.5Pro begin ---------------
 
+#define INT64 int64_t
+
 typedef struct {
     // Scaled PID gains for integer math
     int32_t kp_scaled;
@@ -29,7 +31,7 @@ typedef struct {
     int32_t kd_scaled;
 
     // State variables
-    int64_t integral_term; // 64-bit to prevent overflow during accumulation
+    INT64 integral_term; // 64-bit to prevent overflow during accumulation
     int32_t prev_error;
 
     // Output limits
@@ -37,7 +39,8 @@ typedef struct {
     int16_t max_output;
 
     // Anti-windup limit for the integral term (scaled)
-    int64_t max_integral_scaled;
+    INT64 max_integral_scaled;
+		int32_t start_integral;
 
 } PIDController;
 
@@ -49,7 +52,7 @@ typedef struct {
 // intermediate variables to prevent overflow. 16 bits is a good balance.
 #define PID_SCALE_BITS 16
 #define PID_SCALE (1LL << PID_SCALE_BITS) // Use 1LL for 64-bit literal
-
+#define DRIVER_FREQ 1000
 /**
  * @param pid      Pointer to the PIDController structure to initialize.
  * @param kp       The proportional gain (e.g., 0.5).
@@ -60,22 +63,36 @@ typedef struct {
  * @param max_i    The maximum absolute contribution of the integral term to the final output.
  */
 void PID_Init(PIDController *pid, float kp, float ki, float kd,
-              int16_t min_pwm, int16_t max_pwm, float max_i) {
-
+              int16_t min_pwm, int16_t max_pwm, float max_i, int32_t start_i) 
+{
     // Calculate and store scaled gains based on the PID equation in discrete time
     pid->kp_scaled = (int32_t)(kp * PID_SCALE);
-    pid->ki_scaled = (int32_t)(ki * PID_SCALE / PWM_FREQ);
-    pid->kd_scaled = (int32_t)(kd * PID_SCALE * PWM_FREQ);
+    pid->ki_scaled = (int32_t)(ki * PID_SCALE / DRIVER_FREQ);
+    pid->kd_scaled = (int32_t)(kd * PID_SCALE * DRIVER_FREQ);
 
     // Store output and anti-windup limits
     pid->min_output = min_pwm;
     pid->max_output = max_pwm;
-    pid->max_integral_scaled = (int64_t)(max_i * PID_SCALE);
+    pid->max_integral_scaled = (INT64)(max_i * PID_SCALE);
+		pid->start_integral = start_i;
 
     // Reset state variables
     pid->integral_term = 0;
     pid->prev_error = 0;
 }
+
+int32_t error;
+int32_t delta_error;
+uint32_t p_outH; uint32_t p_outL;
+uint32_t i_outH; uint32_t i_outL;
+uint32_t d_outH; uint32_t d_outL;
+int32_t p_out32;
+int32_t i_out32;
+int32_t d_out32;
+int32_t output,output32 ;
+int16_t bErr;
+extern uint32_t msTicks;
+uint16_t iPID_DoI = 30;
 
 /**
  * This function must be called at the frequency defined by PWM_FREQ (12 kHz).
@@ -88,50 +105,69 @@ void PID_Init(PIDController *pid, float kp, float ki, float kd,
  */
 int16_t PID_Update(PIDController *pid, int32_t setpoint, int32_t actual) {
     // Calculate current error
-    int32_t error = setpoint - actual;
+    error = setpoint - actual;
+ //error = 0;
 
     // --- Proportional Term ---
     // P = Kp * error
     // Result is stored in a 64-bit integer to prevent overflow
-    int64_t p_out = (int64_t)pid->kp_scaled * error;
+    INT64 p_out = (INT64)pid->kp_scaled * error;
 
-    // --- Integral Term ---
-    // I = I + Ki * error * dt
-    pid->integral_term += (int64_t)pid->ki_scaled * error;
 
-    // Apply anti-windup: clamp the integral term to prevent it from growing too large
-    if (pid->integral_term > pid->max_integral_scaled) {
-        pid->integral_term = pid->max_integral_scaled;
-    } else if (pid->integral_term < -pid->max_integral_scaled) {
-        pid->integral_term = -pid->max_integral_scaled;
-    }
-    int64_t i_out = pid->integral_term;
+		if (	(!pid->start_integral) || ((error < pid->start_integral) && (error > -pid->start_integral)	)	)		// only add integral term if p-term is no longer storng
+		{
+			// --- Integral Term ---
+			// I = I + Ki * error * dt
+			pid->integral_term += (INT64)pid->ki_scaled * error;
+
+			// Apply anti-windup: clamp the integral term to prevent it from growing too large
+			if (pid->integral_term > pid->max_integral_scaled) {
+					pid->integral_term = pid->max_integral_scaled;
+			} else if (pid->integral_term < -pid->max_integral_scaled) {
+					pid->integral_term = -pid->max_integral_scaled;
+			}
+		}
+		else pid->integral_term = 0;
+		
+    INT64 i_out = pid->integral_term;
 
     // --- Derivative Term ---
     // D = Kd * (error - prev_error) / dt
-    int32_t delta_error = error - pid->prev_error;
-    int64_t d_out = (int64_t)pid->kd_scaled * delta_error;
+		delta_error = error - pid->prev_error;
+		//delta_error = ((msTicks/5)%200)-100;
+    INT64 d_out = (INT64)pid->kd_scaled * delta_error;
 
     // --- Combine Terms & Scale Down ---
     // Sum of P, I, and D terms (the result is still scaled)
-    int64_t output_scaled = p_out + i_out + d_out;
+    INT64 output_scaled = p_out + i_out + d_out;
 
+		p_outH = p_out>>32;
+		p_outL = (uint32_t)p_out;	
+		i_outH = i_out>>32;
+		i_outL = (uint32_t)i_out;	
+		d_outH = d_out>>32;
+		d_outL = (uint32_t)d_out;	
+		p_out32 = p_out >> PID_SCALE_BITS;
+		i_out32 = i_out >> PID_SCALE_BITS;
+		d_out32 = d_out >> PID_SCALE_BITS;
+		output32 = p_out32 + i_out32 + d_out32;
+    if (output32 > pid->max_output) 	output32 = pid->max_output;
+    else if (output32 < pid->min_output)	output32 = pid->min_output;
+		
+		
     // Scale back down to the final output range using a fast bit-shift.
     // This is equivalent to (output_scaled / PID_SCALE) but avoids division.
-    int32_t output = (int32_t)(output_scaled >> PID_SCALE_BITS);
+    output = (int32_t)(output_scaled >> PID_SCALE_BITS);
 
     // --- Clamp Final Output ---
     // Enforce the min/max PWM limits specified during initialization.
-    if (output > pid->max_output) {
-        output = pid->max_output;
-    } else if (output < pid->min_output) {
-        output = pid->min_output;
-    }
+    if (output > pid->max_output) 	output = pid->max_output;
+    else if (output < pid->min_output)	output = pid->min_output;
 
     // --- Update State for Next Iteration ---
     // Store the current error for the next derivative calculation
     pid->prev_error = error;
-
+//return 0;
     return (int16_t)output;
 }
 
@@ -147,21 +183,29 @@ extern int32_t iOdom;
 PIDController pid;	// PID controller instance
 
 
+//PIDInit: uint16_t iDoEvery; float kp; float ki; float kd;	float minmax_pwm; float max_i; int32_t start_i; 
+	// 	iDoEvery:	16 = only every 16th CalculateBLDC() = 1 kHz if PWM_FREQ=16kHz. Set it higher than 1 if PID reacts too fast
+	//	kp: correction term proportional to the error
+	//	ki: integrate over the error to reach target
+	//	kd: positiv feedback if error increases, negative feedback if error decreases	(Robo understanding)
+	//	minmax_pwm: 1.0 = +-maximum pwm value (1125 for 16 kHz) allowed
+	// 	max_i: 	0.4 = only 40% of max pwm for the ki term
+	//	start_i: 30 = only add ki integral term when error is within +-30 (degrees for position control). 0= always add ki term
 PIDInit aoPIDInit[3] = {
-	// float kp; float ki; float kd;	int16_t min_pwm; int16_t max_pwm; float max_i;
-	{0.1f, 8.0f, 0.0005f, -1250, 1250, 1250},		// constant speed in revs*1024
-	{0.2f, 1.0f, 0.0005f, -1250, 1250, 1250},		// max torque
-	//{4.0f, 1.1f, 0.01f, -1250, 1250, 1250}			// position = iOdom
-	{20.0f, 0.0f, 1.0f, -1250, 1250, 1250}			// position = iOdom
-		};	// BLDC_TIMER_MID_VALUE = 1250 only for 16 kHz !!
+	//{16,	0.1f, 0.2f, 0.5f,	1.0, 1.0, 0},		// constant speed in revs*1024			manual tuned by robo
+	{16,	0.024f, 0.18f, 0.55f,	1.0, 1.0, 0},		// constant speed in revs*1024		further fine tuned by remoteOptimizePID
+	{16,	0.2f, 1.0f, 0.0005f,	1.0, 1.0, 0},		// max torque
+	{1,		4.0f, 2.0f, 0.1f	,		0.5, 0.5, 30}			// position = iOdom		FILTER_SHIFT can/should be 9 !
+		};
 
+uint16_t iDriverDoEvery = 16;	// only PID_Update every iDriverDoEvery Driver() calls
 void DriverInit(uint8_t iDrivingModeNew) 	// Initialize controller (tune these values for your system)
 {
 	iDrivingMode = iDrivingModeNew;
 	if (iDrivingMode==0)	return;
-	
 	PIDInit* p = &aoPIDInit[iDrivingMode-1];
-	PID_Init(&pid, p->kp, p->ki, p->kd, p->min_pwm, p->max_pwm, p->max_i);		
+	PID_Init(&pid, p->kp, p->ki, p->kd, -p->minmax_pwm*BLDC_TIMER_MID_VALUE, p->minmax_pwm*BLDC_TIMER_MID_VALUE, p->max_i*BLDC_TIMER_MID_VALUE, p->start_i);
+	iDriverDoEvery = p->iDoEvery;
 }
 
 #ifdef REMOTE_OPTIMIZEPID

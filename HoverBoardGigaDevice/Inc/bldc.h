@@ -43,7 +43,7 @@
 #define REVS32_SHIFT 12
 
 typedef struct {
-	float kp; float ki; float kd;	int16_t min_pwm; int16_t max_pwm; float max_i;
+	uint16_t iDoEvery; float kp; float ki; float kd;	float minmax_pwm; float max_i; int32_t start_i; 
 } PIDInit;
 
 int16_t	Driver(uint8_t iDrivemode, int32_t input);		// pwm/speed/torque/position as input and returns pwm value to get a low pass filter in bldc.c

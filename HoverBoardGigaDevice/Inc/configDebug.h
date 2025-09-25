@@ -6,10 +6,10 @@
 				// will drive the motor without hall input to detect the hall pins..
 
 #ifdef REMOTE_AUTODETECT
-	#define WINDOWS_RN		// adds a \r before every \n
+	//#define WINDOWS_RN		// adds a \r before every \n
 	
-	#define RTT_REMOTE
-	//#define REMOTE_USART				0 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
+	//#define RTT_REMOTE
+	#define REMOTE_USART				1 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
 																	//	0 is usually PB6/PB7 and the empty header close to the flash-header
 																	//	2 is usually PB10/PB11 on stm32f103 boards
 																	
@@ -35,7 +35,7 @@
 	#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden. 
 	//#define BLDC_SINE_BOOSTER		// can boost speed by 15% starting from 87% throttle.
 	
-	#define DRIVING_MODE 0	//  0=pwm, 1=speed in revs/s*1024, 2=torque in NewtonMeter*1024, 3=iOdometer
+	#define DRIVING_MODE 1	//  0=pwm, 1=speed in revs/s*1024, 2=torque in NewtonMeter*1024, 3=iOdometer
 
 	#define SPEED_AsRevsPerSec		// Will overflow at 327 revs/s = 19620 rpm. Hoverboard motor: 14 rpm/V * 50V = 700 rpm
 
@@ -55,9 +55,9 @@
 	#if defined(MASTER) || defined(SINGLE)
 		
 		// choose only one 'remote' to control the motor
-		#define REMOTE_DUMMY
+		//#define REMOTE_DUMMY
 		#ifdef REMOTE_DUMMY
-			#define REMOTE_PERIOD 6 // 3 = 3 seconds period of the zigzag curve
+			#define REMOTE_PERIOD 5 // 3 = 3 seconds period of the zigzag curve
 			#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
 			#define RTT_REMOTE	// log and set via ST-Link dongle
 				#define WINDOWS_RN		// adds a \r before every \n to RTT log
@@ -76,7 +76,7 @@
 												// Then release the button and leave the joystick (the two potentiometers) in neutral position.
 												// When the melody returns for 2 seconds, push speed to max.
 												// After another 5 seconds + 2 seconds melody: push speed to min. Then steer to max. Finally steer to min
-		//#define REMOTE_OPTIMIZEPID		// will zigzag motor and optimize pid parameters for 1=speed or 3=iOdometer.
+		#define REMOTE_OPTIMIZEPID		// will zigzag motor and optimize pid parameters for 1=speed or 3=iOdometer.
 		// monitor with StmStudio/McuViewer or via ST-Link usb dongle RTT and openocd_rtt_32f1x.bat or PlatformIO RTT_Task
 		#ifdef REMOTE_OPTIMIZEPID
 			#define WINDOWS_RN		// adds a \r before every \n	to RTT log
@@ -134,7 +134,7 @@
 #define PWM_FREQ         		16000     // PWM frequency in Hz
 
 
-#define FILTER_SHIFT 12 						// Low-pass filter for pwm, rank k=12
+#define FILTER_SHIFT 10 						// 12 Low-pass filter for pwm, rank k=12
 					// With PWM_FREQ = 1000, 12 will take over 4s to mostly adapt to a sudden change in input. So only 250 ms for 16 kHz !
 					// 19 and 16 kHz would be 32 seconds for the motor to reach 63% of its new target speed (Gemini 2.5pro)
 

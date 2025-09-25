@@ -141,6 +141,21 @@ void _OptimizeInit(PIDInit* pPID)
 uint8_t iCountMax=0;
 char sMessage[512];
 
+/* to calculate the .xf nunber of x decimals based on 1/(afOptimizeBase[i]/10) 
+for sprintf(sMessage, "%stesting pid: %.3f, %.4f, %.5f\t, pos %i %i\n",sMessage,pPID->kp,pPID->ki,pPID->kd,iFailureMaxPos,iFailureMaxPosCount);
+
+uint16_t _NumPlaces (uint32_t n) 
+{
+    uint16_t r = 1;
+    while (n > 9) 
+		{
+        n /= 10;
+        r++;
+    }
+    return r;
+}
+*/
+
 uint32_t msTicksInit = 0;
 void RemoteUpdate(void)
 {
@@ -286,7 +301,8 @@ void RemoteUpdate(void)
 					{
 						_OptimizeSet(pPID,1);		// continue in this direction
 					}
-					sprintf(sMessage, "%stesting pid: %f %f %f\t, pos %i %i\n",sMessage,pPID->kp,pPID->ki,pPID->kd,iFailureMaxPos,iFailureMaxPosCount);
+					
+					sprintf(sMessage, "%stesting pid: %.3f, %.4f, %.5f\t, pos %i %i\n",sMessage,pPID->kp,pPID->ki,pPID->kd,iFailureMaxPos,iFailureMaxPosCount);
 					DriverInit(iDrivingMode);
 				}
 				iRemoteRetries = 0;
