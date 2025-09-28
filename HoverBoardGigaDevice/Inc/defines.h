@@ -221,6 +221,39 @@
   #define BUZZER_MelodyUp()
 #endif
 
+	
+#define DELAY_IN_MAIN_LOOP 	5         // Delay in ms
+#define TIMEOUT_MS          2000      // Time in milliseconds without steering commands before pwm emergency off
+
+#define DEAD_TIME        		60        // PWM deadtime (60 = 1?s, measured by oscilloscope)
+#define PWM_FREQ         		16000     // PWM frequency in Hz
+
+#ifndef FILTER_SHIFT
+	#define FILTER_SHIFT 10 						// 12 Low-pass filter for pwm, rank k=12
+						// With PWM_FREQ = 1000, 12 will take over 4s to mostly adapt to a sudden change in input. So only 250 ms for 16 kHz !
+						// 19 and 16 kHz would be 32 seconds for the motor to reach 63% of its new target speed (Gemini 2.5pro)
+#endif
+
+
+#ifndef PIDINIT_a3o
+
+	//PIDInit: uint16_t iDoEvery; float kp; float ki; float kd;	float minmax_pwm; float max_i; int32_t start_i; 
+		// 	iDoEvery:	16 = only every 16th CalculateBLDC() = 1 kHz if PWM_FREQ=16kHz. Set it higher than 1 if PID reacts too fast
+		//	kp: correction term proportional to the error
+		//	ki: integrate over the error to reach target
+		//	kd: positiv feedback if error increases, negative feedback if error decreases	(Robo understanding)
+		//	minmax_pwm: 1.0 = +-maximum pwm value (1125 for 16 kHz) allowed
+		// 	max_i: 	0.4 = only 40% of max pwm for the ki term
+		//	start_i: 30 = only add ki integral term when error is within +-30 (steps for position control). 0= always add ki term
+	#define PIDINIT_a3o {\
+		{16,	0.024f, 0.18f, 0.55f,	1.0, 1.0, 0},\
+		{16,	0.2f, 1.0f, 0.0005f,	1.0, 1.0, 0},\
+		{1,		4.0f, 2.0f, 0.1f	,		0.5, 0.5, 30}		}
+	// first PIDInit struct		: constant speed in revs*1024		further fine tuned by remoteOptimizePID
+	// second PIDInit struct 	: max torque - NOT TESTED AT ALL
+	// third PIDInit struct		: position = iOdom		FILTER_SHIFT can/should be 9 !
+		
+#endif	// PIDINIT_a3o
 
 // Useful math function defines
 #define ABS(a) (((a) < 0.0) ? -(a) : (a))

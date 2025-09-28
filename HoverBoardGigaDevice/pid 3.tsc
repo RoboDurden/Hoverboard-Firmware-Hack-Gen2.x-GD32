@@ -1,5 +1,5 @@
 #STM Touch Studio user settings - do not edit
-#Thu Sep 25 15:44:07 CEST 2025
+#Thu Sep 25 17:09:36 CEST 2025
 ExprVariable.Col0ModelIdx=0
 ExprVariable.Col0Width=15
 ExprVariable.Col1ModelIdx=1
@@ -15,7 +15,7 @@ ExprVariable0.Color=0xcc0033
 ExprVariable0.Expression=error*10
 ExprVariable0.Name=error10
 ExprVariable0.Type=double
-GdbVar.ExecDate=1758807369684
+GdbVar.ExecDate=1758811359265
 GdbVar.LastExecRelative=Objects\\Hoverboard.axf
 GdbVar.Version=1
 GeneralPurpose.HorizontalSplit=350

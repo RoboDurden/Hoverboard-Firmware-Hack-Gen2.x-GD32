@@ -3,6 +3,13 @@
 
 #define STM32F103 // Configure system clock to 64 MHz (maximum supported with High Speed Internal (HSI) oscilator as clock source for STM32F103)
 
+// tuned for STM32F103 based board (64MHz-PWM range: [-1000 - 1000]) with 10inch wheel at low speeds (400-600) 
+#define PIDINIT_a3o {\
+	{16,	0.03, 0.1, 0.0,	1.0, 1.0, 0},		\
+	{16,	0.2, 1.0, 0.0005,	1.0, 1.0, 0},	\
+	{1,		4.0, 2.0, 0.1	,		0.5, 0.5, 30}	}
+
+	
 #ifdef MASTER_OR_SINGLE		// layout 2.2 and 2.7 have buzzer on the slave board.
 	#define HAS_BUZZER
 #endif

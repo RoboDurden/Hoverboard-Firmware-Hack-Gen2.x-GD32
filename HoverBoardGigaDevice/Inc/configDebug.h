@@ -130,17 +130,5 @@
 
 
 #define DC_CUR_LIMIT     		15        // Motor DC current limit in amps
-#define DEAD_TIME        		60        // PWM deadtime (60 = 1?s, measured by oscilloscope)
-#define PWM_FREQ         		16000     // PWM frequency in Hz
-
-
-#define FILTER_SHIFT 10 						// 12 Low-pass filter for pwm, rank k=12
-					// With PWM_FREQ = 1000, 12 will take over 4s to mostly adapt to a sudden change in input. So only 250 ms for 16 kHz !
-					// 19 and 16 kHz would be 32 seconds for the motor to reach 63% of its new target speed (Gemini 2.5pro)
-
-
-#define DELAY_IN_MAIN_LOOP 	5         // Delay in ms
-
-#define TIMEOUT_MS          2000      // Time in milliseconds without steering commands before pwm emergency off
 
 #endif		// CONFIGDEBUG_H

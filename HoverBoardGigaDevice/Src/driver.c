@@ -190,13 +190,15 @@ PIDController pid;	// PID controller instance
 	//	kd: positiv feedback if error increases, negative feedback if error decreases	(Robo understanding)
 	//	minmax_pwm: 1.0 = +-maximum pwm value (1125 for 16 kHz) allowed
 	// 	max_i: 	0.4 = only 40% of max pwm for the ki term
-	//	start_i: 30 = only add ki integral term when error is within +-30 (degrees for position control). 0= always add ki term
-PIDInit aoPIDInit[3] = {
+	//	start_i: 30 = only add ki integral term when error is within +-30 (steps for position control). 0= always add ki term
+PIDInit aoPIDInit[3] = PIDINIT_a3o;
+/*{
 	//{16,	0.1f, 0.2f, 0.5f,	1.0, 1.0, 0},		// constant speed in revs*1024			manual tuned by robo
 	{16,	0.024f, 0.18f, 0.55f,	1.0, 1.0, 0},		// constant speed in revs*1024		further fine tuned by remoteOptimizePID
 	{16,	0.2f, 1.0f, 0.0005f,	1.0, 1.0, 0},		// max torque
 	{1,		4.0f, 2.0f, 0.1f	,		0.5, 0.5, 30}			// position = iOdom		FILTER_SHIFT can/should be 9 !
 		};
+*/
 
 uint16_t iDriverDoEvery = 16;	// only PID_Update every iDriverDoEvery Driver() calls
 void DriverInit(uint8_t iDrivingModeNew) 	// Initialize controller (tune these values for your system)
