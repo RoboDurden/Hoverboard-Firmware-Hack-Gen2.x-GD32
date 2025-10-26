@@ -13,7 +13,7 @@ static const uint16_t BLDC_TIMER_MAX_VALUE = BLDC_TIMER_PERIOD - 10; // = 2240
 float batteryVoltage = BAT_CELLS * 3.6;
 float currentDC = 0.42;		// to see in serial log that pin is not defined
 float realSpeed = 0.0;
-int32_t revs32 = 0;
+int32_t revs32 = 0, revs32Latest = 0;
 int32_t torque32 = 0;
 int32_t revs32_reg = 0, torque32_reg = 0, realSpeed32_reg = 0;
 int32_t revs32x = 0;
@@ -300,20 +300,15 @@ void CalculateBLDC(void)
 
 	// robo23
 	iOdom = iOdom - up_or_down(lastPos, pos); // int32 will overflow at +-2.147.483.648
-	
+
 	if(speedCounterSlow < 4000) speedCounterSlow++;	// No speed after 250ms
-	if (iOdomLast != iOdom)	// one hall step is 4�
+	if (iOdomLast != iOdom)	// one hall step is 4°
 	{
-		//if (speedCounterSlow > 600)	// idea was to use the 24� step of realSpeed calculation for better revs32 at higher speeds. But doesn' work for some unkown reason
+		//if (speedCounterSlow > 600)	// idea was to use the 24° step of realSpeed calculation for better revs32 at higher speeds. But doesn' work for some unkown reason
 		if (speedCounterSlow > 10)	// 2.1.11 does not debounce hall inputs :-((((
 		{
-			int32_t revs32Now =  (iOdom-iOdomLast) * (revs32ScaleSlow / speedCounterSlow) ;		// warning, (iOdom-iOdomLast) might give wrong result when iOdom overflows
+			revs32Latest = (iOdom-iOdomLast) * (revs32ScaleSlow / speedCounterSlow) ;		// warning, (iOdom-iOdomLast) might give wrong result when iOdom overflows
 			// revs32ScaleSlow = (PWM_FREQ/90)<<REVS32_SHIFT;	// REVS32_SHIFT-bit fractional precision
-
-			#define RANK_revs32 2 	// Calculate low-pass filter for pwm value
-			revs32_reg = revs32_reg - (revs32_reg >> RANK_revs32) + revs32Now ;		// warning, (iOdom-iOdomLast) might give wrong result when iOdom overflows
-
-			revs32 = (speedCounterSlow < 1000) ? revs32_reg >> RANK_revs32 : revs32Now;
 			
 			#if defined(CURRENT_DC) && defined(VBATT)
 				//  torque = (fEff * V * I * 60) / (RPM * 2p)
@@ -324,14 +319,17 @@ void CalculateBLDC(void)
 
 				#define RANK_torque32 3 	// Calculate low-pass filter for pwm value
 				torque32_reg = torque32_reg - (torque32_reg >> RANK_torque32) + torque32Now;
-				
 				torque32 = (speedCounterSlow < 1000) ? torque32_reg >> RANK_torque32 : torque32Now;
 			#endif			
 		}
 		speedCounterSlowLog = speedCounterSlow;		// for logging with StmStudio
 		speedCounterSlow = 0;
 	}
-	else if (speedCounterSlow >= 4000)	revs32 = revs32_reg = torque32 = torque32_reg = 0;
+	else if (speedCounterSlow >= 4000)	revs32Latest = revs32_reg = torque32 = torque32_reg = 0;
+
+	#define RANK_revs32 4 	// Calculate low-pass filter for revs32 value
+	revs32_reg = revs32_reg - (revs32_reg >> RANK_revs32) + revs32Latest ;		// warning, (iOdom-iOdomLast) might give wrong result when iOdom overflows
+	revs32 = revs32_reg >> RANK_revs32;
 		
 	// Increments with 62.5us
 	if(speedCounter < 8000) speedCounter++;	// No speed after 250ms
