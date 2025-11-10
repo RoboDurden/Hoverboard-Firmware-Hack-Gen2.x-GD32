@@ -246,7 +246,7 @@
 		// 	max_i: 	0.4 = only 40% of max pwm for the ki term
 		//	start_i: 30 = only add ki integral term when error is within +-30 (steps for position control). 0= always add ki term
 	#define PIDINIT_a3o {\
-		{16,	0.024f, 0.18f, 0.55f,	1.0, 1.0, 0},\
+		{16,	0.015f, 0.18f, 0.55f,	1.0, 1.0, 0},\
 		{16,	0.2f, 1.0f, 0.0005f,	1.0, 1.0, 0},\
 		{1,		4.0f, 2.0f, 0.1f	,		0.5, 0.5, 30}		}
 	// first PIDInit struct		: constant speed in revs*1024		further fine tuned by remoteOptimizePID
