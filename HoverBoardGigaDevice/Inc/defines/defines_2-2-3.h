@@ -37,7 +37,7 @@
 #define CURRENT_DC		PA7
 
 
-#define ADC_BATTERY_VOLT      0.025392524927  	//	robo, calibrated with 27V power supply
+#define ADC_BATTERY_VOLT      0.012824507539  	//	JW: calibrated with 10s battery
 #define MOTOR_AMP_CONV_DC_AMP 0.0201465201465		//	robo,  only a very quick comparison to multimeter
 
 

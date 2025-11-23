@@ -12,24 +12,27 @@
 // Only master communicates with steerin device
 #ifdef MASTER_OR_SINGLE
 
+static int16_t iReceivePos = -1;
+
+// From setup.c:
 extern uint8_t usart0_rx_buf[1];
 extern uint8_t usart1_rx_buf[1];
 extern uint8_t usart2_rx_buf[1];
 
-
-static int16_t iReceivePos = -1;	
-
+// From main.c:
 extern uint8_t bRemoteTimeout; 	// any Remote can set this to 1 to disable motor (with soft brake)
 extern int32_t steer;
 extern int32_t speed;
+extern DataSlave oDataSlave;
 
+// From bldc.c:
+extern int32_t revs32;
 extern int32_t iOdom;
 extern float batteryVoltage; 							// global variable for battery voltage
 extern float currentDC; 									// global variable for current dc
 extern float realSpeed; 									// global variable for real Speed
-extern DataSlave oDataSlave;
-extern uint8_t  wStateSlave;
-extern uint8_t  wState;
+extern int32_t bldc_inputFilterPwm;
+extern int32_t bldc_outputFilterPwm;
 
 // from https://github.com/alex-makarov/hoverboard-firmware-hack-FOC/blob/master/Src/bldc.c
 // Changed to input int32_t since iOdom is int32_t.
@@ -43,9 +46,9 @@ int16_t modulo32(int32_t m, int16_t rest_classes)
 #define START_FRAME_LSB 0xCD
 
 typedef struct {
-   uint16_t start;
-   int16_t  steer;
-   int16_t  speed;
+   uint16_t start; // START_FRAME 0xABCD
+   int16_t  steer; // Difference between left and right wheel speed. Unit: RPM
+   int16_t  speed; // Average of left and right wheel speed. Unit: RPM
    uint16_t checksum;
 } SerialCommand;
 
@@ -80,7 +83,7 @@ void RemoteUpdate(void)
 	if (millis() - iTimeLastRx > LOST_CONNECTION_STOP_MILLIS)
 	{
 		bRemoteTimeout = 1;
-		//speed = steer = 0;
+		speed = steer = 0;
 	}
 
 	if (millis() < iTimeNextTx)	
@@ -90,22 +93,22 @@ void RemoteUpdate(void)
 	//Send feedback to ROS2
 	SerialFeedback feedback;
 	feedback.start = START_FRAME;
-	feedback.cmd1 = 0; // Not used
-	feedback.cmd2 = 0; // Not used
-	feedback.batVoltage = (int16_t) (batteryVoltage * 100);
+	feedback.cmd1 = bldc_inputFilterPwm;  // Not used by ROS2 hoverboard-driver
+	feedback.cmd2 = bldc_outputFilterPwm; // Not used by ROS2 hoverboard-driver
+	feedback.cmdLed = revs32;             // Not used by ROS2 hoverboard-driver
+	feedback.batVoltage = (int16_t) (batteryVoltage * 100); // Unit: 0.01 V
 	feedback.boardTemp = 250; // Dummy value (250 => 25 degrees)
-	feedback.cmdLed = 0; // Not used
-	feedback.speedL_meas = (int16_t) (realSpeed * 100); // TODO: Need to scale? 100 is just a guess...
+	feedback.speedL_meas = (int16_t) (realSpeed * 1000); // TODO: Base on revs32/revs32x instead! 1000 is just random scale-factor...
 	feedback.wheelL_cnt = modulo32(iOdom, ENCODER_MAX);
 	feedback.left_dc_curr = (int16_t) (currentDC * 100);
 
 #ifdef MASTER
-	feedback.speedR_meas = (int16_t) (oDataSlave.realSpeed * 100); // TODO: Need to scale? 100 is just a guess... 
+	feedback.speedR_meas = (int16_t) (oDataSlave.realSpeed * 1000); // TODO: Base on revs32/revs32x instead! 1000 is just random scale-factor...
 	feedback.wheelR_cnt = modulo32(oDataSlave.iOdom, ENCODER_MAX);
 	feedback.right_dc_curr = (int16_t) (oDataSlave.currentDC * 100);
 #else // SINGLE (SLAVE not possible due to ifdef MASTER_OR_SINGLE at top of this file)
-	feedback.speedR_meas = (int16_t) (realSpeed * 100); // Fake both wheels with same speed for single. TODO: Need to scale?
-	feedback.wheelR_cnt = modulo32(iOdom, ENCODER_MAX); // Fake both wheels with same speed for single.
+	feedback.speedR_meas = 0;
+	feedback.wheelR_cnt = 0;
 	feedback.right_dc_curr = 0;
 #endif
 
@@ -155,13 +158,9 @@ void RemoteCallback(void)
 			{
 				iTimeLastRx = millis();
 				bRemoteTimeout = 0;
-				speed = pData->speed * 3; // TODO: What is the range/unit received? Need any scaling?
-				steer = pData->steer * 3; // TODO: What is the range/unit received? Need any scaling?
-				
-				speed = CLAMP(speed , -1000, 1000); // Sanity check: Range for speed is +-1000
-				steer = CLAMP(steer , -1000, 1000); // Sanity check: Range for steer is +-1000
-				
-				//if (speed > 300) speed = 300;	else if (speed < -300) speed = -300;		// for testing this function
+
+				speed = pData->speed;
+				steer = pData->steer;
 
 				ResetTimeout();	// Reset the pwm timout to avoid stopping motors
 			}
@@ -173,12 +172,17 @@ void RemoteCallback(void)
 
 #endif // MASTER_OR_SINGLE
 
-/*
+#if DRIVING_MODE != 1
+  #error "RemoteROS2 assumes DRIVING_MODE == 1"
+#endif
+// Outputs pPwmMaster and pPwmSlave in revs/s*1024 (fixed-point with 10 bit fraction)
+// speed and steer in RPM unit (some kind of average and difference between left and right wheel speed)
+// Reverse of hoverboard-driver code: https://github.com/hoverboard-robotics/hoverboard-driver/blob/humble/hardware/hoverboard_driver.cpp#L465
 void 	Pilot(int16_t* pPwmMaster, int16_t* pPwmSlave)
 {
-	*pPwmMaster = CLAMP(speed + steer,-1000,+1000);	// or something like that
-	*pPwmMaster = CLAMP(speed - steer,-1000,1000);	// or something like that
+	*pPwmMaster = ( (speed + (steer/2)) *1024) / 60;	// Divide by 60 due to RPM to revs(revolution per second)
+	*pPwmSlave  = ( (speed - (steer/2)) *1024) / 60;	// Divide by 60 due to RPM to revs(revolution per second)
 }
-*/
+
 
 #endif // REMOTE_ROS2
