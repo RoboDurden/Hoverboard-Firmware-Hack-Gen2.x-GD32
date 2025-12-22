@@ -51,9 +51,15 @@ void I2C_Init()
 		gpio_af_set(GPIOB, GPIO_AF_1, GPIO_PIN_6 | GPIO_PIN_7);  // AF1 for I2C0
 	#else
 		// Configure PB8 (SCL) and PB9 (SDA) as AF open-drain
+	  #if TARGET == 2 // GD32/STM32F103
+		rcu_periph_clock_enable(RCU_AF);        // Alternate Function clock
+		gpio_pin_remap_config(GPIO_I2C0_REMAP, ENABLE); // JW: Remap I2C0 to PB8 and PB9
+		gpio_init(GPIOB, GPIO_MODE_AF_OD, GPIO_OSPEED_50MHZ, GPIO_PIN_8 | GPIO_PIN_9);
+	  #else
 		gpio_mode_set(GPIOB, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO_PIN_8 | GPIO_PIN_9);
 		gpio_output_options_set(GPIOB, GPIO_OTYPE_OD, GPIO_OSPEED_50MHZ, GPIO_PIN_8 | GPIO_PIN_9);
 		gpio_af_set(GPIOB, GPIO_AF_1, GPIO_PIN_8 | GPIO_PIN_9);  // AF1 for I2C0
+	  #endif
 	#endif	
 	
 	i2c_deinit(I2C_PERIPH);
@@ -278,7 +284,7 @@ uint8_t i2c_scanner(void)
 		for (volatile int i = 0; i < 1000; i++);	// Short delay between probes (adjust based on system clock)
 	}
     RTT_PRINTF(64,"I2c scan complete. Found: %i\n",iFound)
-	return iFound>0 ? aiFound[iFound] : 0;	//printf("Scan complete. Found %d device(s).\r\n", found);
+	return iFound>0 ? aiFound[(iFound-1)] : 0;	//printf("Scan complete. Found %d device(s).\r\n", found);
 }
 
 #define MAX_REGISTERS 0x88
