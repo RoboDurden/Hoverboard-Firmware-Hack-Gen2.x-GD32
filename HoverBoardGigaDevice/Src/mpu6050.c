@@ -55,13 +55,21 @@ int MPU_Init() {
        int result = mpu_config();
        if(result) {                              // IMU MPU-6050 config
             mpuStatus = ERROR;
+				 #ifdef LED_RED
             digitalWrite(LED_RED,SET);
+				 #endif
+				 #ifdef LED_GREEN
             digitalWrite(LED_GREEN,RESET);
+				 #endif
         }
         else {
             mpuStatus = SUCCESS;
+					#ifdef LED_RED
             digitalWrite(LED_RED, RESET);
+					#endif
+					#ifdef LED_GREEN
             digitalWrite(LED_GREEN,SET);
+					#endif
         }
         return result;
 }
@@ -256,7 +264,7 @@ int mpu_config(void)
     if (rc) return rc;
 
     // small delay for the oscillator to stabilize
-    Delay(10);
+    Delay(50); // According to Gemini, 10ms is a bit risky. 50ms is more safe to get stable PPL clock.
 
     // 2) Disable DMP & FIFO
     rc = i2c_writeByte(MPU_I2C,

@@ -64,3 +64,6 @@
 #define USART2_TX	PB10
 #define USART2_RX	PB11
 
+// IMU MP6500 (or ICM20600?) which is 99.9% compatible with MPU6050
+#define MPU_6050old
+#define I2C_PB8PB9
