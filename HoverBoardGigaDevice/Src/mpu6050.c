@@ -26,7 +26,7 @@
 #include "../Inc/it.h" // for Delay()
 #include "../Inc/mpu6050.h"
 
-#ifdef MPU_6050old
+#if defined(MPU_6050old) || defined(MPU_6500)
 
 
 extern uint32_t iBug;
@@ -137,6 +137,19 @@ enum lpf_e {
     NUM_FILTER
 };
 
+/* Accelerometer  digital low-pass filter configurations (MPU6500 only). */
+enum a_dlpf_cfg_e {
+    A_DLPF_460HZ = 0,
+    A_DLPF_184HZ,
+    A_DLPF_92HZ,
+    A_DLPF_41HZ,
+    A_DLPF_20HZ,
+    A_DLPF_10HZ,
+    A_DLPF_5HZ,
+    A_DLPF_460HZ_2,
+    NUM_A_DLPF
+};
+
 /* Full scale ranges. */
 enum gyro_fsr_e {
     INV_FSR_250DPS = 0,
@@ -214,6 +227,7 @@ const struct gyro_reg_s reg = {
     .fifo_en        = 0x23,
     .gyro_cfg       = 0x1B, // Set to 0x00  GYRO_CONFIG: FS_SEL = 0 → ±250 °/s
     .accel_cfg      = 0x1C, // // ACCEL_CONFIG: AFS_SEL = 0 → ±2 g
+    .accel_cfg2     = 0x1D, // MPU6500 only
     .motion_thr     = 0x1F,
     .motion_dur     = 0x20,
     .fifo_count_h   = 0x72,
@@ -310,6 +324,15 @@ int mpu_config(void)
                        (INV_FSR_2G << 3));      // 0 << 3 = 0
     if (rc) return rc;
 
+#ifdef MPU_6500 // Additional configration of accel_cfg2 for MPU6500 (register not present on MPU5060).
+    //    Set Accelerometer LPF to 41Hz to match the Gyro.
+    rc = i2c_writeByte(MPU_I2C,
+                       hw.addr,
+                       reg.accel_cfg2,
+                       A_DLPF_41HZ);      // bits [2:0] = 3 (41Hz), bit [3] = 0 (Normal mode)
+    if (rc) return rc;
+#endif
+
     // 6) INT pin: active-high, push-pull, latch until cleared
     //    BIT_ACTL=0, BIT_LATCH_EN=1<<5, BIT_ANY_RD_CLR=1<<4
     rc = i2c_writeByte(MPU_I2C,
@@ -364,4 +387,4 @@ int MPU_ReadAll()
 	return mpuStatus;
 }
 
-#endif // MPU_6050
+#endif // MPU_6050 || MPU_6500
