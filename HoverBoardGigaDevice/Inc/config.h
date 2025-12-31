@@ -87,7 +87,7 @@
 		//#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
 
 		//#define RTT_REMOTE		// uncoment for i2c_scanner and dump_i2c_registers to print to rtt :-)
-			// needs either I2C_PB8PB9 or I2C_PB6PB7 and MPU_6050 or MPU_6050old or BMI_160 in your defines_2-x-y.h file
+			// needs either I2C_PB8PB9 or I2C_PB6PB7 and MPU_6050 or MPU_6050old or MPU_6500 or BMI_160 in your defines_2-x-y.h file
 		//#define SEND_IMU_DATA // send the IMU data with RemoteUart or RemoteUartBus. Tested for 2.1.20 !
 
 		//#define PILOT_USER	// uncomment if you want to extend the firmware with custom code :-)

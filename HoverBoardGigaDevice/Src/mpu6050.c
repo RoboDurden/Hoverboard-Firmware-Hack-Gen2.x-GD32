@@ -381,8 +381,10 @@ int MPU_ReadAll()
 		mpuData.gyro.x  = (int16_t)((buf[8]  << 8) | buf[9]);
 		mpuData.gyro.y  = (int16_t)((buf[10] << 8) | buf[11]);
 		mpuData.gyro.z  = (int16_t)((buf[12] << 8) | buf[13]);
-		
-		DoLowPass(4, sizeof(mpuData)/2, aiLowPass, (int16_t*) &mpuData,0);
+
+	#if IMU_LP > 0
+		DoLowPass(IMU_LP, sizeof(mpuData)/2, aiLowPass, (int16_t*) &mpuData,0);
+	#endif
 	}
 	return mpuStatus;
 }
