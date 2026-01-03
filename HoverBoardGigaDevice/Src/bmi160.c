@@ -171,8 +171,10 @@ int MPU_ReadAll() {
         // Note: To convert BMI160 temperature to °C: T_celsius = 23 + (raw_temp / 512.0)
         // Here we just store the raw value as the struct expects.
 
+	#if IMU_LP > 0
         // Apply low-pass filter
-        DoLowPass(4, sizeof(mpuData)/2, aiLowPass, (int16_t*) &mpuData, 0);
+        DoLowPass(IMU_LP, sizeof(mpuData)/2, aiLowPass, (int16_t*) &mpuData, 0);
+	#endif
 
         return SUCCESS;
     }

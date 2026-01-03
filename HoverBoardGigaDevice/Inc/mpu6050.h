@@ -31,6 +31,9 @@
 
 #define MPU_I2C                     I2C_PERIPH
 
+#ifndef IMU_LP
+  #define IMU_LP 4
+#endif
 
 int MPU_Init();
 int MPU_ReadAll();
