@@ -107,14 +107,7 @@ void RemoteUpdate(void)
 	}
 
 #ifdef SEND_IMU_DATA
-	int readResult = MPU_ReadAll();
-	if (readResult != SUCCESS)
-	{
-		// Try once more if read fails. If i2c_readBytes() in MPU_ReadAll() fails, it will try to recover using i2c_hard_reset().
-		readResult = MPU_ReadAll();
-	}
-
-	if (readResult == SUCCESS)
+	if (MPU_ReadAll() == SUCCESS)
 	{
 		//Send IMU data to ROS2
 		SerialImu imu;

@@ -33,7 +33,7 @@
 #define I2C_OWN_ADDRESS7            0x24
 
 
-#define I2C_TIMEOUT  10000
+#define I2C_TIMEOUT  2000
 #ifndef I2C_ACK_ENABLE
 	#define I2C_ACK_ENABLE  1
 	#define I2C_ACK_DISABLE 0
@@ -53,6 +53,7 @@ void I2C_Init(void);
 int8_t i2c_writeBytes(uint32_t i2c_periph, uint8_t slaveAddr, uint8_t regAddr, uint8_t length, uint8_t *data);
 int8_t i2c_writeByte (uint32_t i2c_periph, uint8_t slaveAddr, uint8_t regAddr, uint8_t data);
 int8_t i2c_writeBit  (uint32_t i2c_periph, uint8_t slaveAddr, uint8_t regAddr, uint8_t bitNum, uint8_t  data);
+int8_t i2c_readBytesTimeout(uint16_t iTimeoutMillis, uint32_t i2c_periph, uint8_t slaveAddr, uint8_t regAddr, uint8_t length, uint8_t *data);
 int8_t i2c_readBytes (uint32_t i2c_periph, uint8_t slaveAddr, uint8_t regAddr, uint8_t length, uint8_t *data);
 int8_t i2c_readByte  (uint32_t i2c_periph, uint8_t slaveAddr, uint8_t regAddr, uint8_t *data);
 int8_t i2c_readBit   (uint32_t i2c_periph, uint8_t slaveAddr, uint8_t regAddr, uint8_t bitNum, uint8_t *data);

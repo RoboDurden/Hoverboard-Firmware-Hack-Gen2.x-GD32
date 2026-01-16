@@ -35,6 +35,10 @@
   #define IMU_LP 4
 #endif
 
+#ifndef IMU_TIMEOUT_MS
+  #define IMU_TIMEOUT_MS 4
+#endif
+
 int MPU_Init();
 int MPU_ReadAll();
 
