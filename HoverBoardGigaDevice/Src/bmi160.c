@@ -97,7 +97,7 @@ int mpu_config(void) {
     int8_t rc;
 
     // 1) Check Chip ID
-    rc = i2c_readBytes(MPU_I2C, BMI160_I2C_ADDR, BMI160_CHIP_ID_ADDR, 1, &chip_id);
+    rc = i2c_readBytesTimeout(IMU_TIMEOUT_MS, MPU_I2C, BMI160_I2C_ADDR, BMI160_CHIP_ID_ADDR, 1, &chip_id);
     if (rc || chip_id != BMI160_CHIP_ID) {
         return -1; // Error: incorrect chip ID or I2C failure
     }

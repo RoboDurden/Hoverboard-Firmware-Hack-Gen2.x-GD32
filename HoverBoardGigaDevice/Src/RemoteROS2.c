@@ -7,6 +7,12 @@
 
 #ifdef REMOTE_ROS2
 
+#ifdef IMU_ENABLE
+  #define SEND_IMU_DATA
+  #include "../Inc/mpu6050.h"
+  extern MPU_Data mpuData;
+#endif
+
 #pragma pack(1)
 
 // Only master communicates with steerin device
@@ -73,6 +79,20 @@ typedef struct {
 } SerialFeedback;
 
 
+#define START_FRAME_IMU 0xACDC
+
+typedef struct {
+	uint16_t start; // START_FRAME_IMU=0xACDC
+	uint16_t imuId; // 0=imu0(Master board), 1=imu1(Slave board)
+	int16_t accelX;
+	int16_t accelY;
+	int16_t accelZ;
+	int16_t gyroX;
+	int16_t gyroY;
+	int16_t gyroZ;
+	uint16_t checksum;
+} SerialImu;
+
 uint32_t iTimeLastRx = 0;
 uint32_t iTimeNextTx = 0;
 
@@ -86,9 +106,37 @@ void RemoteUpdate(void)
 		speed = steer = 0;
 	}
 
+#ifdef SEND_IMU_DATA
+	if (MPU_ReadAll() == SUCCESS)
+	{
+		//Send IMU data to ROS2
+		SerialImu imu;
+		imu.start = START_FRAME_IMU;
+		imu.imuId = 0; // 0=imu0(Master board), 1=imu1(Slave board)
+		imu.accelX = mpuData.accel.x;
+		imu.accelY = mpuData.accel.y;
+		imu.accelZ = mpuData.accel.z;
+		imu.gyroX = mpuData.gyro.x;
+		imu.gyroY = mpuData.gyro.y;
+		imu.gyroZ = mpuData.gyro.z;
+
+		imu.checksum = (uint16_t)(
+		  imu.start ^
+		  imu.imuId ^
+		  imu.accelX ^
+		  imu.accelY ^
+		  imu.accelZ ^
+		  imu.gyroX ^
+		  imu.gyroY ^
+		  imu.gyroZ);
+
+		SendBuffer(USART_REMOTE, (uint8_t*) &imu, sizeof(imu));
+	}
+#endif
+
 	if (millis() < iTimeNextTx)	
 		return;
-	iTimeNextTx = millis() + SEND_INTERVAL_MS -1; //-1 to avoid drift (only called every 10ms so precision is ~10ms)
+	iTimeNextTx = millis() + SEND_INTERVAL_MS; // Called every 10ms so precision is ~10ms
 	
 	//Send feedback to ROS2
 	SerialFeedback feedback;

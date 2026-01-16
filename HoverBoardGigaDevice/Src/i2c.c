@@ -70,6 +70,16 @@ void I2C_Init()
 }
 #endif
 
+void i2c_hardReset(uint32_t i2c_periph) {
+	// 1. Force the I2C peripheral into reset state
+	i2c_software_reset_config(i2c_periph, I2C_SRESET_SET);
+	for(volatile int d=0; d<1000; d++);
+	i2c_software_reset_config(i2c_periph, I2C_SRESET_RESET);
+
+	// 2. Re-initialize the I2C peripheral from scratch
+	I2C_Init();
+}
+
 //------------------------------------------------------------------------------
 // Blocking write of N bytes to device @devAddr, register @regAddr.
 //------------------------------------------------------------------------------
@@ -166,6 +176,27 @@ int8_t i2c_writeBit(uint32_t i2c_periph, uint8_t slaveAddr, uint8_t regAddr, uin
 
 /* =========================== I2C READ Functions =========================== */
 
+int16_t i2cReadErrors = 0;     // Debug counter
+int16_t i2cReadAddrErrors = 0; // Debug counter
+int16_t i2cReadTimeout = 0;    // Debug counter
+
+//------------------------------------------------------------------------------
+// Blocking read of N bytes into data[] from device @devAddr, register @regAddr,
+// with retries on read failure for @iTimeoutMillis ms (can happen due to noisy i2c bus)
+//------------------------------------------------------------------------------
+int8_t i2c_readBytesTimeout(uint16_t iTimeoutMillis, uint32_t i2c_periph, uint8_t slaveAddr, uint8_t regAddr, uint8_t length, uint8_t *data)
+{
+	uint32_t iTimeRetry = millis() + iTimeoutMillis;
+	do
+	{
+		if (I2C_OK == i2c_readBytes(i2c_periph, slaveAddr, regAddr, length, data))	return I2C_OK;
+		i2cReadErrors++;
+		i2c_hardReset(i2c_periph);
+	}while (millis() < iTimeRetry);
+	i2cReadTimeout++;
+	return I2C_ERR;
+}
+
 //------------------------------------------------------------------------------
 // Blocking read of N bytes into data[] from device @devAddr, register @regAddr.
 //------------------------------------------------------------------------------
@@ -194,6 +225,7 @@ int8_t i2c_readBytes(uint32_t i2c_periph,
     while (!i2c_flag_get(i2c_periph, I2C_FLAG_ADDSEND)) {
         if (++tmo > I2C_TIMEOUT) {
             i2c_stop_on_bus(i2c_periph);
+            i2cReadAddrErrors++;
             return I2C_ERR;
         }
     }

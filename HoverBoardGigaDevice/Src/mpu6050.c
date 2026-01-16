@@ -364,7 +364,7 @@ int MPU_ReadAll()
 		// burst‐read accel(6) + temp(2) + gyro(6)
 		// auto‐increment register address in MPU-6050
 
-		if (i2c_readBytes(MPU_I2C, st.hw->addr, st.reg->raw_accel, 14, buf) != I2C_OK) 
+		if (i2c_readBytesTimeout(IMU_TIMEOUT_MS, MPU_I2C, st.hw->addr, st.reg->raw_accel, 14, buf) != I2C_OK)
 		{	// handle I2C error here if you need to
 				return ERROR;
 		}
