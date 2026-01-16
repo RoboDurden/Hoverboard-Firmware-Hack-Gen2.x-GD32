@@ -49,4 +49,18 @@ uint32_t millis( void );
 //----------------------------------------------------------------------------
 void Delay (uint32_t dlyTicks);
 
+
+// helper macros for microsecond precision
+#define DWT_CONTROL *(volatile uint32_t *)0xE0001000
+#define DWT_CYCCNT  *(volatile uint32_t *)0xE0001004
+#define DEM_CR      *(volatile uint32_t *)0xE000EDFC
+#define CPU_FREQ_MHZ 64 
+
+/* usage:
+	uint32_t attemptStart = DWT_CYCCNT; // Start cycle timer for THIS attempt
+		... the code whose execution time you want to log ...
+	uint32_t attemptDurationUs = (DWT_CYCCNT - attemptStart) / CPU_FREQ_MHZ;
+*/
+
+
 #endif

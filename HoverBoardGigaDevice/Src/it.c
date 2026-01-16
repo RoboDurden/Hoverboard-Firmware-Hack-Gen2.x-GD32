@@ -363,3 +363,9 @@ void DebugMon_Handler(void)
 void PendSV_Handler(void)
 {
 }
+
+void debug_timer_init() {
+    DEM_CR |= 0x01000000; // Enable trace
+    DWT_CYCCNT = 0;       // Reset cycle counter
+    DWT_CONTROL |= 1;     // Enable cycle counter
+}
