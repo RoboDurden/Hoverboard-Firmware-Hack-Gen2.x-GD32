@@ -54,7 +54,7 @@ void Delay (uint32_t dlyTicks);
 #define DWT_CONTROL *(volatile uint32_t *)0xE0001000
 #define DWT_CYCCNT  *(volatile uint32_t *)0xE0001004
 #define DEM_CR      *(volatile uint32_t *)0xE000EDFC
-#define CPU_FREQ_MHZ #define CPU_FREQ_MHZ  (SystemCoreClock / 1000000)
+#define CPU_FREQ_MHZ  (SystemCoreClock / 1000000)
 	// 64 for 32103 mcu, 72 for 32f130
 
 /* usage:
