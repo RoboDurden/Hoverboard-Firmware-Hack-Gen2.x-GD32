@@ -68,8 +68,8 @@ typedef struct {
    int16_t  cmd2;          // Not used
    int16_t  speedR_meas;   // Unit: RPM
    int16_t  speedL_meas;   // Unit: RPM
-   int16_t  wheelR_cnt;    // Range: 0-ENCODER_MAX
-   int16_t  wheelL_cnt;    // Range: 0-ENCODER_MAX
+   int16_t  wheelR_cnt;    // Counts up when going forward, down when going backwards, wraps to the range. Range: 0-ENCODER_MAX
+   int16_t  wheelL_cnt;    // Counts up when going forward, down when going backwards, wraps to the range. Range: 0-ENCODER_MAX
    int16_t  left_dc_curr;  // Unit: 0.01 A
    int16_t  right_dc_curr; // Unit: 0.01 A
    int16_t  batVoltage;    // Unit: 0.01 V
@@ -146,13 +146,13 @@ void RemoteUpdate(void)
 	feedback.cmdLed = revs32;             // Not used by ROS2 hoverboard-driver
 	feedback.batVoltage = (int16_t) (batteryVoltage * 100); // Unit: 0.01 V
 	feedback.boardTemp = 250; // Dummy value (250 => 25 degrees)
-	feedback.speedL_meas = (int16_t) (realSpeed * 1000); // TODO: Base on revs32/revs32x instead! 1000 is just random scale-factor...
+	feedback.speedL_meas = (int16_t) (realSpeed * 1000); // TODO: Base on revs32/revs32x instead! 1000 is just a random scale-factor. Only published by ROS2 hoverboard_driver for logging...
 	feedback.wheelL_cnt = modulo32(iOdom, ENCODER_MAX);
 	feedback.left_dc_curr = (int16_t) (currentDC * 100);
 
 #ifdef MASTER
-	feedback.speedR_meas = (int16_t) (oDataSlave.realSpeed * 1000); // TODO: Base on revs32/revs32x instead! 1000 is just random scale-factor...
-	feedback.wheelR_cnt = modulo32(oDataSlave.iOdom, ENCODER_MAX);
+	feedback.speedR_meas = (int16_t) (oDataSlave.realSpeed * 1000); // TODO: Base on revs32/revs32x instead! 1000 is just a random scale-factor. Only published by ROS2 hoverboard_driver for logging...
+	feedback.wheelR_cnt = modulo32(-oDataSlave.iOdom, ENCODER_MAX); // Negate sign on slave iOdom. Since master and slave are identical, they count in opposite direction when moving straight.
 	feedback.right_dc_curr = (int16_t) (oDataSlave.currentDC * 100);
 #else // SINGLE (SLAVE not possible due to ifdef MASTER_OR_SINGLE at top of this file)
 	feedback.speedR_meas = 0;
