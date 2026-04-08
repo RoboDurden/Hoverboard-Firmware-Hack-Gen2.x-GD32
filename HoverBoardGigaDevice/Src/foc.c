@@ -16,12 +16,24 @@ const uint16_t sector_start_angle[7] = {
 
 void foc_angle_init(FOC_Angle *a) {
 	a->electrical_angle = 0;
-	a->angle_offset = 27307;  // 150° hardcoded from alignment test
+	a->angle_offset = 27307;  // 150° — best from alignment and sweep
 	a->sector = 0;
 	a->last_sector = 0;
+	a->direction = 1;
 	a->transition_tick = 0;
 	a->sector_ticks = 1000;  // ~62ms at 16kHz, safe default (slow speed)
 	a->tick = 0;
+}
+
+// Determine direction from sector transition
+// Forward: 1→2→3→4→5→6→1, Reverse: 1→6→5→4→3→2→1
+static int8_t sector_direction(uint8_t from, uint8_t to) {
+	if (from == 0 || to == 0) return 1;
+	int8_t diff = (int8_t)to - (int8_t)from;
+	// Handle wraparound: 6→1 is forward (+1), 1→6 is reverse (-1)
+	if (diff == 1 || diff == -5) return 1;
+	if (diff == -1 || diff == 5) return -1;
+	return 1;  // skip or glitch, keep current direction
 }
 
 void foc_angle_update(FOC_Angle *a, uint8_t pos) {
@@ -35,30 +47,35 @@ void foc_angle_update(FOC_Angle *a, uint8_t pos) {
 		uint32_t elapsed = now - a->transition_tick;
 
 		// Only update speed if the elapsed time is reasonable
-		// (filter out glitches: minimum 2 ticks, maximum 10000 ticks ~625ms)
 		if (elapsed >= 2 && elapsed <= 10000) {
 			a->sector_ticks = elapsed;
 		}
+
+		// Detect rotation direction
+		a->direction = sector_direction(a->sector, pos);
 
 		a->last_sector = a->sector;
 		a->sector = pos;
 		a->transition_tick = now;
 	}
 
-	// Interpolate angle within current sector
+	// Interpolate angle within current sector, respecting direction
 	uint32_t ticks_in_sector = a->tick - a->transition_tick;
 
-	// Fraction through current sector: ticks_in_sector / sector_ticks
-	// Clamp to 1.0 (don't extrapolate beyond one sector)
 	uint16_t frac;
 	if (ticks_in_sector >= a->sector_ticks) {
-		frac = ANGLE_60DEG;  // full sector
+		frac = ANGLE_60DEG;
 	} else {
-		// frac = (ticks_in_sector * ANGLE_60DEG) / sector_ticks
 		frac = (uint16_t)((uint32_t)ticks_in_sector * ANGLE_60DEG / a->sector_ticks);
 	}
 
-	a->electrical_angle = sector_start_angle[a->sector] + frac + a->angle_offset;
+	if (a->direction >= 0) {
+		// Forward: angle increases from sector start
+		a->electrical_angle = sector_start_angle[a->sector] + frac + a->angle_offset;
+	} else {
+		// Reverse: angle decreases from sector start + 60°
+		a->electrical_angle = sector_start_angle[a->sector] + ANGLE_60DEG - frac + a->angle_offset;
+	}
 }
 
 void foc_current_update(FOC_Current *c, uint16_t adc_y, uint16_t adc_b,

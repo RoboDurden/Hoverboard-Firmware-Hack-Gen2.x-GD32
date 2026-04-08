@@ -15,6 +15,7 @@ typedef struct {
 	uint16_t angle_offset;         // hall-to-electrical angle offset (tune this!)
 	uint8_t  sector;               // current hall sector (1-6)
 	uint8_t  last_sector;          // previous hall sector
+	int8_t   direction;            // +1 = forward (1→2→3), -1 = reverse (3→2→1)
 	uint32_t transition_tick;      // ISR tick at last hall transition
 	uint32_t sector_ticks;         // ticks for one sector (speed estimate)
 	uint32_t tick;                 // running ISR tick counter

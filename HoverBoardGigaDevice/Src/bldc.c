@@ -58,7 +58,7 @@ uint32_t foc_warmup_ticks = 0;  // counts up from 0, FOC allowed after warmup
 // Lower ticks = higher speed. Hysteresis prevents oscillation.
 #define FOC_ENGAGE_TICKS  400   // switch to FOC when faster than this (~25ms/sector)
 #define FOC_DISENGAGE_TICKS 600 // switch back to block when slower (~37ms/sector)
-#define FOC_WARMUP_TICKS  48000 // ~3 seconds at 16kHz before FOC allowed
+#define FOC_WARMUP_TICKS  16000 // ~1 second at 16kHz before FOC allowed
 #endif
 int32_t bldc_inputFilterPwm = 0;
 int32_t bldc_outputFilterPwm = 0;
@@ -336,7 +336,7 @@ void CalculateBLDC(void)
 		// No PI controllers — just set voltage directly using angle estimate
 		FOC_DQ vdq;
 		vdq.d = 0;
-		vdq.q = bldc_outputFilterPwm / 4;  // conservative scaling
+		vdq.q = bldc_outputFilterPwm / 3;  // open-loop voltage scaling
 
 		FOC_AlphaBeta vab;
 		foc_inverse_park(&vdq, &vab, foc_angle.electrical_angle);
