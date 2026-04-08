@@ -49,6 +49,17 @@ FOC_DQ foc_dq;
 FOC_Controller foc_ctrl;
 uint16_t foc_offset_y = 2000;  // calibrated at startup
 uint16_t foc_offset_b = 2000;
+
+#ifdef FOC_ENABLED
+// Runtime mode: 0=block commutation (startup), 1=FOC
+uint8_t foc_mode = 0;
+uint32_t foc_warmup_ticks = 0;  // counts up from 0, FOC allowed after warmup
+// Speed thresholds for mode switching (in ISR ticks per hall sector)
+// Lower ticks = higher speed. Hysteresis prevents oscillation.
+#define FOC_ENGAGE_TICKS  400   // switch to FOC when faster than this (~25ms/sector)
+#define FOC_DISENGAGE_TICKS 600 // switch back to block when slower (~37ms/sector)
+#define FOC_WARMUP_TICKS  48000 // ~3 seconds at 16kHz before FOC allowed
+#endif
 int32_t bldc_inputFilterPwm = 0;
 int32_t bldc_outputFilterPwm = 0;
 uint8_t iDrivingModeOverride = 0;
@@ -308,18 +319,39 @@ void CalculateBLDC(void)
 	bldc_outputFilterPwm = filter_reg >> iFILTER_SHIFT;
 
 #ifdef FOC_ENABLED
-	// FOC: set torque reference from filtered PWM input, run closed-loop control
-	foc_ctrl.iq_ref = bldc_outputFilterPwm / 2;  // scale PWM input to current reference
-	foc_ctrl.id_ref = 0;  // no field weakening
+	// Runtime mode switching: block commutation at low speed, FOC at speed
+	if (foc_warmup_ticks < FOC_WARMUP_TICKS) foc_warmup_ticks++;
 
-	FOC_Phase foc_voltage;
-	foc_controller_update(&foc_ctrl, &foc_current, foc_angle.electrical_angle, &foc_voltage);
+	if (foc_mode == 0) {
+		// Block commutation (startup mode)
+		bldc_get_pwm(bldc_outputFilterPwm, pos, &y, &b, &g);
 
-	y = foc_voltage.y;
-	b = foc_voltage.b;
-	g = foc_voltage.g;
+		// Switch to FOC once motor has enough speed AND warmup period has passed
+		if (foc_warmup_ticks >= FOC_WARMUP_TICKS &&
+		    foc_angle.sector_ticks < FOC_ENGAGE_TICKS && foc_angle.sector_ticks >= 2) {
+			foc_mode = 1;
+			foc_pi_reset(&foc_ctrl.pi_d);
+			foc_pi_reset(&foc_ctrl.pi_q);
+		}
+	} else {
+		// FOC mode
+		foc_ctrl.iq_ref = bldc_outputFilterPwm / 2;
+		foc_ctrl.id_ref = 0;
+
+		FOC_Phase foc_voltage;
+		foc_controller_update(&foc_ctrl, &foc_current, foc_angle.electrical_angle, &foc_voltage);
+
+		y = foc_voltage.y;
+		b = foc_voltage.b;
+		g = foc_voltage.g;
+
+		// Fall back to block commutation if speed drops too low
+		if (foc_angle.sector_ticks > FOC_DISENGAGE_TICKS) {
+			foc_mode = 0;
+		}
+	}
 #else
-	// Block commutation
+	// Block commutation only
 	bldc_get_pwm(bldc_outputFilterPwm, pos, &y, &b, &g);
 #endif
 

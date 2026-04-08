@@ -47,6 +47,8 @@ void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g)
   }	
 }
 
+extern const uint8_t hall_to_pos[8];
+
 void InitBldc()
 {
 	extern FOC_Angle foc_angle;
@@ -60,6 +62,11 @@ void InitBldc()
 	#if defined(PHASE_CURRENT_Y) && defined(PHASE_CURRENT_B)
 		foc_calibrate_offsets(&foc_offset_y, &foc_offset_b,
 		                      &adc_buffer.phase_current_y, &adc_buffer.phase_current_b);
+	#endif
+
+	#ifdef FOC_ENABLED
+		// Align rotor and determine angle offset
+		foc_angle.angle_offset = foc_align_rotor((uint8_t *)hall_to_pos);
 	#endif
 }
 #endif

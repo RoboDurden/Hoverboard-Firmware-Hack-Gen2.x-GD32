@@ -1,4 +1,5 @@
 #include "../Inc/foc.h"
+#include "../Inc/defines.h"
 
 // Sector start angles (uint16_t: 0..65535 = 0..360 degrees electrical)
 // pos 1 starts at 0°, each sector is 60°
@@ -15,7 +16,7 @@ const uint16_t sector_start_angle[7] = {
 
 void foc_angle_init(FOC_Angle *a) {
 	a->electrical_angle = 0;
-	a->angle_offset = 10000;  // ~55° — best Iq/Id ratio from block commutation sweep
+	a->angle_offset = 0;  // set by foc_align_rotor() at startup
 	a->sector = 0;
 	a->last_sector = 0;
 	a->transition_tick = 0;
@@ -206,14 +207,68 @@ void foc_calibrate_offsets(uint16_t *offset_y, uint16_t *offset_b,
 	*offset_b = (uint16_t)(sum_b / 1000);
 }
 
+// Align rotor to determine the electrical angle offset.
+// Applies a d-axis voltage at 0° to lock the rotor, then reads the hall position.
+#define ALIGN_VOLTAGE 500  // PWM counts (~44% of mid value)
+#define ALIGN_SETTLE_MS 800
+
+uint16_t foc_align_rotor(uint8_t *hall_to_pos_table) {
+	uint16_t mid = BLDC_TIMER_PERIOD / 2;
+
+	// Disable BLDC ISR so it doesn't overwrite our PWM
+	nvic_irq_disable(DMA_Channel0_IRQn);
+	timer_automatic_output_enable(TIMER_BLDC);
+
+	// Apply voltage at 0° electrical:
+	// Inverse Park at θ=0: Vα = Vd, Vβ = 0
+	// Inverse Clarke: Vy = Vα = ALIGN_VOLTAGE
+	//                 Vb = (-Vα) / 2 = -ALIGN_VOLTAGE/2
+	//                 Vg = (-Vα) / 2 = -ALIGN_VOLTAGE/2
+	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, mid + ALIGN_VOLTAGE);
+	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_B, mid - ALIGN_VOLTAGE / 2);
+	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_G, mid - ALIGN_VOLTAGE / 2);
+
+	// Wait for rotor to settle
+	for (int i = 0; i < ALIGN_SETTLE_MS; i++) {
+		Delay(1);
+		fwdgt_counter_reload();
+		ResetTimeout();
+	}
+
+	// Read hall sensors
+	uint8_t ha = digitalRead(HALL_A);
+	uint8_t hb = digitalRead(HALL_B);
+	uint8_t hc = digitalRead(HALL_C);
+	uint8_t hall = ha * 1 + hb * 2 + hc * 4;
+	uint8_t sector = hall_to_pos_table[hall];
+
+	// Turn off outputs
+	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, mid);
+	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_B, mid);
+	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_G, mid);
+	timer_automatic_output_disable(TIMER_BLDC);
+
+	// Re-enable BLDC ISR
+	nvic_irq_enable(DMA_Channel0_IRQn, 1, 0);
+
+	// The rotor has aligned to 0° electrical.
+	// The halls report sector s, whose center is sector_start_angle[s] + 30°.
+	// offset = applied_angle - measured_angle = 0 - (sector_start + 30°)
+	if (sector >= 1 && sector <= 6) {
+		uint16_t measured = sector_start_angle[sector] + ANGLE_60DEG / 2;  // center of sector
+		return (uint16_t)(0 - measured);  // wraps naturally
+	}
+	return 0;  // invalid hall state, no offset
+}
+
 // FOC controller
 void foc_controller_init(FOC_Controller *ctrl) {
 	// Very conservative starting gains — tune upward from here
 	// Kp=2: 2 PWM counts per ADC count of current error
 	// Ki=1: slow integral, shifted by PI_INTEGRAL_SHIFT (1/1024)
 	// Limit: ±500 (well below max of ±1125)
-	foc_pi_init(&ctrl->pi_d, 2, 1, 500);
-	foc_pi_init(&ctrl->pi_q, 2, 1, 500);
+	foc_pi_init(&ctrl->pi_d, 2, 1, 350);
+	foc_pi_init(&ctrl->pi_q, 2, 1, 350);
 	ctrl->iq_ref = 0;
 	ctrl->id_ref = 0;
 }

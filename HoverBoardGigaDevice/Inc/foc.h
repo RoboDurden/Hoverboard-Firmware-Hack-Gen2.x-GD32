@@ -102,6 +102,11 @@ void foc_controller_init(FOC_Controller *ctrl);
 void foc_calibrate_offsets(uint16_t *offset_y, uint16_t *offset_b,
                            volatile uint16_t *adc_y, volatile uint16_t *adc_b);
 
+// Align rotor to a known angle and determine the hall-to-electrical angle offset.
+// Applies a voltage at 0° electrical, waits for rotor to settle, reads halls.
+// Returns the angle_offset to use. Blocks for ~1s. Call at startup.
+uint16_t foc_align_rotor(uint8_t *hall_to_pos_table);
+
 // Run one FOC iteration: currents + angle → phase voltages
 void foc_controller_update(FOC_Controller *ctrl,
                            const FOC_Current *current,
