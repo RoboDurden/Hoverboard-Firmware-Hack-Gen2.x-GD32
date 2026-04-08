@@ -50,6 +50,16 @@ void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g)
 void InitBldc()
 {
 	extern FOC_Angle foc_angle;
+	extern FOC_Controller foc_ctrl;
+	extern uint16_t foc_offset_y, foc_offset_b;
+	extern adc_buf_t adc_buffer;
+
 	foc_angle_init(&foc_angle);
+	foc_controller_init(&foc_ctrl);
+
+	#if defined(PHASE_CURRENT_Y) && defined(PHASE_CURRENT_B)
+		foc_calibrate_offsets(&foc_offset_y, &foc_offset_b,
+		                      &adc_buffer.phase_current_y, &adc_buffer.phase_current_b);
+	#endif
 }
 #endif

@@ -11,7 +11,8 @@
 #define ANGLE_360DEG  65536   // wraps to 0
 
 typedef struct {
-	uint16_t electrical_angle;     // 0..65535 = 0..2*PI
+	uint16_t electrical_angle;     // 0..65535 = 0..2*PI (includes offset)
+	uint16_t angle_offset;         // hall-to-electrical angle offset (tune this!)
 	uint8_t  sector;               // current hall sector (1-6)
 	uint8_t  last_sector;          // previous hall sector
 	uint32_t transition_tick;      // ISR tick at last hall transition
@@ -62,5 +63,49 @@ void foc_inverse_park(const FOC_DQ *in, FOC_AlphaBeta *out, uint16_t angle);
 // Output: Q15 value (-32768..32767 representing -1.0..+1.0)
 int16_t foc_sin(uint16_t angle);
 int16_t foc_cos(uint16_t angle);
+
+// PI controller
+#define PI_INTEGRAL_SHIFT 10  // integrator accumulates at 1/1024 rate
+
+typedef struct {
+	int16_t kp;        // proportional gain
+	int16_t ki;        // integral gain
+	int32_t integral;  // accumulated integral (shifted)
+	int16_t limit;     // symmetric output clamp
+} FOC_PI;
+
+void foc_pi_init(FOC_PI *pi, int16_t kp, int16_t ki, int16_t limit);
+int16_t foc_pi_update(FOC_PI *pi, int16_t error);
+void foc_pi_reset(FOC_PI *pi);
+
+// Inverse Clarke: alpha-beta → 3-phase voltages (Y, B, G)
+typedef struct {
+	int16_t y;
+	int16_t b;
+	int16_t g;
+} FOC_Phase;
+
+void foc_inverse_clarke(const FOC_AlphaBeta *in, FOC_Phase *out);
+
+// Full FOC state for the control loop
+typedef struct {
+	FOC_PI pi_d;       // flux controller (drives Id → 0)
+	FOC_PI pi_q;       // torque controller (drives Iq → reference)
+	int16_t iq_ref;    // torque reference (set from speed/pwm input)
+	int16_t id_ref;    // flux reference (normally 0)
+} FOC_Controller;
+
+void foc_controller_init(FOC_Controller *ctrl);
+
+// Calibrate current offsets by sampling ADC with motor off
+// Call at startup before enabling motor. Blocks for ~200ms.
+void foc_calibrate_offsets(uint16_t *offset_y, uint16_t *offset_b,
+                           volatile uint16_t *adc_y, volatile uint16_t *adc_b);
+
+// Run one FOC iteration: currents + angle → phase voltages
+void foc_controller_update(FOC_Controller *ctrl,
+                           const FOC_Current *current,
+                           uint16_t angle,
+                           FOC_Phase *voltage_out);
 
 #endif

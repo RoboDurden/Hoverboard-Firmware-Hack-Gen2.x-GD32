@@ -46,6 +46,7 @@ FOC_Angle foc_angle;
 FOC_Current foc_current;
 FOC_AlphaBeta foc_ab;
 FOC_DQ foc_dq;
+FOC_Controller foc_ctrl;
 uint16_t foc_offset_y = 2000;  // calibrated at startup
 uint16_t foc_offset_b = 2000;
 int32_t bldc_inputFilterPwm = 0;
@@ -299,17 +300,28 @@ void CalculateBLDC(void)
 	}
 
 	extern uint16_t iDriverDoEvery;		// set in Driver:DriverInit()
-	if (buzzerTimer%iDriverDoEvery==0)	
+	if (buzzerTimer%iDriverDoEvery==0)
 		bldc_inputFilterPwm = Driver(iDrivingModeOverride,iBldcInput);		// interpret the input as pwm/speed/torque/position.
-	
+
 	// Calculate low-pass filter for pwm value
 	filter_reg = filter_reg - (filter_reg >> iFILTER_SHIFT) + bldc_inputFilterPwm;
 	bldc_outputFilterPwm = filter_reg >> iFILTER_SHIFT;
-	
-	//bldc_outputFilterPwm = bldc_inputFilterPwm;		// does not work for drivingMode 1, low-pass is needed :-(
 
-	// Update PWM channels based on position y(ellow), b(lue), g(reen)
+#ifdef FOC_ENABLED
+	// FOC: set torque reference from filtered PWM input, run closed-loop control
+	foc_ctrl.iq_ref = bldc_outputFilterPwm / 2;  // scale PWM input to current reference
+	foc_ctrl.id_ref = 0;  // no field weakening
+
+	FOC_Phase foc_voltage;
+	foc_controller_update(&foc_ctrl, &foc_current, foc_angle.electrical_angle, &foc_voltage);
+
+	y = foc_voltage.y;
+	b = foc_voltage.b;
+	g = foc_voltage.g;
+#else
+	// Block commutation
 	bldc_get_pwm(bldc_outputFilterPwm, pos, &y, &b, &g);
+#endif
 
 	// Set PWM output (pwm_res/2 is the mean value, setvalue has to be between 10 and pwm_res-10)
 	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_G, CLAMP(g + BLDC_TIMER_MID_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));

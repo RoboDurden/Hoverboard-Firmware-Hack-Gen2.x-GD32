@@ -15,6 +15,7 @@ const uint16_t sector_start_angle[7] = {
 
 void foc_angle_init(FOC_Angle *a) {
 	a->electrical_angle = 0;
+	a->angle_offset = 0;  // will need tuning per motor
 	a->sector = 0;
 	a->last_sector = 0;
 	a->transition_tick = 0;
@@ -56,7 +57,7 @@ void foc_angle_update(FOC_Angle *a, uint8_t pos) {
 		frac = (uint16_t)((uint32_t)ticks_in_sector * ANGLE_60DEG / a->sector_ticks);
 	}
 
-	a->electrical_angle = sector_start_angle[a->sector] + frac;
+	a->electrical_angle = sector_start_angle[a->sector] + frac + a->angle_offset;
 }
 
 void foc_current_update(FOC_Current *c, uint16_t adc_y, uint16_t adc_b,
@@ -144,4 +145,100 @@ void foc_inverse_park(const FOC_DQ *in, FOC_AlphaBeta *out, uint16_t angle) {
 	int16_t cos_val = foc_cos(angle);
 	out->alpha = (int16_t)(((int32_t)in->d * cos_val - (int32_t)in->q * sin_val) >> 15);
 	out->beta  = (int16_t)(((int32_t)in->d * sin_val + (int32_t)in->q * cos_val) >> 15);
+}
+
+// PI controller
+void foc_pi_init(FOC_PI *pi, int16_t kp, int16_t ki, int16_t limit) {
+	pi->kp = kp;
+	pi->ki = ki;
+	pi->integral = 0;
+	pi->limit = limit;
+}
+
+void foc_pi_reset(FOC_PI *pi) {
+	pi->integral = 0;
+}
+
+int16_t foc_pi_update(FOC_PI *pi, int16_t error) {
+	// Accumulate integral
+	pi->integral += (int32_t)error * pi->ki;
+
+	// Anti-windup: clamp integral
+	int32_t int_limit = (int32_t)pi->limit << PI_INTEGRAL_SHIFT;
+	if (pi->integral > int_limit) pi->integral = int_limit;
+	if (pi->integral < -int_limit) pi->integral = -int_limit;
+
+	// Compute output: P + I
+	int32_t output = (int32_t)error * pi->kp + (pi->integral >> PI_INTEGRAL_SHIFT);
+
+	// Clamp output
+	if (output > pi->limit) return pi->limit;
+	if (output < -pi->limit) return -pi->limit;
+	return (int16_t)output;
+}
+
+// Inverse Clarke: alpha-beta → 3-phase
+// Vy = Vα
+// Vb = (-Vα + √3*Vβ) / 2
+// Vg = (-Vα - √3*Vβ) / 2
+// √3/2 in Q15 = 28378
+#define SQRT3_OVER_2_Q15 28378
+
+void foc_inverse_clarke(const FOC_AlphaBeta *in, FOC_Phase *out) {
+	out->y = in->alpha;
+	int32_t sqrt3_beta = ((int32_t)in->beta * SQRT3_OVER_2_Q15) >> 15;
+	out->b = (int16_t)((-in->alpha + sqrt3_beta) / 2);
+	out->g = (int16_t)((-in->alpha - sqrt3_beta) / 2);
+}
+
+// Calibrate current sensor offsets (zero-current ADC values)
+// Samples ADC 1000 times over ~200ms with motor off
+void foc_calibrate_offsets(uint16_t *offset_y, uint16_t *offset_b,
+                           volatile uint16_t *adc_y, volatile uint16_t *adc_b) {
+	uint32_t sum_y = 0, sum_b = 0;
+	for (int i = 0; i < 1000; i++) {
+		sum_y += *adc_y;
+		sum_b += *adc_b;
+		// Small delay — the DMA refreshes ADC values continuously
+		for (volatile int d = 0; d < 500; d++);
+	}
+	*offset_y = (uint16_t)(sum_y / 1000);
+	*offset_b = (uint16_t)(sum_b / 1000);
+}
+
+// FOC controller
+void foc_controller_init(FOC_Controller *ctrl) {
+	// Very conservative starting gains — tune upward from here
+	// Kp=2: 2 PWM counts per ADC count of current error
+	// Ki=1: slow integral, shifted by PI_INTEGRAL_SHIFT (1/1024)
+	// Limit: ±500 (well below max of ±1125)
+	foc_pi_init(&ctrl->pi_d, 2, 1, 500);
+	foc_pi_init(&ctrl->pi_q, 2, 1, 500);
+	ctrl->iq_ref = 0;
+	ctrl->id_ref = 0;
+}
+
+void foc_controller_update(FOC_Controller *ctrl,
+                           const FOC_Current *current,
+                           uint16_t angle,
+                           FOC_Phase *voltage_out) {
+	// Clarke: 3-phase → alpha-beta
+	FOC_AlphaBeta ab;
+	foc_clarke(current, &ab);
+
+	// Park: alpha-beta → d-q
+	FOC_DQ dq;
+	foc_park(&ab, &dq, angle);
+
+	// PI controllers
+	FOC_DQ vdq;
+	vdq.d = foc_pi_update(&ctrl->pi_d, ctrl->id_ref - dq.d);
+	vdq.q = foc_pi_update(&ctrl->pi_q, ctrl->iq_ref - dq.q);
+
+	// Inverse Park: d-q → alpha-beta
+	FOC_AlphaBeta vab;
+	foc_inverse_park(&vdq, &vab, angle);
+
+	// Inverse Clarke: alpha-beta → 3-phase voltages
+	foc_inverse_clarke(&vab, voltage_out);
 }
