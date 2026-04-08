@@ -165,9 +165,9 @@ void RemoteUpdate(void)
 		}
 	
 		steer = 0;
-		speed = CLAMP((fRemoteScaleMax*iRemoteMax/100) * (ABS( (int)(((msTicks-msTicksInit)/iRemotePeriod+250) % 1000) - 500) - 250),-iRemoteMax,iRemoteMax);   // repeats from +300 to -300 to +300 :-)
-		speed = CLAMP(speed , -iRemoteMax, iRemoteMax);
-		//speed = 300;
+		//speed = CLAMP((fRemoteScaleMax*iRemoteMax/100) * (ABS( (int)(((msTicks-msTicksInit)/iRemotePeriod+250) % 1000) - 500) - 250),-iRemoteMax,iRemoteMax);   // repeats from +300 to -300 to +300 :-)
+		//speed = CLAMP(speed , -iRemoteMax, iRemoteMax);
+		speed = 300;  // constant speed, one direction — for testing FOC quality
 		//speed = 0;	// uncomment this to turn the motor manually when TEST_HALL2LED
 		//speed = 1.5*1024;
 	#else

@@ -56,8 +56,8 @@ uint8_t foc_mode = 0;
 uint32_t foc_warmup_ticks = 0;  // counts up from 0, FOC allowed after warmup
 // Speed thresholds for mode switching (in ISR ticks per hall sector)
 // Lower ticks = higher speed. Hysteresis prevents oscillation.
-#define FOC_ENGAGE_TICKS  400   // switch to FOC when faster than this (~25ms/sector)
-#define FOC_DISENGAGE_TICKS 600 // switch back to block when slower (~37ms/sector)
+#define FOC_ENGAGE_TICKS  400   // switch to FOC when faster than this
+#define FOC_DISENGAGE_TICKS 600 // switch back to block when slower
 #define FOC_WARMUP_TICKS  16000 // ~1 second at 16kHz before FOC allowed
 #endif
 int32_t bldc_inputFilterPwm = 0;
@@ -319,24 +319,12 @@ void CalculateBLDC(void)
 	bldc_outputFilterPwm = filter_reg >> iFILTER_SHIFT;
 
 #ifdef FOC_ENABLED
-	// Runtime mode switching: block commutation at low speed, FOC at speed
-	if (foc_warmup_ticks < FOC_WARMUP_TICKS) foc_warmup_ticks++;
-
-	if (foc_mode == 0) {
-		// Block commutation (startup mode)
-		bldc_get_pwm(bldc_outputFilterPwm, pos, &y, &b, &g);
-
-		// Switch to FOC once motor has enough speed AND warmup period has passed
-		if (foc_warmup_ticks >= FOC_WARMUP_TICKS &&
-		    foc_angle.sector_ticks < FOC_ENGAGE_TICKS && foc_angle.sector_ticks >= 2) {
-			foc_mode = 1;
-		}
-	} else {
-		// Open-loop voltage FOC: Vd=0, Vq=scaled from speed input
-		// No PI controllers — just set voltage directly using angle estimate
+	{
+		// Open-loop voltage FOC: Vd=0, Vq from speed input
+		// No BLC startup — FOC runs from the start
 		FOC_DQ vdq;
 		vdq.d = 0;
-		vdq.q = bldc_outputFilterPwm / 3;  // open-loop voltage scaling
+		vdq.q = bldc_outputFilterPwm;
 
 		FOC_AlphaBeta vab;
 		foc_inverse_park(&vdq, &vab, foc_angle.electrical_angle);
@@ -347,11 +335,6 @@ void CalculateBLDC(void)
 		y = foc_voltage.y;
 		b = foc_voltage.b;
 		g = foc_voltage.g;
-
-		// Fall back to block commutation if speed drops too low
-		if (foc_angle.sector_ticks > FOC_DISENGAGE_TICKS) {
-			foc_mode = 0;
-		}
 	}
 #else
 	// Block commutation only
