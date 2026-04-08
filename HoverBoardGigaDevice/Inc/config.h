@@ -44,13 +44,11 @@
 	#define BATTERY_LOW_BEEP
 	#define BEEP_BACKWARDS
 
-	#define REMOTE_USART	1	// 0=PB6/PB7, 1=PA2/PA3
-
 	#if defined(MASTER) || defined(SINGLE)
 		#define MASTER_OR_SINGLE
 
-		//#define REMOTE_DUMMY
-		#define REMOTE_UART
+		#define REMOTE_DUMMY
+		//#define REMOTE_UART
 		//#define REMOTE_UARTBUS
 		//#define REMOTE_CRSF
 
@@ -61,6 +59,8 @@
 		#ifdef REMOTE_DUMMY
 			#define REMOTE_PERIOD 6
 			#define TEST_HALL2LED
+			#define RTT_REMOTE
+			#define WINDOWS_RN
 		#else
 			//#define TEST_HALL2LED
 		#endif

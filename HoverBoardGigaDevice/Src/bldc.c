@@ -1,5 +1,6 @@
 //#include "../Inc/defines.h"
 #include "../Inc/bldc.h"
+#include "../Inc/foc.h"
 #include <stdio.h>
 
 /*
@@ -39,6 +40,12 @@ volatile uint8_t hall = 0;        // Global hall state
 
 uint8_t pos;
 uint8_t lastPos;
+
+// FOC state
+FOC_Angle foc_angle;
+FOC_Current foc_current;
+uint16_t foc_offset_y = 2000;  // calibrated at startup
+uint16_t foc_offset_b = 2000;
 int32_t bldc_inputFilterPwm = 0;
 int32_t bldc_outputFilterPwm = 0;
 uint8_t iDrivingModeOverride = 0;
@@ -271,6 +278,13 @@ void CalculateBLDC(void)
 	#else
 		pos = hall_to_pos[hall];
 	#endif
+	// Update FOC angle estimation and phase currents
+	foc_angle_update(&foc_angle, pos);
+	#if defined(PHASE_CURRENT_Y) && defined(PHASE_CURRENT_B)
+		foc_current_update(&foc_current, adc_buffer.phase_current_y, adc_buffer.phase_current_b,
+		                   foc_offset_y, foc_offset_b);
+	#endif
+
 // Add this check before setting PWM:
 	if (pos == 0) 	// 0b000 and 0b111 should never happen with the three hall sensors
 	{

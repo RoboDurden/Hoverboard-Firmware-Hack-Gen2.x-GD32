@@ -182,7 +182,17 @@ void RemoteUpdate(void)
 			iTimeNextLog = msTicks + 200;
 			iCounterLog++;
 
-			sprintf(sMessage, "%s%5.02f V\t%5.02f A\todom: %6d\ttarget: %5d\trevs: %5d\ttorque: %5d",sMessage,batteryVoltage,currentDC,iOdom,speed,revs32>>(REVS32_SHIFT-10),torque32);
+			#if defined(PHASE_CURRENT_Y) && defined(PHASE_CURRENT_B)
+				extern adc_buf_t adc_buffer;
+				extern uint8_t pos;
+				#include "../Inc/foc.h"
+				extern FOC_Angle foc_angle;
+				extern FOC_Current foc_current;
+				uint16_t deg = (uint32_t)foc_angle.electrical_angle * 360 / 65536;
+				sprintf(sMessage, "%s%5.02f V\tpos:%d\tang:%3d\tIy:%4d\tIb:%4d\tIg:%4d",sMessage,batteryVoltage,pos,deg,foc_current.iy,foc_current.ib,foc_current.ig);
+			#else
+				sprintf(sMessage, "%s%5.02f V\t%5.02f A\todom: %6d\ttarget: %5d\trevs: %5d\ttorque: %5d",sMessage,batteryVoltage,currentDC,iOdom,speed,revs32>>(REVS32_SHIFT-10),torque32);
+			#endif
 
 			if (iCounterLog%10==0)
 			{

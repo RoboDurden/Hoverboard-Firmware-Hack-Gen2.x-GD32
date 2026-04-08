@@ -1,4 +1,5 @@
 #include "../Inc/bldcBC.h"
+#include "../Inc/foc.h"
 #ifdef BLDC_BC
 
 //----------------------------------------------------------------------------
@@ -48,5 +49,7 @@ void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g)
 
 void InitBldc()
 {
+	extern FOC_Angle foc_angle;
+	foc_angle_init(&foc_angle);
 }
 #endif
