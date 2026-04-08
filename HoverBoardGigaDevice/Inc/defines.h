@@ -271,11 +271,15 @@ typedef struct
 {
   uint16_t v_batt;
 	uint16_t current_dc;
+	#if defined(PHASE_CURRENT_Y) && defined(PHASE_CURRENT_B)
+		uint16_t phase_current_y;
+		uint16_t phase_current_b;
+	#endif
 	#ifdef REMOTE_ADC
 		uint16_t speed;
 		uint16_t steer;
 	#endif
-	
+
 } adc_buf_t;
 
 //#pragma pack(1)

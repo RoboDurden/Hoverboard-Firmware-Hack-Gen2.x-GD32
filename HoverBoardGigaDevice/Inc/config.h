@@ -34,41 +34,47 @@
 	//#define SLAVE			// uncomment for SLAVE firmware. Choose USART0_MASTERSLAVE or USART1_MASTERSLAVE in your defines_2-?.h file
 	#define SINGLE			// uncomment if firmware is for single board and no master-slave dual board setup
 
-	#define BAT_CELLS         	7       // battery number of cells. Normal Hoverboard battery: 10s
+	#define BLDC_BC			// old block commutation bldc control
+	//#define BLDC_SINE		// silent sine-pwm motor control
 
-	#define USART1_REMOTE
-	
+	#define DRIVING_MODE 0	//  0=pwm, 1=speed, 2=torque, 3=odometer
+
+	#define BAT_CELLS         	7       // battery number of cells. Normal Hoverboard battery: 10s
+	//#define BATTERY_LOW_SHUTOFF
+	#define BATTERY_LOW_BEEP
+	#define BEEP_BACKWARDS
+
+	#define REMOTE_USART	1	// 0=PB6/PB7, 1=PA2/PA3
+
 	#if defined(MASTER) || defined(SINGLE)
 		#define MASTER_OR_SINGLE
-		
+
 		//#define REMOTE_DUMMY
 		#define REMOTE_UART
-		//#define REMOTE_UARTBUS	// ESP32 as master and multiple boards as multiple slaves ESP.tx-Hovers.rx and ESP.rx-Hovers.tx
-		//#define REMOTE_CRSF		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/26
-		
+		//#define REMOTE_UARTBUS
+		//#define REMOTE_CRSF
+
 		#ifdef REMOTE_UARTBUS
-			#define SLAVE_ID	0		// must be unique for all hoverboards connected to the bus
+			#define SLAVE_ID	0
 		#endif
 
 		#ifdef REMOTE_DUMMY
-			#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
+			#define REMOTE_PERIOD 6
+			#define TEST_HALL2LED
 		#else
-			//#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
+			//#define TEST_HALL2LED
 		#endif
-		
-		//#define DEBUG_LED		// uncomment to activate DEBUG_LedSet(bSet,iColor) macro. iCol: 0=green, 1=organge, 2=red
 
 		#define SPEED_COEFFICIENT   -1
 		#define STEER_COEFFICIENT   1
-		
-		//#define CHECK_BUTTON		// disable = add '//' if you use a slave board as master
+
+		//#define CHECK_BUTTON
+		#define DISABLE_BUTTON	// startup waits for button release, so permanent jumper hangs firmware
 	#endif
 #endif
 
 // ################################################################################
 
-
-#define BLDC_TIMER_PERIOD       (72000000u / 2u / PWM_FREQ) // = 2250
 #define DC_CUR_LIMIT     		15        // Motor DC current limit in amps
 #define DEAD_TIME        		60        // PWM deadtime (60 = 1�s, measured by oscilloscope)
 #define PWM_FREQ         		16000     // PWM frequency in Hz

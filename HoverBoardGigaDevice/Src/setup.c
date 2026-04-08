@@ -607,28 +607,32 @@ void ADC_init(void)
 	
 	// Enable DMA channel 0
 	TARGET_dma_channel_enable(DMA_CH0);
-	
-	
+
+
 	#ifdef REMOTE_AUTODETECT
 		TARGET_adc_channel_length_config(ADC_REGULAR_CHANNEL, 1);
 		TARGET_adc_regular_channel_config(0, PIN_TO_CHANNEL(TODO_PIN), ADC_SAMPLETIME_13POINT5);
 			// for some reason, the adc channel 1 used for VBat (3.3V) has to be set to TODO_PIN = PF4
 	#else
-		TARGET_adc_channel_length_config(ADC_REGULAR_CHANNEL, iCountAdc);	// 2
+		TARGET_adc_channel_length_config(ADC_REGULAR_CHANNEL, iCountAdc);
 		#ifdef VBATT
 			TARGET_adc_regular_channel_config(0, PIN_TO_CHANNEL(VBATT), ADC_SAMPLETIME_13POINT5);
 		#endif
 		#ifdef CURRENT_DC
 			TARGET_adc_regular_channel_config(1, PIN_TO_CHANNEL(CURRENT_DC), ADC_SAMPLETIME_13POINT5);
 		#endif
+		#if defined(PHASE_CURRENT_Y) && defined(PHASE_CURRENT_B)
+			TARGET_adc_regular_channel_config(2, PIN_TO_CHANNEL(PHASE_CURRENT_Y), ADC_SAMPLETIME_13POINT5);
+			TARGET_adc_regular_channel_config(3, PIN_TO_CHANNEL(PHASE_CURRENT_B), ADC_SAMPLETIME_13POINT5);
+		#endif
 		#ifdef REMOTE_ADC
 			adc_regular_channel_config(2, PIN_TO_CHANNEL(PA2), ADC_SAMPLETIME_13POINT5);
 			adc_regular_channel_config(3, PIN_TO_CHANNEL(PA3), ADC_SAMPLETIME_13POINT5);
 		#endif
 	#endif
-	
+
 	TARGET_adc_data_alignment_config(ADC_DATAALIGN_RIGHT);
-	
+
 	// Set trigger of ADC
 	TARGET_adc_external_trigger_config(ADC_REGULAR_CHANNEL, ENABLE);
 	TARGET_adc_external_trigger_source_config(ADC_REGULAR_CHANNEL, ADC_EXTTRIG_REGULAR_NONE);
@@ -638,19 +642,19 @@ void ADC_init(void)
 	#ifndef REMOTE_AUTODETECT
 		TARGET_adc_vbat_disable();
 	#endif
-	
+
 	// ADC analog watchdog disable
 	TARGET_adc_watchdog_disable();
-	
+
 	// Enable ADC (must be before calibration)
 	TARGET_adc_enable();
-	
+
 	// Calibrate ADC values
 	TARGET_adc_calibration_enable();
-	
+
 	// Enable DMA request
 	TARGET_adc_dma_mode_enable();
-    
+
 	// Set ADC to scan mode
 	TARGET_adc_special_function_config(ADC_SCAN_MODE, ENABLE);
 }
