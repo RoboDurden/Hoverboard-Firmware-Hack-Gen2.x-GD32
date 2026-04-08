@@ -50,6 +50,15 @@ FOC_Controller foc_ctrl;
 uint16_t foc_offset_y = 2000;  // calibrated at startup
 uint16_t foc_offset_b = 2000;
 
+// ISR-rate averaging for debugging
+int32_t foc_id_sum = 0, foc_iq_sum = 0;
+int32_t foc_iy_sum = 0, foc_ib_sum = 0;
+uint16_t foc_avg_count = 0;
+int16_t foc_id_avg = 0, foc_iq_avg = 0;
+int16_t foc_iy_avg = 0, foc_ib_avg = 0;
+int32_t foc_id_var_sum = 0, foc_iq_var_sum = 0;
+int32_t foc_iy_var_sum = 0, foc_ib_var_sum = 0;
+
 #ifdef FOC_ENABLED
 // Runtime mode: 0=block commutation (startup), 1=FOC
 uint8_t foc_mode = 0;
@@ -299,6 +308,23 @@ void CalculateBLDC(void)
 		                   foc_offset_y, foc_offset_b);
 		foc_clarke(&foc_current, &foc_ab);
 		foc_park(&foc_ab, &foc_dq, foc_angle.electrical_angle);
+
+		// Accumulate for ISR-rate averaging (compute avg every 1000 cycles = ~62ms)
+		foc_id_sum += foc_dq.d;
+		foc_iq_sum += foc_dq.q;
+		foc_iy_sum += foc_current.iy;
+		foc_ib_sum += foc_current.ib;
+		foc_avg_count++;
+		if (foc_avg_count >= 1000) {
+			foc_id_avg = foc_id_sum / 1000;
+			foc_iq_avg = foc_iq_sum / 1000;
+			foc_iy_avg = foc_iy_sum / 1000;
+			foc_ib_avg = foc_ib_sum / 1000;
+			// Variance pass (approximate: use avg from this batch)
+			foc_id_var_sum = foc_iq_var_sum = foc_iy_var_sum = foc_ib_var_sum = 0;
+			foc_id_sum = foc_iq_sum = foc_iy_sum = foc_ib_sum = 0;
+			foc_avg_count = 0;
+		}
 	#endif
 
 // Add this check before setting PWM:

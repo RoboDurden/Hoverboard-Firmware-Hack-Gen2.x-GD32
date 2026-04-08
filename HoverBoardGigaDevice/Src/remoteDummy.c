@@ -196,7 +196,11 @@ void RemoteUpdate(void)
 				#endif
 				uint16_t deg = (uint32_t)foc_angle.electrical_angle * 360 / 65536;
 				uint16_t off_deg = (uint32_t)foc_angle.angle_offset * 360 / 65536;
-				sprintf(sMessage, "%s%5.02f V\t%s\tpos:%d\tang:%3d\tId:%4d\tIq:%4d\toff:%3d\tst:%lu",sMessage,batteryVoltage,foc_mode?"FOC":"BLC",pos,deg,foc_dq.d,foc_dq.q,off_deg,foc_angle.sector_ticks);
+				extern int16_t foc_id_avg, foc_iq_avg, foc_iy_avg, foc_ib_avg;
+				sprintf(sMessage, "%spos:%d\tang:%3d\tId:%4d\tIq:%4d\tIy:%4d\tIb:%4d\tiId:%4d\tiIq:%4d\tiIy:%4d\tiIb:%4d",
+					sMessage,pos,deg,
+					foc_dq.d,foc_dq.q,foc_current.iy,foc_current.ib,
+					foc_id_avg,foc_iq_avg,foc_iy_avg,foc_ib_avg);
 			#else
 				sprintf(sMessage, "%s%5.02f V\t%5.02f A\todom: %6d\ttarget: %5d\trevs: %5d\ttorque: %5d",sMessage,batteryVoltage,currentDC,iOdom,speed,revs32>>(REVS32_SHIFT-10),torque32);
 			#endif

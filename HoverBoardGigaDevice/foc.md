@@ -20,7 +20,7 @@ All FOC code lives in `foc.c` / `foc.h`. The control loop runs inside
 ```
 ADC (DMA) → phase_current_y, phase_current_b
                     ↓
-         foc_current_update()     ← offset calibration
+         foc_current_update()     ← auto-calibrated offsets
                     ↓
             Iy, Ib, Ig (int16_t, ADC counts)
                     ↓
@@ -32,9 +32,8 @@ ADC (DMA) → phase_current_y, phase_current_b
                     ↓
             Id, Iq (rotating frame)
                     ↓
-         PI controllers           ← Id→0 (flux), Iq→ref (torque)
-                    ↓
-            Vd, Vq
+      [Currently open-loop: Vd=0, Vq=speed_input]
+      [PI controllers exist but sign convention issue]
                     ↓
         foc_inverse_park()
                     ↓
@@ -52,9 +51,13 @@ transitions, the angle is linearly interpolated using the time between the
 last two transitions (speed estimate). The electrical angle is stored as
 uint16_t (0..65535 = 0..360°) for natural wraparound.
 
-An `angle_offset` parameter compensates for the physical alignment between
-hall sensors and motor phases. Currently set to ~55° (10000 uint16) based on
-minimizing Id RMS while running with block commutation.
+**Direction-aware**: The interpolation detects rotation direction from hall
+transition sequence (1→2→3 = forward, 3→2→1 = reverse) and interpolates
+forward or backward accordingly. This was critical — without it, one
+direction was silent and the other rumbled.
+
+**Angle offset**: 150° (27307 uint16), hardcoded. Determined by rotor
+alignment test (`foc_align_rotor()`) and confirmed by Id_rms sweep.
 
 ### Math
 
@@ -69,65 +72,31 @@ Total overhead: ~660 bytes Flash for sin table, ~8 bytes RAM for FOC state.
 ## Current status
 
 ### What works
+- **Open-loop voltage FOC**: Vd=0, Vq=bldc_outputFilterPwm. Motor runs
+  silently in both directions, self-starts from standstill.
 - Synchronized ADC sampling of phase currents (DMA triggered from timer update)
 - Automatic zero-current offset calibration at startup (~200ms, motor off)
-- Hall-based angle estimation with interpolation between transitions
+- Hall-based angle estimation with direction-aware interpolation
 - Clarke and Park transforms producing Id/Iq in the rotating frame
-- PI controllers and inverse transforms producing 3-phase voltage output
-- FOC control loop compiles and runs at 16kHz
-- Motor produces torque under FOC — drew 1A, continued spinning when
-  given a push by hand
+- 150° angle offset (lowest Id_rms = 28.1)
+- Lower pitch vibration than block commutation (more sinusoidal output)
 
 ### What doesn't work yet
-- **Startup from standstill**: Motor cannot self-start under FOC. The angle
-  interpolation needs at least one hall transition to estimate speed, so at
-  zero RPM the angle is stuck and the voltage vector doesn't rotate.
-  Need a startup strategy (e.g. block commutation until speed > threshold,
-  then switch to FOC).
-- **Angle offset tuning**: The ~55° offset was determined by sweeping offsets
-  while running block commutation and comparing Id_rms vs Iq_rms. Results:
+- **PI current controllers**: When enabled, the PI opposes motor motion.
+  The motor starts fast (PI output small), then slows as iq_ref ramps up.
+  Inverting current sign made it worse. Root cause: sign convention mismatch
+  in the feedback chain (shunt polarity → Clarke → Park → PI direction).
+  
+  **To debug**: Log Id/Iq via RTT while open-loop runs at constant speed.
+  Check: does Iq read positive or negative when motor spins forward with
+  positive Vq? The PI reference must match this sign.
 
-  | Offset | Id_rms | Iq_rms | Iq/Id ratio |
-  |--------|--------|--------|-------------|
-  | 0°     | 40.3   | 32.4   | 0.80        |
-  | 30°    | 38.0   | 43.5   | 1.14        |
-  | 55°    | 40.0   | 50.8   | 1.27 (best) |
-  | 90°    | 40.4   | 45.7   | 1.13        |
-
-  The remaining Id_rms (~40) doesn't change much across offsets because block
-  commutation produces inherently non-sinusoidal currents. The offset may need
-  further tuning once FOC is driving the motor (sinusoidal currents).
-- **Strange noises under FOC**: Audible noise when FOC is active, likely from
-  the angle offset being imperfect and/or the low hall sensor resolution (6
-  steps per revolution) causing jerky torque output.
-- **Overcurrent on first attempt**: With Kp=5, Ki=1, limit=1000 and no offset
-  calibration, the controller drove full voltage and tripped the 1A PSU limit.
-  Fixed by reducing gains to Kp=2, Ki=1, limit=500 and adding auto-calibration.
-
-## Configuration
-
-In `config.h`:
-```c
-#define BLDC_BC            // base commutation mode (always needed for startup)
-#define FOC_ENABLED        // enable FOC control loop (comment out for block commutation)
-```
-
-## PI controller tuning
-
-Current conservative values:
-- Kp = 2 (PWM counts per ADC count of current error)
-- Ki = 1 (integral gain, accumulated with >>10 shift = 1/1024 rate)
-- Output limit = ±500 (max ±1125 = full PWM range)
-
-These need increasing once startup and angle alignment are resolved. The motor
-draws current but barely moves with these gains — they were chosen for safety
-during initial testing.
-
-## Angle offset calibration results
+## Angle offset calibration
 
 ### Alignment test
 `foc_align_rotor()` applies 500 PWM counts at 0° electrical for 800ms, reads
-halls, computes offset. Found sector that gives **150° offset**.
+halls, computes offset. Found **150° offset**. Currently hardcoded to avoid
+the DC overcurrent from the alignment hold.
 
 ### Sweep results (block commutation, observing FOC math)
 
@@ -140,59 +109,84 @@ halls, computes offset. Found sector that gives **150° offset**.
 | **150°** | **28.1** | **33.4** | **1.19** | **alignment result, lowest Id** |
 | 180°   | 35.2   | 39.3   | 1.12  | |
 
-150° gives clearly the best Id (28.1 vs ~40 for all others).
+### Direction tuning
+At 150°, one direction was nearly silent, the other rumbled. Adding
+direction-aware interpolation (forward/reverse angle within sector)
+fixed this — both directions now sound the same.
 
-## FOC driving attempts
+135° and 165° were both worse than 150° in both directions.
 
-### Attempt 1: FOC only (Kp=5, limit=1000, no calibration)
-- Immediate overcurrent, PSU tripped at 1A
-- No offset calibration, hardcoded offsets wrong
+## FOC driving attempts (chronological)
 
-### Attempt 2: FOC only (Kp=2, limit=500, auto calibration, 150° offset)
-- Motor moved! Drew 1A, continued spinning when pushed by hand
+### Attempt 1: PI closed-loop (Kp=5, limit=1000, no calibration, 0° offset)
+- Immediate overcurrent, PSU tripped
+
+### Attempt 2: PI closed-loop (Kp=2, limit=500, auto calibration, 150° offset)
+- Motor moved! Continued spinning when pushed by hand
 - Horrible noise, voltage dropped 25→24V
-- Id still large (up to -133), angle may need more tuning
 
-### Attempt 3: Kp=1, limit=250
-- Too weak, just clicking, can't overcome cogging torque
+### Attempt 3: PI closed-loop (Kp=1, limit=250)
+- Too weak, just clicking
 
-### Attempt 4: Kp=2, limit=350, with block commutation startup + warmup
-- Alignment DC hold itself drew too much current
-- Block commutation didn't start properly after alignment
-- Motor ticked but didn't spin
+### Attempt 4: PI + BLC startup + warmup + alignment
+- Alignment DC hold drew too much current
+- BLC didn't start properly after alignment
 
-## Current issues
+### Attempt 5: Open-loop voltage, BLC startup, 150° offset, /4 scaling
+- First working FOC! Silent one way, rumble other way
+- Direction-aware interpolation fixed the rumble
 
-1. **Alignment overcurrent**: The DC voltage hold during alignment draws too
-   much current through the winding. Need either:
-   - Much lower alignment voltage
-   - PWM-based alignment (pulsed, not DC)
-   - Skip alignment and hardcode 150° offset
-2. **FOC transition**: Even with warmup timer, the transition from block
-   commutation to FOC causes issues. The FOC controller immediately tries
-   to correct current errors and overshoots.
-3. **PI tuning**: Kp=2, limit=500 worked but was noisy. Kp=1, limit=250 was
-   too weak. Need to find the sweet spot, possibly with different Id/Iq gains.
+### Attempt 6: Open-loop, no BLC, Vq=bldc_outputFilterPwm
+- Self-starts from standstill
+- Lower pitch than BLC, both directions similar
+- Current best configuration
+
+### Attempt 7: PI closed-loop with soft ramp (Kp=3/2, limit=400, iq_ref/8)
+- Motor started fast then slowed — PI opposing motion
+- Sign convention issue in current feedback
+- Inverting current sign made it worse
+
+## Configuration
+
+In `config.h`:
+```c
+#define BLDC_BC            // block commutation (used as fallback)
+#define FOC_ENABLED        // enable open-loop voltage FOC
+```
+
+In `remoteDummy.c`: `speed = 300` for constant speed testing.
+
+## PI controller (not yet working)
+
+Values tried:
+- Kp_d=2, Ki_d=1, limit=400 (flux)
+- Kp_q=3, Ki_q=1, limit=400 (torque)
+- iq_ref = bldc_outputFilterPwm / 8 with soft ramp
+
+Issue: PI opposes motion. Need to verify Iq sign convention before re-enabling.
 
 ## Next steps
 
-1. **Hardcode 150° offset** and skip alignment to avoid overcurrent at startup
-2. **Reduce FOC iq_ref scaling** — currently `bldc_outputFilterPwm / 2` which
-   may be too aggressive. Try `/4` or `/8`.
-3. **Add current limiting in FOC** — if |Id| or |Iq| exceed a threshold,
-   reduce voltage output regardless of PI
-4. **PI gain tuning**: Try Kp=2 Ki=0 (P-only) first to avoid integral windup
-5. **Consider open-loop voltage FOC** instead of current-loop FOC as a first
-   step — set Vd=0, Vq=reference directly, no PI controllers needed
-6. **Field weakening**: At high speeds, inject negative Id to extend speed range
-   beyond the voltage limit. Requires knowing the motor's electrical parameters.
+1. **Fix PI sign convention**: Log Id/Iq via RTT during open-loop at constant
+   speed. Determine if Iq is positive or negative for positive torque direction.
+   Then set iq_ref sign to match.
+2. **P-only control first**: Try Kp only (Ki=0) to avoid integral windup while
+   debugging the sign issue.
+3. **Current scaling**: Determine ADC counts per amp so iq_ref has physical
+   meaning. Use known PSU current + ADC reading.
+4. **Reduce hall stepping noise**: The remaining vibration is from 60° hall
+   resolution. Could add a low-pass on the angle estimate, or increase the
+   sin table to 512 entries.
+5. **Field weakening**: Inject negative Id at high speed.
+6. **UART control**: Switch from REMOTE_DUMMY to REMOTE_UART + joystick for
+   real-world testing.
 
 ## Files
 
 | File | Purpose |
 |------|---------|
 | `Inc/foc.h` | FOC types, function declarations |
-| `Src/foc.c` | Transforms, PI controller, sin table, control loop |
+| `Src/foc.c` | Transforms, PI controller, sin table, alignment, control loop |
 | `Src/bldc.c` | Hooks FOC into CalculateBLDC ISR |
 | `Src/bldcBC.c` | InitBldc: FOC init + offset calibration |
 | `Inc/defines/defines_2-1-20.h` | PHASE_CURRENT_Y=PB0, PHASE_CURRENT_B=PB1 |
@@ -203,12 +197,13 @@ halls, computes offset. Found sector that gives **150° offset**.
 FOC state is logged via SEGGER RTT when REMOTE_DUMMY + RTT_REMOTE are enabled.
 Output format:
 ```
-26.72 V  pos:3  ang:159  Id: -19  Iq:   3  Iy:  16  Ib: -16  Oy:1993  Ob:2001
+26.72 V  FOC  pos:3  ang:159  Id: -19  Iq:   3  off:150  st:37
 ```
+- FOC/BLC: current control mode
 - pos: hall sector (1-6)
 - ang: electrical angle in degrees (0-359)
-- Id/Iq: rotating frame currents (should be: Id≈0, Iq=torque)
-- Iy/Ib: raw phase currents (offset-corrected ADC counts)
-- Oy/Ob: calibrated zero-current offsets
+- Id/Iq: rotating frame currents
+- off: angle offset in degrees
+- st: sector_ticks (ISR ticks per hall sector, lower = faster)
 
 See `howto.md` for RTT connection commands.
