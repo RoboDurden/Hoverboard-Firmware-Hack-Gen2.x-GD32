@@ -20,7 +20,12 @@
 #define VBATT PA4
 #define ADC_BATTERY_VOLT      0.02507  	// V_Batt to V_BattMeasure = factor 30: ( (ADC-Data/4095) *3,3V *30 )
 
-//#define CURRENT_DC P??		// this board does not have a shunt resistor !
+//#define CURRENT_DC P??		// no DC bus shunt on this board
+// Per-phase current sensing: 2x R004 (4mΩ) shunt resistors on low-side FETs,
+// amplified by dual op-amp (~20x gain). Confirmed by phase identification test:
+// PB0 responds to Y-low, PB1 responds to B-low. No shunt on green phase.
+#define PHASE_CURRENT_Y	PB0		// 4mΩ shunt + op-amp on yellow low-side
+#define PHASE_CURRENT_B	PB1		// 4mΩ shunt + op-amp on blue low-side
 
 #define SELF_HOLD	PB12
 #define BUTTON PA12
