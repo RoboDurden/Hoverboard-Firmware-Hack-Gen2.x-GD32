@@ -64,9 +64,7 @@ void InitBldc()
 		                      &adc_buffer.phase_current_y, &adc_buffer.phase_current_b);
 	#endif
 
-	#ifdef FOC_ENABLED
-		// Align rotor and determine angle offset
-		foc_angle.angle_offset = foc_align_rotor((uint8_t *)hall_to_pos);
-	#endif
+	// Angle offset hardcoded at 150° — determined by alignment test
+	// Skip runtime alignment to avoid DC overcurrent
 }
 #endif

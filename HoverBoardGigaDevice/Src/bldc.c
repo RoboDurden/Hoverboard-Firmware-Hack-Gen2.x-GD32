@@ -330,16 +330,19 @@ void CalculateBLDC(void)
 		if (foc_warmup_ticks >= FOC_WARMUP_TICKS &&
 		    foc_angle.sector_ticks < FOC_ENGAGE_TICKS && foc_angle.sector_ticks >= 2) {
 			foc_mode = 1;
-			foc_pi_reset(&foc_ctrl.pi_d);
-			foc_pi_reset(&foc_ctrl.pi_q);
 		}
 	} else {
-		// FOC mode
-		foc_ctrl.iq_ref = bldc_outputFilterPwm / 2;
-		foc_ctrl.id_ref = 0;
+		// Open-loop voltage FOC: Vd=0, Vq=scaled from speed input
+		// No PI controllers — just set voltage directly using angle estimate
+		FOC_DQ vdq;
+		vdq.d = 0;
+		vdq.q = bldc_outputFilterPwm / 4;  // conservative scaling
+
+		FOC_AlphaBeta vab;
+		foc_inverse_park(&vdq, &vab, foc_angle.electrical_angle);
 
 		FOC_Phase foc_voltage;
-		foc_controller_update(&foc_ctrl, &foc_current, foc_angle.electrical_angle, &foc_voltage);
+		foc_inverse_clarke(&vab, &foc_voltage);
 
 		y = foc_voltage.y;
 		b = foc_voltage.b;

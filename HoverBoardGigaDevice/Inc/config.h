@@ -36,7 +36,7 @@
 
 	#define BLDC_BC			// old block commutation bldc control
 	//#define BLDC_SINE		// silent sine-pwm motor control
-	//#define FOC_ENABLED	// block commutation at startup, transitions to FOC at speed
+	#define FOC_ENABLED	// block commutation at startup, transitions to FOC at speed
 
 	#define DRIVING_MODE 0	//  0=pwm, 1=speed, 2=torque, 3=odometer
 

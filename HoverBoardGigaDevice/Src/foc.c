@@ -16,7 +16,7 @@ const uint16_t sector_start_angle[7] = {
 
 void foc_angle_init(FOC_Angle *a) {
 	a->electrical_angle = 0;
-	a->angle_offset = 0;  // set by foc_align_rotor() at startup
+	a->angle_offset = 27307;  // 150° hardcoded from alignment test
 	a->sector = 0;
 	a->last_sector = 0;
 	a->transition_tick = 0;
