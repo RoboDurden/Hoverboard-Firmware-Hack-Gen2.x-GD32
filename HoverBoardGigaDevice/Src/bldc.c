@@ -44,6 +44,8 @@ uint8_t lastPos;
 // FOC state
 FOC_Angle foc_angle;
 FOC_Current foc_current;
+FOC_AlphaBeta foc_ab;
+FOC_DQ foc_dq;
 uint16_t foc_offset_y = 2000;  // calibrated at startup
 uint16_t foc_offset_b = 2000;
 int32_t bldc_inputFilterPwm = 0;
@@ -283,6 +285,8 @@ void CalculateBLDC(void)
 	#if defined(PHASE_CURRENT_Y) && defined(PHASE_CURRENT_B)
 		foc_current_update(&foc_current, adc_buffer.phase_current_y, adc_buffer.phase_current_b,
 		                   foc_offset_y, foc_offset_b);
+		foc_clarke(&foc_current, &foc_ab);
+		foc_park(&foc_ab, &foc_dq, foc_angle.electrical_angle);
 	#endif
 
 // Add this check before setting PWM:

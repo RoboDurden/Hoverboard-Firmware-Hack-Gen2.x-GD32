@@ -37,4 +37,30 @@ typedef struct {
 void foc_current_update(FOC_Current *c, uint16_t adc_y, uint16_t adc_b,
                         uint16_t offset_y, uint16_t offset_b);
 
+// Alpha-beta (stationary frame) and d-q (rotating frame) currents
+typedef struct {
+	int16_t alpha;
+	int16_t beta;
+} FOC_AlphaBeta;
+
+typedef struct {
+	int16_t d;   // flux component (should be driven to 0)
+	int16_t q;   // torque component
+} FOC_DQ;
+
+// Clarke transform: 3-phase → alpha-beta (stationary frame)
+// Uses yellow as phase A reference
+void foc_clarke(const FOC_Current *in, FOC_AlphaBeta *out);
+
+// Park transform: alpha-beta → d-q (rotating frame)
+void foc_park(const FOC_AlphaBeta *in, FOC_DQ *out, uint16_t angle);
+
+// Inverse Park: d-q → alpha-beta
+void foc_inverse_park(const FOC_DQ *in, FOC_AlphaBeta *out, uint16_t angle);
+
+// Q15 sin/cos from lookup table. Input: uint16_t angle (0..65535)
+// Output: Q15 value (-32768..32767 representing -1.0..+1.0)
+int16_t foc_sin(uint16_t angle);
+int16_t foc_cos(uint16_t angle);
+
 #endif

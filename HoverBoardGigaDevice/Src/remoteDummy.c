@@ -187,9 +187,10 @@ void RemoteUpdate(void)
 				extern uint8_t pos;
 				#include "../Inc/foc.h"
 				extern FOC_Angle foc_angle;
+				extern FOC_DQ foc_dq;
 				extern FOC_Current foc_current;
 				uint16_t deg = (uint32_t)foc_angle.electrical_angle * 360 / 65536;
-				sprintf(sMessage, "%s%5.02f V\tpos:%d\tang:%3d\tIy:%4d\tIb:%4d\tIg:%4d",sMessage,batteryVoltage,pos,deg,foc_current.iy,foc_current.ib,foc_current.ig);
+				sprintf(sMessage, "%s%5.02f V\tpos:%d\tang:%3d\tId:%4d\tIq:%4d\tIy:%4d\tIb:%4d",sMessage,batteryVoltage,pos,deg,foc_dq.d,foc_dq.q,foc_current.iy,foc_current.ib);
 			#else
 				sprintf(sMessage, "%s%5.02f V\t%5.02f A\todom: %6d\ttarget: %5d\trevs: %5d\ttorque: %5d",sMessage,batteryVoltage,currentDC,iOdom,speed,revs32>>(REVS32_SHIFT-10),torque32);
 			#endif
