@@ -15,7 +15,7 @@ const uint16_t sector_start_angle[7] = {
 
 void foc_angle_init(FOC_Angle *a) {
 	a->electrical_angle = 0;
-	a->angle_offset = 0;  // will need tuning per motor
+	a->angle_offset = 10000;  // ~55° — best Iq/Id ratio from block commutation sweep
 	a->sector = 0;
 	a->last_sector = 0;
 	a->transition_tick = 0;
