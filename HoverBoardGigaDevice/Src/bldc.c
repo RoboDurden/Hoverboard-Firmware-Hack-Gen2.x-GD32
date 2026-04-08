@@ -320,8 +320,7 @@ void CalculateBLDC(void)
 
 #ifdef FOC_ENABLED
 	{
-		// Open-loop voltage FOC: Vd=0, Vq from speed input
-		// No BLC startup — FOC runs from the start
+		// Open-loop voltage FOC
 		FOC_DQ vdq;
 		vdq.d = 0;
 		vdq.q = bldc_outputFilterPwm;

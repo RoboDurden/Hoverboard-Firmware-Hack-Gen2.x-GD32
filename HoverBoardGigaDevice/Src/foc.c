@@ -82,7 +82,7 @@ void foc_current_update(FOC_Current *c, uint16_t adc_y, uint16_t adc_b,
                         uint16_t offset_y, uint16_t offset_b) {
 	c->iy = (int16_t)adc_y - (int16_t)offset_y;
 	c->ib = (int16_t)adc_b - (int16_t)offset_b;
-	c->ig = -(c->iy + c->ib);  // Kirchhoff: Iy + Ib + Ig = 0
+	c->ig = -(c->iy + c->ib);
 }
 
 // 256-entry Q15 sine table (one full period, 0..360°)
@@ -284,8 +284,8 @@ void foc_controller_init(FOC_Controller *ctrl) {
 	// Kp=2: 2 PWM counts per ADC count of current error
 	// Ki=1: slow integral, shifted by PI_INTEGRAL_SHIFT (1/1024)
 	// Limit: ±500 (well below max of ±1125)
-	foc_pi_init(&ctrl->pi_d, 2, 1, 350);
-	foc_pi_init(&ctrl->pi_q, 2, 1, 350);
+	foc_pi_init(&ctrl->pi_d, 2, 1, 400);  // flux: drive Id→0
+	foc_pi_init(&ctrl->pi_q, 3, 1, 400);  // torque: track iq_ref
 	ctrl->iq_ref = 0;
 	ctrl->id_ref = 0;
 }
