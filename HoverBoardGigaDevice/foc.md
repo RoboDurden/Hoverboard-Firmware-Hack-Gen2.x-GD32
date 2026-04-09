@@ -201,21 +201,93 @@ iq_ref ramped up — PI was opposing motion. Inverting current sign was worse.
 Now that ISR-rate analysis shows iIq=+40 for positive speed, the PI reference
 sign should match. The iIb offset of -22 may still cause issues.
 
+## Reference implementation analysis
+
+Studied `/Users/alex/dev/c/hoverboard-firmware-hack-FOC` — a production-grade
+FOC for STM32F103 hoverboard mainboard (different from our GD32 sensorboard).
+Matlab/Simulink generated core. Key learnings:
+
+### Current sign convention
+Reference uses `current = offset - adc_reading` (inverted from our
+`adc_reading - offset`). However, this depends on the op-amp topology:
+- Their board has different shunt amps (possibly inverting)
+- Our HM8632 might be non-inverting — need to verify from circuit
+- We tested both signs and neither worked, suggesting the sign alone
+  isn't the problem
+
+### PI gains — ours were far too aggressive
+Reference gains (converted from Q11 fixed-point):
+
+| Loop | Kp | Ki | Anti-windup |
+|------|----|----|-------------|
+| Speed | 2.36 | 0.12 | Kb=0.12 |
+| Iq (torque) | **0.60** | **0.60** | Kb=0.36 |
+| Id (flux) | **0.40** | **0.36** | Kb=0.38 |
+
+Our Iq Kp was 2-3, theirs is **0.60** — we were 3-5x too aggressive.
+This is likely the primary reason the PI failed, not the sign convention.
+The motor was responding correctly but the overshoot was so severe it
+looked like the PI was opposing motion.
+
+### Anti-windup
+Reference uses **back-calculation anti-windup** (Kb coefficient) which is
+more sophisticated than our simple integrator clamp. When the output
+saturates, the integrator is actively driven back by `Kb * (saturated -
+unsaturated)`. This prevents the integrator from building up during
+saturation and overshooting on release.
+
+### Startup strategy
+- Commutation mode below 240 RPM (speed-based, not time-based)
+- FOC above 480 RPM
+- Hysteresis between thresholds prevents mode oscillation
+- Open-loop voltage ramp at `dV_openRate` per control cycle
+
+### SVPWM
+Reference doesn't use true SVPWM either — same inverse Clarke (SPWM)
+but subtracts common-mode `(Va+Vb+Vc)/3` to center waveforms. This is
+equivalent to the min-max method:
+```c
+offset = -(max(Va,Vb,Vc) + min(Va,Vb,Vc)) / 2;
+Va += offset; Vb += offset; Vc += offset;
+```
+Gives ~15% more DC bus voltage utilization with no downside.
+
+### Motor parameters
+- `n_polePairs = 15` (30 poles — standard hoverboard hub motor)
+- `cf_speedCoef = 10667` for RPM calculation
+- `I_DC_MAX = 100A` DC-link current limit
+- `i_max = 12000` units (~60A) phase current limit
+
+### Waveform
+Uses sinusoidal modulation in FOC mode, not trapezoidal. The motor
+back-EMF shape (sinusoidal vs trapezoidal) can be measured with a scope
+by spinning the wheel by hand with the controller off.
+
+### Field weakening
+Implemented but disabled by default. Activates above 4800 RPM by
+injecting negative Id current. Uses speed-dependent Vq_max lookup table
+to constrain torque at high speed.
+
 ## Next steps
 
-1. **Fix Ib calibration**: The -22 offset on iIb suggests the auto-calibration
-   runs too early or the op-amp hasn't settled. Try longer calibration delay,
-   or re-calibrate after motor has been idle for 1 second.
-2. **Re-attempt PI with correct signs**: iIq=+40 for positive speed means
-   iq_ref should be positive. Start with P-only (Ki=0) to avoid windup.
-3. **Verify physical wire mapping**: Firmware Y/B/G channel names may not match
+1. **Reduce PI gains dramatically**: Match reference — Iq Kp=0.6 Ki=0.6,
+   Id Kp=0.4 Ki=0.36. Our values of 2-3 were far too aggressive.
+2. **Add anti-windup back-calculation**: Replace simple integrator clamp
+   with Kb-based back-calculation for smoother saturation recovery.
+3. **Fix Ib calibration**: The -22 offset on iIb suggests the auto-cal
+   runs too early. Try longer delay or running average filter like
+   the reference (which averages over 2000 cycles).
+4. **Add SVPWM centering**: Simple min-max offset after inverse Clarke.
+   Free ~15% voltage headroom.
+5. **Verify current sign**: With correct (lower) gains, re-test PI.
+   If iIq=+40 for positive speed with `adc-offset`, the sign is correct.
+   If PI still opposes, try `offset-adc`.
+6. **Measure back-EMF**: Scope the motor wires while spinning by hand.
+   Determines if sinusoidal or trapezoidal waveform is optimal.
+7. **Verify physical wire mapping**: Firmware Y/B/G names may not match
    motor wire colors. Energize each channel and observe which wire twitches.
-4. **Reduce hall stepping noise**: The remaining vibration is from 60° hall
-   resolution. Could add a low-pass on the angle estimate, or increase the
-   sin table to 512 entries.
-5. **Field weakening**: Inject negative Id at high speed.
-6. **UART control**: Switch from REMOTE_DUMMY to REMOTE_UART + joystick for
-   real-world testing.
+8. **UART control**: Switch from REMOTE_DUMMY to REMOTE_UART + joystick
+   for real-world testing.
 
 ## Files
 
