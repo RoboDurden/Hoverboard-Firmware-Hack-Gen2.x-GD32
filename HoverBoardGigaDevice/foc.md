@@ -359,16 +359,116 @@ smoothness improvement over 6-step is significant regardless.
 
 ## RTT debugging
 
-FOC state is logged via SEGGER RTT when REMOTE_DUMMY + RTT_REMOTE are enabled.
-Output format:
+### What is RTT?
+
+SEGGER Real Time Transfer (RTT) is a debug logging mechanism that works
+over the ST-LINK SWD connection — no UART needed. The firmware writes to
+a RAM buffer, and the debugger (OpenOCD) reads it out over SWD in the
+background without stopping the CPU.
+
+
+**How it works:**
+1. The firmware includes `SEGGER_RTT.c` (already in the project)
+2. A control block (`"SEGGER RTT"`) is placed in RAM — OpenOCD searches
+   for this magic string to find the buffer
+3. `SEGGER_RTT_WriteString(0, "hello\r\n")` writes to channel 0's ring buffer
+4. OpenOCD polls the buffer via SWD and forwards data to a TCP port
+5. You connect to that TCP port to read the output
+
+**Advantages over UART:**
+- No extra wires — uses the same ST-LINK already connected for flashing
+- Doesn't interfere with motor control UART (REMOTE_UART can stay active)
+- Non-blocking — if the host isn't reading, data is silently dropped
+  (mode NO_BLOCK_SKIP), so it never stalls the firmware
+- Much faster than UART for burst data
+
+**Limitations:**
+- Buffer is only 1024 bytes — high-frequency logging can overflow
+- `SEGGER_RTT_MODE_NO_BLOCK_SKIP` (default) drops writes when buffer is full
+- OpenOCD must find the RTT control block in RAM — if the firmware restarts,
+  you may need to re-issue `rtt start` to re-scan
+- Small CPU overhead for the `sprintf` + `WriteString` calls
+
+### How to use RTT
+
+**Enable in firmware:**
+```c
+// In config.h, enable REMOTE_DUMMY with RTT:
+#define REMOTE_DUMMY
+#define RTT_REMOTE
+#define WINDOWS_RN     // adds \r before \n for terminal compatibility
 ```
-26.72 V  FOC  pos:3  ang:159  Id: -19  Iq:   3  off:150  st:37
+
+**Write from firmware:**
+```c
+#include "../Src/SEGGER_RTT.h"
+SEGGER_RTT_WriteString(0, "Hello RTT\r\n");
+
+// Or with formatting:
+char s[64];
+sprintf(s, "Id:%d Iq:%d\r\n", foc_dq.d, foc_dq.q);
+SEGGER_RTT_WriteString(0, s);
 ```
-- FOC/BLC: current control mode
+
+**Read from host (start OpenOCD + connect):**
+```bash
+# Start OpenOCD with RTT server on port 9090
+/Users/alex/.platformio/packages/tool-openocd-gd32/bin/openocd \
+  -f interface/stlink.cfg \
+  -c "transport select hla_swd" \
+  -c "set CPUTAPID 0" \
+  -f target/stm32f1x.cfg \
+  -c "rtt setup 0x20000000 0x2000 \"SEGGER RTT\"" \
+  -c "init" -c "rtt start" \
+  -c "rtt server start 9090 0"
+
+# Then in another terminal, read the output:
+nc localhost 9090
+
+# Or use python for programmatic capture:
+python3 -c "
+import socket, time
+s = socket.socket()
+s.connect(('localhost', 9090))
+s.settimeout(1.0)
+while True:
+    try:
+        data = s.recv(4096)
+        if data: print(data.decode(), end='')
+    except socket.timeout: pass
+"
+```
+
+**Reset and capture startup output:**
+```bash
+# If RTT is already running, reset via telnet to OpenOCD:
+python3 -c "
+import socket, time
+# Connect RTT reader first
+s = socket.socket(); s.connect(('localhost', 9090))
+# Reset target via OpenOCD telnet
+t = socket.socket(); t.connect(('localhost', 4444))
+t.recv(1024); t.sendall(b'reset run\n')
+time.sleep(1); t.sendall(b'rtt start\n'); t.close()
+# Now read fresh output
+while True:
+    try: print(s.recv(4096).decode(), end='')
+    except: pass
+"
+```
+
+**Note:** OpenOCD must be running to flash firmware too, so you can't have
+both `pio run --target upload` and RTT active simultaneously. Kill OpenOCD
+before flashing, then restart it for RTT.
+
+### Current FOC RTT output format
+
+When REMOTE_DUMMY + RTT_REMOTE + PHASE_CURRENT are enabled:
+```
+pos:3  ang:159  Id: -19  Iq:   3  Iy:  16  Ib: -16  iId:  -2  iIq:  40  iIy:  -2  iIb: -22
+```
 - pos: hall sector (1-6)
 - ang: electrical angle in degrees (0-359)
-- Id/Iq: rotating frame currents
-- off: angle offset in degrees
-- st: sector_ticks (ISR ticks per hall sector, lower = faster)
-
-See `howto.md` for RTT connection commands.
+- Id/Iq: snapshot rotating frame currents (noisy at 200Hz sample rate)
+- Iy/Ib: snapshot phase currents
+- iId/iIq/iIy/iIb: ISR-averaged values (1000 cycles, stable)
