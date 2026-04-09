@@ -515,6 +515,46 @@ With 4mΩ shunts and ~20x op-amp gain:
 - This converts `iq_ref` from arbitrary ADC units to actual amps
 - Needed for meaningful torque control and current limiting
 
+### Back-EMF observer (next major step)
+
+The biggest improvement available — replaces the noisy 6-step hall
+angle interpolation with a smooth back-EMF derived angle estimate.
+
+**Why it's the right next step:**
+- 4.5x more 50-200Hz noise in FOC vs BLC is from angle interpolation jumps
+- Per-sector calibration and PLL helped marginally but didn't fix the
+  fundamental issue
+- Production hoverboard FOC firmware uses sensorless above ~480 RPM
+
+**Approach: dq-frame back-EMF observer**
+
+In our open-loop FOC (Vd=0), Id should be ~0 when angle is correct.
+Non-zero Id indicates angle misalignment — exactly what we exploited
+for manual angle calibration. Make this a continuous control loop:
+
+```
+estimated_angle += Kp * Id_measured
+estimated_velocity += Ki * Id_measured
+```
+
+Then use `estimated_angle` instead of hall angle in the Park transform.
+
+**Implementation steps:**
+1. Add observer state (angle, velocity) to foc.h
+2. Run observer alongside hall angle, log both via RTT for comparison
+3. Verify observer converges to similar angle as halls (validation only)
+4. Then switch FOC Park transform to use observer angle above threshold
+5. Tune gains for smoothness vs response
+
+**Sign convention warning:**
+Same sign trap that broke our PI controller. Test by manually offsetting
+the assumed angle via joystick trim, observing whether Id goes positive
+or negative, then matching the PI sign.
+
+**Below minimum speed:**
+Back-EMF ∝ speed. Below ~50 RPM it's lost in noise. Fall back to halls
+or open-loop ramp.
+
 ### Field weakening
 
 At high speed, back-EMF approaches supply voltage and torque drops.
