@@ -449,6 +449,38 @@ actual motor wire colors may not match. To verify:
 3. Observe which physical wire / motor direction responds
 4. Map: wire color → timer channel → firmware name
 
+### RPM from odometry (no firmware change needed)
+
+The firmware already sends `iOdomL` (signed int32, hall step count) via
+UART. The joystick controller can compute RPM from the delta:
+
+```c
+// In joystick controller, every 10ms:
+static int32_t lastOdom = 0;
+int32_t delta = oData.iOdomL - lastOdom;
+lastOdom = oData.iOdomL;
+// 90 hall steps per mechanical revolution (6 steps × 15 pole pairs)
+float rpm = (delta * 100.0 * 60.0) / 90.0;
+```
+
+15 pole pairs confirmed by VESC parameter detection screenshot in the
+reference FOC project (`docs/pictures/motor_VESC_params.png`).
+
+The existing `realSpeed` in the firmware is in km/h using a magic constant
+(`1991.81f / speedCounter`) that assumes a specific wheel diameter — not
+useful for bench testing or different wheel setups.
+
+Could also expose `sector_ticks` and FOC debug data via the unused UART
+feedback fields (`iSpeedR`, `iAmpR`, `iOdomR` are all zero in single
+board mode):
+```c
+#ifdef FOC_ENABLED
+    oData.iSpeedR = (int16_t) foc_angle.sector_ticks;
+    oData.iAmpR = (int16_t) foc_dq.q;    // Iq
+    oData.iOdomR = (int32_t) foc_angle.electrical_angle;
+#endif
+```
+
 ### Current scaling calibration
 
 With 4mΩ shunts and ~20x op-amp gain:
@@ -465,6 +497,25 @@ Inject negative Id to weaken the permanent magnet field:
 - Reference project activates above 4800 RPM with max Id of -4000 units
 - Requires a Vq_max lookup table (speed → max available voltage)
 - Only enable once basic FOC + PI is stable
+
+The reference project has a diagram (`docs/pictures/FieldWeakening.png`)
+showing three blending modes based on Lo/Hi speed thresholds:
+- **Fully Blended**: FW ramps 0→FW_max within the input range
+- **Partially Blended**: FW starts but input range ends before FW_max
+- **Outside**: FW thresholds above input range — never activates
+
+### Matlab/Simulink vs handwritten C
+
+The reference FOC project uses Simulink-generated code. Pros: visual model,
+automatic fixed-point scaling, simulation before flashing. Cons: unreadable
+generated code (`rtDW->Switch2_e`), expensive toolchain (~$10K), hard to
+debug on target, inflexible for custom features.
+
+Our handwritten approach is ~200-300 lines of C for the complete FOC core.
+The Simulink model is useful as a **design reference** (gains, thresholds,
+structure) without needing to use the generated code. For a single developer
+iterating on hardware with RTT debugging, handwritten C is faster to develop
+and much easier to debug.
 
 ## Files
 
