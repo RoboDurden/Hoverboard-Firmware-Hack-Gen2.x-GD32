@@ -36,14 +36,14 @@
 
 	#define BLDC_BC			// old block commutation bldc control
 	//#define BLDC_SINE		// silent sine-pwm motor control
-	#define FOC_ENABLED	// block commutation at startup, transitions to FOC at speed
+	//#define FOC_ENABLED	// block commutation at startup, transitions to FOC at speed
 
 	#define DRIVING_MODE 0	//  0=pwm, 1=speed, 2=torque, 3=odometer
 
 	#define BAT_CELLS         	7       // battery number of cells. Normal Hoverboard battery: 10s
 	//#define BATTERY_LOW_SHUTOFF
 	#define BATTERY_LOW_BEEP
-	#define BEEP_BACKWARDS
+	//#define BEEP_BACKWARDS
 
 	#define REMOTE_USART	1	// 0=PB6/PB7, 1=PA2/PA3
 

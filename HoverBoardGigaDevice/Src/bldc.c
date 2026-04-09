@@ -365,9 +365,18 @@ void CalculateBLDC(void)
 		FOC_Phase foc_voltage;
 		foc_inverse_clarke(&vab, &foc_voltage);
 
-		y = foc_voltage.y;
-		b = foc_voltage.b;
-		g = foc_voltage.g;
+		// SVPWM centering: subtract midpoint of (max, min) to free ~15% voltage
+		int16_t vmax = foc_voltage.y;
+		if (foc_voltage.b > vmax) vmax = foc_voltage.b;
+		if (foc_voltage.g > vmax) vmax = foc_voltage.g;
+		int16_t vmin = foc_voltage.y;
+		if (foc_voltage.b < vmin) vmin = foc_voltage.b;
+		if (foc_voltage.g < vmin) vmin = foc_voltage.g;
+		int16_t v_offset = -(vmax + vmin) / 2;
+
+		y = foc_voltage.y + v_offset;
+		b = foc_voltage.b + v_offset;
+		g = foc_voltage.g + v_offset;
 	}
 #else
 	// Block commutation only
