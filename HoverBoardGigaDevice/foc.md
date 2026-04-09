@@ -325,26 +325,125 @@ The actual back-EMF shape should be measured before deciding. For now,
 sinusoidal FOC is a good default — it works on both motor types and the
 smoothness improvement over 6-step is significant regardless.
 
-## Next steps
+## Next steps (priority order)
 
 1. **Reduce PI gains dramatically**: Match reference — Iq Kp=0.6 Ki=0.6,
    Id Kp=0.4 Ki=0.36. Our values of 2-3 were far too aggressive.
+   This is the most likely fix for the PI current loop.
 2. **Add anti-windup back-calculation**: Replace simple integrator clamp
    with Kb-based back-calculation for smoother saturation recovery.
 3. **Fix Ib calibration**: The -22 offset on iIb suggests the auto-cal
    runs too early. Try longer delay or running average filter like
    the reference (which averages over 2000 cycles).
-4. **Add SVPWM centering**: Simple min-max offset after inverse Clarke.
-   Free ~15% voltage headroom.
-5. **Verify current sign**: With correct (lower) gains, re-test PI.
+4. **Verify current sign**: With correct (lower) gains, re-test PI.
    If iIq=+40 for positive speed with `adc-offset`, the sign is correct.
    If PI still opposes, try `offset-adc`.
-6. **Measure back-EMF**: Scope the motor wires while spinning by hand.
-   Determines if sinusoidal or trapezoidal waveform is optimal.
-7. **Verify physical wire mapping**: Firmware Y/B/G names may not match
-   motor wire colors. Energize each channel and observe which wire twitches.
-8. **UART control**: Switch from REMOTE_DUMMY to REMOTE_UART + joystick
-   for real-world testing.
+5. **Add SVPWM centering**: Simple min-max offset after inverse Clarke.
+   Free ~15% voltage headroom.
+
+## Ideas and suggestions
+
+### Live angle tuning via joystick trim
+
+Instead of reflashing to test each angle offset, use REMOTE_UART with
+the joystick controller and map the steer axis to the angle offset.
+This allows real-time tuning while monitoring Id/Iq on RTT (RTT uses
+SWD, UART uses PA2/PA3 — both can run simultaneously).
+
+In `bldc.c`:
+```c
+// Map steer input (-1000..+1000) to angle offset
+// Center = 150° (27307), ±60° trim range (±10922)
+foc_angle.angle_offset = 27307 + (steer * 10922 / 1000);
+```
+
+Sweep the trim while watching iId on RTT — find the angle where iId
+is closest to zero. Then hardcode the result.
+
+The joystick controller already sends `iSteer` in the serial protocol.
+A trim axis on the physical joystick could be mapped to this via
+the `-a` axis parameter, or by modifying the joystick controller to
+send a separate trim axis as the steer value.
+
+### Trapezoidal FOC waveform
+
+If the motor has trapezoidal back-EMF (measure with scope — spin wheel
+by hand with controller off, observe waveform on motor wires), a
+trapezoidal lookup table would give better torque than sine.
+
+Implementation: replace the 256-entry `sin_table[]` in `foc.c` with a
+trapezoidal waveform:
+```
+Sine:        0 → peak → 0 → -peak → 0  (smooth)
+Trapezoidal: 0 → ramp → flat → ramp → 0 → ramp → -flat → ramp → 0
+             |60°| 120° |60°|  60°  |120°  |60°|
+```
+
+Could be a compile-time option:
+```c
+#ifdef FOC_WAVEFORM_TRAP
+  static const int16_t waveform_table[256] = { ... };  // trapezoidal
+#else
+  static const int16_t waveform_table[256] = { ... };  // sinusoidal
+#endif
+```
+
+Then `foc_sin()` and `foc_cos()` use `waveform_table` instead of
+`sin_table`. Everything else (Park, Clarke, PI) stays identical.
+
+A/B test sinusoidal vs trapezoidal by switching the define and
+comparing sound, vibration, and torque.
+
+### Speed-based FOC/BLC mode switching
+
+Instead of time-based warmup, use speed (sector_ticks) with hysteresis
+like the reference project:
+- BLC below 240 RPM equivalent (~sector_ticks > 500)
+- FOC above 480 RPM equivalent (~sector_ticks < 250)
+- Hysteresis between thresholds prevents oscillation
+
+Previous attempts at mode switching caused grinding because the voltage
+scaling didn't match between BLC and FOC. The fix is to match the
+effective voltage: BLC uses `bldc_outputFilterPwm` directly, so FOC
+should use a similar magnitude (currently `bldc_outputFilterPwm / 1`
+in open-loop mode, which matches).
+
+### Measure back-EMF with scope
+
+Disconnect motor from controller (or power off with FETs disabled).
+Spin wheel by hand, measure between any two motor wires.
+- Trapezoidal = flat tops and bottoms with steep ramps
+- Sinusoidal = smooth rounded peaks
+
+Also reveals:
+- Pole pairs (count electrical cycles per mechanical revolution)
+- Back-EMF constant (V/RPM) — useful for PI tuning and field weakening
+
+### Verify physical wire-to-channel mapping
+
+Firmware names Y/B/G correspond to timer channels CH0/CH1/CH2. The
+actual motor wire colors may not match. To verify:
+1. Disconnect motor from wheel (free spinning)
+2. Energize one timer channel at a time with a small DC voltage
+3. Observe which physical wire / motor direction responds
+4. Map: wire color → timer channel → firmware name
+
+### Current scaling calibration
+
+With 4mΩ shunts and ~20x op-amp gain:
+- Estimated ~0.01A per ADC count (10mA resolution)
+- Verify by comparing PSU ammeter reading with ADC count at known load
+- This converts `iq_ref` from arbitrary ADC units to actual amps
+- Needed for meaningful torque control and current limiting
+
+### Field weakening
+
+At high speed, back-EMF approaches supply voltage and torque drops.
+Inject negative Id to weaken the permanent magnet field:
+- Extends speed range at the cost of efficiency
+- Reference project activates above 4800 RPM with max Id of -4000 units
+- Requires a Vq_max lookup table (speed → max available voltage)
+- Only enable once basic FOC + PI is stable
 
 ## Files
 
