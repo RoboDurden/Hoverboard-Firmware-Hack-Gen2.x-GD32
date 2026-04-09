@@ -53,11 +53,13 @@ void InitBldc()
 {
 	extern FOC_Angle foc_angle;
 	extern FOC_Controller foc_ctrl;
+	extern FOC_Observer foc_obs;
 	extern uint16_t foc_offset_y, foc_offset_b;
 	extern adc_buf_t adc_buffer;
 
 	foc_angle_init(&foc_angle);
 	foc_controller_init(&foc_ctrl);
+	foc_observer_init(&foc_obs);
 
 	#if defined(PHASE_CURRENT_Y) && defined(PHASE_CURRENT_B)
 		foc_calibrate_offsets(&foc_offset_y, &foc_offset_b,

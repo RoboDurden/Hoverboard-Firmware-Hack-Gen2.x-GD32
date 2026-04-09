@@ -200,6 +200,36 @@ void foc_inverse_park(const FOC_DQ *in, FOC_AlphaBeta *out, uint16_t angle) {
 	out->beta  = (int16_t)(((int32_t)in->d * sin_val + (int32_t)in->q * cos_val) >> 15);
 }
 
+// Back-EMF observer: uses Id as angle error signal
+// (d-axis current is non-zero when assumed angle ≠ rotor angle in open-loop FOC)
+void foc_observer_init(FOC_Observer *obs) {
+	obs->angle = 0;
+	obs->velocity = 0;
+	obs->sign = 1;  // start positive, flip if observer diverges
+}
+
+void foc_observer_set(FOC_Observer *obs, uint16_t angle, int32_t velocity) {
+	obs->angle = (int32_t)angle << 16;
+	obs->velocity = velocity;
+}
+
+// Observer update at ISR rate.
+// Each call advances angle by velocity, then nudges based on Id error.
+// Very conservative gains — observer needs many cycles to converge.
+void foc_observer_update(FOC_Observer *obs, int16_t id) {
+	// Always advance angle by current velocity estimate
+	obs->angle += obs->velocity;
+
+	// Use Id (raw ADC counts) as the error signal.
+	int32_t error = (int32_t)id * obs->sign;
+
+	// Kp: position correction — much smaller than before (was 1, now 1/256)
+	// In Q16 units: error * 256 = nudge angle by 256 units per ADC count of Id
+	obs->angle += error * 256;
+	// Ki: velocity correction (slower)
+	obs->velocity += error;
+}
+
 // PI controller
 void foc_pi_init(FOC_PI *pi, int16_t kp, int16_t ki, int16_t limit) {
 	pi->kp = kp;

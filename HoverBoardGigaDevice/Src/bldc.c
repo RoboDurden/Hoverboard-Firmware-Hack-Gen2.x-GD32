@@ -50,6 +50,7 @@ FOC_Current foc_current;
 FOC_AlphaBeta foc_ab;
 FOC_DQ foc_dq;
 FOC_Controller foc_ctrl;
+FOC_Observer foc_obs;
 uint16_t foc_offset_y = 2000;  // calibrated at startup
 uint16_t foc_offset_b = 2000;
 
@@ -312,6 +313,21 @@ void CalculateBLDC(void)
 		foc_clarke(&foc_current, &foc_ab);
 		foc_park(&foc_ab, &foc_dq, foc_angle.electrical_angle);
 
+		// Back-EMF observer: seed from halls once motor is spinning, then let it run free
+		// Re-seed only if observer is way off from hall (catches drift)
+		static uint8_t obs_seeded = 0;
+		int16_t obs_hall_diff = (int16_t)(foc_angle.electrical_angle - foc_observer_angle(&foc_obs));
+		if (!obs_seeded || obs_hall_diff > 5461 || obs_hall_diff < -5461) {  // > 30°
+			if (foc_angle.sector_ticks > 0 && foc_angle.sector_ticks < 5000) {
+				// hall velocity = ANGLE_60DEG (10923) per sector_ticks ISR cycles, in Q16
+				int32_t hall_velocity = ((int32_t)10923 << 16) / (int32_t)foc_angle.sector_ticks;
+				if (foc_angle.direction < 0) hall_velocity = -hall_velocity;
+				foc_observer_set(&foc_obs, foc_angle.electrical_angle, hall_velocity);
+				obs_seeded = 1;
+			}
+		}
+		foc_observer_update(&foc_obs, foc_dq.d);
+
 		// Accumulate for ISR-rate averaging (compute avg every 1000 cycles = ~62ms)
 		foc_id_sum += foc_dq.d;
 		foc_iq_sum += foc_dq.q;
@@ -352,7 +368,7 @@ void CalculateBLDC(void)
 		// Hardcoded angle offset (calibrated for this motor)
 		foc_angle.angle_offset = 27307;
 
-		// Open-loop voltage FOC (PI current loop unstable on this hardware)
+		// Open-loop voltage FOC driven by hall angle (observer runs in parallel for monitoring)
 		FOC_DQ vdq;
 		vdq.d = 0;
 		vdq.q = bldc_outputFilterPwm;
@@ -385,32 +401,20 @@ void CalculateBLDC(void)
 	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_B, CLAMP(b + BLDC_TIMER_MID_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
 	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, CLAMP(y + BLDC_TIMER_MID_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
 
-	// RTT logging for FOC tuning (every ~3000 cycles ~= 5Hz at 16kHz)
+	// RTT logging for back-EMF observer comparison (every ~3000 cycles)
 	#if defined(RTT_REMOTE) && defined(PHASE_CURRENT_Y) && defined(PHASE_CURRENT_B)
 	{
 		static uint16_t rtt_log_count = 0;
 		if (++rtt_log_count >= 3000) {
 			rtt_log_count = 0;
 			char s[120];
-			// Print sector calibration: average ticks for each sector and percentage of mean
-			uint32_t total = 0;
-			uint16_t samples = 0;
-			for (int i = 0; i < 6; i++) {
-				if (foc_angle.sector_tick_cnt[i] > 0) {
-					total += foc_angle.sector_tick_sum[i] / foc_angle.sector_tick_cnt[i];
-					samples += foc_angle.sector_tick_cnt[i];
-				}
-			}
-			uint32_t mean = total / 6;
-			if (mean == 0) mean = 1;
-			sprintf(s, "n=%u  mean=%lu  s1=%lu s2=%lu s3=%lu s4=%lu s5=%lu s6=%lu\r\n",
-				samples, mean,
-				foc_angle.sector_tick_cnt[0] ? foc_angle.sector_tick_sum[0]/foc_angle.sector_tick_cnt[0] : 0,
-				foc_angle.sector_tick_cnt[1] ? foc_angle.sector_tick_sum[1]/foc_angle.sector_tick_cnt[1] : 0,
-				foc_angle.sector_tick_cnt[2] ? foc_angle.sector_tick_sum[2]/foc_angle.sector_tick_cnt[2] : 0,
-				foc_angle.sector_tick_cnt[3] ? foc_angle.sector_tick_sum[3]/foc_angle.sector_tick_cnt[3] : 0,
-				foc_angle.sector_tick_cnt[4] ? foc_angle.sector_tick_sum[4]/foc_angle.sector_tick_cnt[4] : 0,
-				foc_angle.sector_tick_cnt[5] ? foc_angle.sector_tick_sum[5]/foc_angle.sector_tick_cnt[5] : 0);
+			uint16_t hall_deg = (uint32_t)foc_angle.electrical_angle * 360 / 65536;
+			uint16_t obs_deg = (uint32_t)foc_observer_angle(&foc_obs) * 360 / 65536;
+			int16_t diff_deg = (int16_t)((int32_t)obs_deg - (int32_t)hall_deg);
+			if (diff_deg > 180) diff_deg -= 360;
+			if (diff_deg < -180) diff_deg += 360;
+			sprintf(s, "hall:%3u  obs:%3u  diff:%+4d  Id:%4d  Iq:%4d  obs_v:%ld\r\n",
+				hall_deg, obs_deg, diff_deg, foc_id_avg, foc_iq_avg, foc_obs.velocity >> 16);
 			SEGGER_RTT_WriteString(0, s);
 		}
 	}

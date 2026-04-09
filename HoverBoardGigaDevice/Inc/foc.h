@@ -122,4 +122,25 @@ void foc_controller_update(FOC_Controller *ctrl,
                            uint16_t angle,
                            FOC_Phase *voltage_out);
 
+// Back-EMF observer using Id as the angle error signal.
+// In open-loop voltage FOC with Vd=0, Id is non-zero only when the
+// assumed angle is misaligned with the rotor. The observer maintains
+// its own angle estimate that converges to minimize Id.
+typedef struct {
+	int32_t angle;     // Q16: top 16 bits are the uint16_t angle
+	int32_t velocity;  // Q16: angle units per ISR tick
+	int8_t  sign;      // ±1: sign of Id→angle correction (determined empirically)
+} FOC_Observer;
+
+void foc_observer_init(FOC_Observer *obs);
+// Update observer one ISR cycle. id is the d-axis current measurement
+// (output of Park transform using the CURRENT angle estimate, not halls).
+void foc_observer_update(FOC_Observer *obs, int16_t id);
+// Get the current observer angle as a uint16_t
+static inline uint16_t foc_observer_angle(const FOC_Observer *obs) {
+	return (uint16_t)(obs->angle >> 16);
+}
+// Force the observer angle/velocity (e.g., from halls during startup)
+void foc_observer_set(FOC_Observer *obs, uint16_t angle, int32_t velocity);
+
 #endif
