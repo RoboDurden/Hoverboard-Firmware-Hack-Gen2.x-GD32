@@ -422,10 +422,8 @@ SEGGER_RTT_WriteString(0, s);
   -c "init" -c "rtt start" \
   -c "rtt server start 9090 0"
 
-# Then in another terminal, read the output:
-nc localhost 9090
-
-# Or use python for programmatic capture:
+# Then in another terminal, read the output.
+# Note: nc on macOS is unreliable for RTT — use python instead:
 python3 -c "
 import socket, time
 s = socket.socket()
