@@ -343,6 +343,27 @@ smoothness improvement over 6-step is significant regardless.
 
 ## Ideas and suggestions
 
+### Speed measurement and comparison
+
+The firmware has built-in speed measurement via `realSpeed` (km/h, legacy)
+and `revs32` (revs/s × 1024, fixed-point). Both are computed from hall
+transition timing in `CalculateBLDC()`.
+
+RPM can also be derived from `foc_angle.sector_ticks`:
+```
+RPM = 60 * PWM_FREQ / (sector_ticks * 6 * pole_pairs)
+```
+With 15 pole pairs and sector_ticks=35: RPM ≈ 305.
+
+**Open-loop FOC was slower than block commutation at the same speed input.**
+This is expected — SPWM only uses ~87% of the DC bus voltage vs block
+commutation's ~100%. Adding SVPWM centering (see above) would recover
+~15% and nearly match block commutation speed. An external RPM counter
+(optical/magnetic) could verify the exact difference.
+
+The `revs32` value was visible in RTT output (the `revs:` field from
+remoteDummy). To add RPM to the FOC RTT output, compute from sector_ticks.
+
 ### Live angle tuning via joystick trim
 
 Instead of reflashing to test each angle offset, use REMOTE_UART with
