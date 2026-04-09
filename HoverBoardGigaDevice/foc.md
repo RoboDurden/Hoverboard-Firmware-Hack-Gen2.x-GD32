@@ -268,6 +268,63 @@ Implemented but disabled by default. Activates above 4800 RPM by
 injecting negative Id current. Uses speed-dependent Vq_max lookup table
 to constrain torque at high speed.
 
+## SVPWM vs SPWM
+
+Our current implementation uses **SPWM** (sinusoidal PWM) — the inverse
+Clarke produces three pure sinusoidal phase voltages. This is simple and
+correct but only uses ~87% of the available DC bus voltage.
+
+**SVPWM** (space vector PWM) adds a common-mode offset that centers the
+waveforms, giving ~15% more voltage utilization. Two equivalent methods:
+
+1. **Min-max centering** (simplest, one line of code):
+   ```c
+   int16_t offset = -(MAX(y, MAX(b, g)) + MIN(y, MIN(b, g))) / 2;
+   y += offset; b += offset; g += offset;
+   ```
+
+2. **Common-mode subtraction** (reference project uses this):
+   ```c
+   int16_t offset = (y + b + g) / 3;
+   y -= offset; b -= offset; g -= offset;
+   ```
+
+3. **t0/t1/t2 sector-based switching** (the old hhworking branch SVM code):
+   More complex, mathematically equivalent to min-max for centered vectors.
+
+All three produce identical motor behavior. Method 1 is recommended for
+our implementation — add after `foc_inverse_clarke()`.
+
+The old SVM code on `hoverboardhavoc/hhworking` was a legitimate SVPWM
+implementation based on Jantzen Lee's tutorial, using sector-based t0/t1/t2
+timing with phase advance. It was open-loop (hall sector only, no angle
+interpolation) — essentially "better shaped block commutation".
+
+## Motor waveform: sinusoidal vs trapezoidal
+
+Hoverboard motors typically have **trapezoidal back-EMF** (designed for
+cheap 6-step controllers). This affects the optimal control strategy:
+
+| Approach | Trapezoidal motor | Sinusoidal motor |
+|----------|-------------------|------------------|
+| 6-step block commutation | Good torque, noisy | Poor — torque ripple |
+| Sinusoidal FOC (our impl) | Smooth, ~5% less peak torque | Optimal |
+| Trapezoidal FOC | Optimal — max torque + smooth | Poor — mismatch |
+
+**Trapezoidal FOC** uses the same control loop (Clarke, Park, PI, inverse
+Park) but with a trapezoidal lookup table instead of sine. This matches
+the back-EMF shape for maximum torque while keeping the benefits of current
+control. To implement: replace the sine table in `foc.c` with a trapezoidal
+waveform (flat tops for 120°, linear ramps for 60°).
+
+**To determine which waveform this motor uses**: disconnect from controller,
+spin wheel by hand, scope any two motor wires. Trapezoidal = flat tops with
+steep ramps. Sinusoidal = smooth rounded peaks.
+
+The actual back-EMF shape should be measured before deciding. For now,
+sinusoidal FOC is a good default — it works on both motor types and the
+smoothness improvement over 6-step is significant regardless.
+
 ## Next steps
 
 1. **Reduce PI gains dramatically**: Match reference — Iq Kp=0.6 Ki=0.6,
