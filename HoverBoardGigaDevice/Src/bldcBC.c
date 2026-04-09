@@ -64,7 +64,10 @@ void InitBldc()
 		                      &adc_buffer.phase_current_y, &adc_buffer.phase_current_b);
 	#endif
 
-	// Angle offset hardcoded at 150° — determined by alignment test
-	// Skip runtime alignment to avoid DC overcurrent
+	#ifdef FOC_ENABLED
+		// Self-calibrate angle offset by aligning rotor to a known electrical angle.
+		// Required because hall sensor placement varies between motor designs.
+		foc_angle.angle_offset = foc_align_rotor((uint8_t *)hall_to_pos);
+	#endif
 }
 #endif
