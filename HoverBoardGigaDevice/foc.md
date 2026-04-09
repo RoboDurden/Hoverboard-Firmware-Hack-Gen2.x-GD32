@@ -6,9 +6,21 @@
 - Motor: BLDC hoverboard motor, 3-phase
 - Hall sensors: 3 (6 positions per electrical revolution, 60° resolution)
 - PWM: 16kHz, center-aligned, complementary outputs with 60-count dead time
-- Phase current shunts: 2 low-side (PB0=Yellow, PB1=Blue, no Green)
-  - Op-amp biased at ~VCC/2 (~2000 ADC counts at zero current)
+- Phase current shunts: 2 low-side, amplified by dual op-amp
+  - Shunt resistors: 2x R004 (4mΩ) SMD
+  - Op-amp: HM8632 (C32X marking), dual RRIO CMOS, 6.5MHz, 520µA
+  - Feedback: 3x 10KΩ (1002 marking) resistors
+  - Op-amp gain: ~20x (estimated from 1A → ~100 ADC counts)
+  - Biased at ~VCC/2 (~2000 ADC counts at zero current)
+  - ~0.01A per ADC count (10mA resolution)
+  - PB0 = TIMER_BLDC_CHANNEL_Y (CH0/PA8 low-side)
+  - PB1 = TIMER_BLDC_CHANNEL_B (CH1/PA9 low-side)
+  - No shunt on TIMER_BLDC_CHANNEL_G (CH2/PA10)
   - Third phase derived via Kirchhoff: Ig = -(Iy + Ib)
+  - NOTE: firmware channel names (Y/B/G) may not match physical motor wire
+    colors. Robo Durden's photo of the same board labels the shunts as
+    "Blue shunt" and "Green shunt" by wire color. The firmware-to-ADC
+    mapping is correct regardless of wire color naming.
 
 ## Architecture
 
@@ -156,6 +168,26 @@ In `config.h`:
 
 In `remoteDummy.c`: `speed = 300` for constant speed testing.
 
+## Current sensing verification
+
+ISR-rate averaging (1000 samples at 16kHz, reported every ~62ms) confirms
+sensing and transforms are working correctly:
+
+| Signal | Avg | Variance | Interpretation |
+|--------|-----|----------|----------------|
+| iIy | -2 | 3 | Near-zero average (AC signal) ✓ |
+| iIb | -22 | 4 | DC offset — calibration issue |
+| iId | -2 | 7 | Near-zero flux ✓ |
+| iIq | 40 | 6 | Stable torque signal ✓ |
+
+Key insight: snapshot values (200Hz RTT rate) show variance ~1000, but
+ISR-averaged values show variance ~5. The 16kHz control loop sees stable
+values — the apparent noise was just aliasing from the slow RTT sample rate.
+
+**Open-loop FOC does not use current measurements** — the motor spins purely
+from hall-based angle estimation and voltage transforms. Current sensing is
+read-only until PI controllers are enabled.
+
 ## PI controller (not yet working)
 
 Values tried:
@@ -163,17 +195,21 @@ Values tried:
 - Kp_q=3, Ki_q=1, limit=400 (torque)
 - iq_ref = bldc_outputFilterPwm / 8 with soft ramp
 
-Issue: PI opposes motion. Need to verify Iq sign convention before re-enabling.
+Attempt with ramp: motor started fast (PI output small) then slowed as
+iq_ref ramped up — PI was opposing motion. Inverting current sign was worse.
+
+Now that ISR-rate analysis shows iIq=+40 for positive speed, the PI reference
+sign should match. The iIb offset of -22 may still cause issues.
 
 ## Next steps
 
-1. **Fix PI sign convention**: Log Id/Iq via RTT during open-loop at constant
-   speed. Determine if Iq is positive or negative for positive torque direction.
-   Then set iq_ref sign to match.
-2. **P-only control first**: Try Kp only (Ki=0) to avoid integral windup while
-   debugging the sign issue.
-3. **Current scaling**: Determine ADC counts per amp so iq_ref has physical
-   meaning. Use known PSU current + ADC reading.
+1. **Fix Ib calibration**: The -22 offset on iIb suggests the auto-calibration
+   runs too early or the op-amp hasn't settled. Try longer calibration delay,
+   or re-calibrate after motor has been idle for 1 second.
+2. **Re-attempt PI with correct signs**: iIq=+40 for positive speed means
+   iq_ref should be positive. Start with P-only (Ki=0) to avoid windup.
+3. **Verify physical wire mapping**: Firmware Y/B/G channel names may not match
+   motor wire colors. Energize each channel and observe which wire twitches.
 4. **Reduce hall stepping noise**: The remaining vibration is from 60° hall
    resolution. Could add a low-pass on the angle estimate, or increase the
    sin table to 512 entries.
