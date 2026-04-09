@@ -2,6 +2,9 @@
 #include "../Inc/bldc.h"
 #include "../Inc/foc.h"
 #include <stdio.h>
+#ifdef RTT_REMOTE
+#include "SEGGER_RTT.h"
+#endif
 
 /*
 // Internal constants
@@ -346,6 +349,11 @@ void CalculateBLDC(void)
 
 #ifdef FOC_ENABLED
 	{
+		// Live angle tuning: map joystick steer (-1000..+1000) to angle offset
+		// Center at 150° (27307), ±60° trim range (±10922)
+		extern int32_t steer;
+		foc_angle.angle_offset = 27307 + (int16_t)((int32_t)steer * 10922 / 1000);
+
 		// Open-loop voltage FOC
 		FOC_DQ vdq;
 		vdq.d = 0;
@@ -370,6 +378,21 @@ void CalculateBLDC(void)
 	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_G, CLAMP(g + BLDC_TIMER_MID_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
 	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_B, CLAMP(b + BLDC_TIMER_MID_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
 	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, CLAMP(y + BLDC_TIMER_MID_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
+
+	// RTT logging for FOC tuning (every ~3000 cycles ~= 5Hz at 16kHz)
+	#if defined(RTT_REMOTE) && defined(FOC_ENABLED) && defined(PHASE_CURRENT_Y) && defined(PHASE_CURRENT_B)
+	{
+		static uint16_t rtt_log_count = 0;
+		if (++rtt_log_count >= 3000) {
+			rtt_log_count = 0;
+			char s[80];
+			uint16_t off_deg = (uint32_t)foc_angle.angle_offset * 360 / 65536;
+			sprintf(s, "off:%3u  iId:%5d  iIq:%5d  iIy:%5d  iIb:%5d\r\n",
+				off_deg, foc_id_avg, foc_iq_avg, foc_iy_avg, foc_ib_avg);
+			SEGGER_RTT_WriteString(0, s);
+		}
+	}
+	#endif
 
 	// robo23
 	iOdom = iOdom - up_or_down(lastPos, pos); // int32 will overflow at +-2.147.483.648

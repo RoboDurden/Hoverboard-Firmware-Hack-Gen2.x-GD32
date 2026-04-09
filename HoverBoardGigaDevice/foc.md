@@ -188,6 +188,32 @@ values — the apparent noise was just aliasing from the slow RTT sample rate.
 from hall-based angle estimation and voltage transforms. Current sensing is
 read-only until PI controllers are enabled.
 
+## Live trim test results (confirmed angle and sign convention)
+
+Used joystick axis 4 → `iSteer` → `foc_angle.angle_offset` for live tuning.
+Sweep range: 90°-210° around 150° center.
+
+| Offset | iId | iIq | Notes |
+|--------|-----|-----|-------|
+| 90° | -4 | +9 | Edge of range |
+| 150° | +0.4 | **-32** | **Motor fastest here** (user observation) |
+| 175° | -22 | +26 | (default startup value) |
+| 190° | +0.4 | +64 | Second iId zero crossing (180° flipped) |
+| 205° | +48 | +55 | Diverging |
+
+**Confirmations:**
+- 150° is the correct angle offset (matches motor max speed)
+- iIq is **negative** for forward motion at 150°
+- The PI controller failure was a **sign convention mismatch** — our `iq_ref`
+  was positive (matching forward speed input) but measured `iIq` was negative
+- Fix: invert current measurement (`current = offset - adc`) like the reference
+  project, OR negate `iq_ref` before passing to PI
+
+The 190° point is the same physical alignment rotated 180° — both are
+"perpendicular to flux" but with opposite torque sign. Motor was slower
+at 190° because the voltage was applied in the wrong direction relative
+to the rotor.
+
 ## PI controller (not yet working)
 
 Values tried:
