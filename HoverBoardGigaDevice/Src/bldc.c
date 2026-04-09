@@ -349,12 +349,10 @@ void CalculateBLDC(void)
 
 #ifdef FOC_ENABLED
 	{
-		// Live angle tuning: map joystick steer (-1000..+1000) to angle offset
-		// Center at 150° (27307), ±60° trim range (±10922)
-		extern int32_t steer;
-		foc_angle.angle_offset = 27307 + (int16_t)((int32_t)steer * 10922 / 1000);
+		// Hardcoded angle offset (calibrated for this motor)
+		foc_angle.angle_offset = 27307;
 
-		// Open-loop voltage FOC
+		// Open-loop voltage FOC (PI current loop unstable on this hardware)
 		FOC_DQ vdq;
 		vdq.d = 0;
 		vdq.q = bldc_outputFilterPwm;
@@ -365,7 +363,6 @@ void CalculateBLDC(void)
 		FOC_Phase foc_voltage;
 		foc_inverse_clarke(&vab, &foc_voltage);
 
-		// SVPWM centering: subtract midpoint of (max, min) to free ~15% voltage
 		int16_t vmax = foc_voltage.y;
 		if (foc_voltage.b > vmax) vmax = foc_voltage.b;
 		if (foc_voltage.g > vmax) vmax = foc_voltage.g;

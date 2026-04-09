@@ -28,7 +28,10 @@ static const uint16_t sector_width[7] = {
 
 void foc_angle_init(FOC_Angle *a) {
 	a->electrical_angle = 0;
-	a->angle_offset = 0;  // motor-specific — calibrate via foc_align_rotor() or live trim
+	// Angle offset depends on hall sensor placement (motor design, not per-unit).
+	// For this hoverboard sensorboard: 27307 = 150° (verified by bench tuning).
+	// For other motors, calibrate via foc_align_rotor() or joystick trim.
+	a->angle_offset = 27307;
 	a->sector = 0;
 	a->last_sector = 0;
 	a->direction = 1;
@@ -209,17 +212,23 @@ void foc_pi_reset(FOC_PI *pi) {
 	pi->integral = 0;
 }
 
+// Q11 fixed-point gains (matching reference FOC project)
+// Effective gain = stored_value / 2048
+// Reference uses kp=1229 → ~0.6, ki=1229 → ~0.6 (Iq loop)
+//                kp=819  → ~0.4, ki=737  → ~0.36 (Id loop)
+#define PI_KP_SHIFT 11
+
 int16_t foc_pi_update(FOC_PI *pi, int16_t error) {
-	// Accumulate integral
+	// Accumulate integral (Q11 scaled by additional PI_INTEGRAL_SHIFT for precision)
 	pi->integral += (int32_t)error * pi->ki;
 
 	// Anti-windup: clamp integral
-	int32_t int_limit = (int32_t)pi->limit << PI_INTEGRAL_SHIFT;
+	int32_t int_limit = (int32_t)pi->limit << (PI_INTEGRAL_SHIFT + PI_KP_SHIFT);
 	if (pi->integral > int_limit) pi->integral = int_limit;
 	if (pi->integral < -int_limit) pi->integral = -int_limit;
 
-	// Compute output: P + I
-	int32_t output = (int32_t)error * pi->kp + (pi->integral >> PI_INTEGRAL_SHIFT);
+	// Compute output: P + I, with Q11 gains
+	int32_t output = ((int32_t)error * pi->kp + (pi->integral >> PI_INTEGRAL_SHIFT)) >> PI_KP_SHIFT;
 
 	// Clamp output
 	if (output > pi->limit) return pi->limit;
@@ -258,8 +267,8 @@ void foc_calibrate_offsets(uint16_t *offset_y, uint16_t *offset_b,
 
 // Align rotor to determine the electrical angle offset.
 // Applies a d-axis voltage at 0° to lock the rotor, then reads the hall position.
-#define ALIGN_VOLTAGE 500  // PWM counts (~44% of mid value)
-#define ALIGN_SETTLE_MS 800
+#define ALIGN_VOLTAGE 150  // PWM counts (~13% of mid value) — keep current low
+#define ALIGN_SETTLE_MS 500
 
 uint16_t foc_align_rotor(uint8_t *hall_to_pos_table) {
 	uint16_t mid = BLDC_TIMER_PERIOD / 2;
@@ -316,8 +325,9 @@ void foc_controller_init(FOC_Controller *ctrl) {
 	// Kp=2: 2 PWM counts per ADC count of current error
 	// Ki=1: slow integral, shifted by PI_INTEGRAL_SHIFT (1/1024)
 	// Limit: ±500 (well below max of ±1125)
-	foc_pi_init(&ctrl->pi_d, 2, 1, 400);  // flux: drive Id→0
-	foc_pi_init(&ctrl->pi_q, 3, 1, 400);  // torque: track iq_ref
+	// Q11 gains from hoverboard-firmware-hack-FOC reference project
+	foc_pi_init(&ctrl->pi_d, 819,  737,  400);  // flux: Kp~0.4, Ki~0.36
+	foc_pi_init(&ctrl->pi_q, 1229, 1229, 400);  // torque: Kp~0.6, Ki~0.6
 	ctrl->iq_ref = 0;
 	ctrl->id_ref = 0;
 }

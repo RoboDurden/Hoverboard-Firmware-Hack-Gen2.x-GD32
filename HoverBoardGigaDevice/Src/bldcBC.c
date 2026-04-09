@@ -65,9 +65,11 @@ void InitBldc()
 	#endif
 
 	#ifdef FOC_ENABLED
-		// Self-calibrate angle offset by aligning rotor to a known electrical angle.
-		// Required because hall sensor placement varies between motor designs.
-		foc_angle.angle_offset = foc_align_rotor((uint8_t *)hall_to_pos);
+		// Angle offset must be set per motor. Options:
+		// 1. Hardcode it in foc_angle_init() — simplest but motor-specific
+		// 2. Call foc_align_rotor() — requires bench testing to find a safe ALIGN_VOLTAGE
+		// 3. Use joystick trim axis to set live (see remoteUart -> steer mapping)
+		// 4. EEPROM/flash storage of calibration value
 	#endif
 }
 #endif
