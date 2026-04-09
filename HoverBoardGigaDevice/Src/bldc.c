@@ -389,15 +389,31 @@ void CalculateBLDC(void)
 	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, CLAMP(y + BLDC_TIMER_MID_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
 
 	// RTT logging for FOC tuning (every ~3000 cycles ~= 5Hz at 16kHz)
-	#if defined(RTT_REMOTE) && defined(FOC_ENABLED) && defined(PHASE_CURRENT_Y) && defined(PHASE_CURRENT_B)
+	#if defined(RTT_REMOTE) && defined(PHASE_CURRENT_Y) && defined(PHASE_CURRENT_B)
 	{
 		static uint16_t rtt_log_count = 0;
 		if (++rtt_log_count >= 3000) {
 			rtt_log_count = 0;
-			char s[80];
-			uint16_t off_deg = (uint32_t)foc_angle.angle_offset * 360 / 65536;
-			sprintf(s, "off:%3u  iId:%5d  iIq:%5d  iIy:%5d  iIb:%5d\r\n",
-				off_deg, foc_id_avg, foc_iq_avg, foc_iy_avg, foc_ib_avg);
+			char s[120];
+			// Print sector calibration: average ticks for each sector and percentage of mean
+			uint32_t total = 0;
+			uint16_t samples = 0;
+			for (int i = 0; i < 6; i++) {
+				if (foc_angle.sector_tick_cnt[i] > 0) {
+					total += foc_angle.sector_tick_sum[i] / foc_angle.sector_tick_cnt[i];
+					samples += foc_angle.sector_tick_cnt[i];
+				}
+			}
+			uint32_t mean = total / 6;
+			if (mean == 0) mean = 1;
+			sprintf(s, "n=%u  mean=%lu  s1=%lu s2=%lu s3=%lu s4=%lu s5=%lu s6=%lu\r\n",
+				samples, mean,
+				foc_angle.sector_tick_cnt[0] ? foc_angle.sector_tick_sum[0]/foc_angle.sector_tick_cnt[0] : 0,
+				foc_angle.sector_tick_cnt[1] ? foc_angle.sector_tick_sum[1]/foc_angle.sector_tick_cnt[1] : 0,
+				foc_angle.sector_tick_cnt[2] ? foc_angle.sector_tick_sum[2]/foc_angle.sector_tick_cnt[2] : 0,
+				foc_angle.sector_tick_cnt[3] ? foc_angle.sector_tick_sum[3]/foc_angle.sector_tick_cnt[3] : 0,
+				foc_angle.sector_tick_cnt[4] ? foc_angle.sector_tick_sum[4]/foc_angle.sector_tick_cnt[4] : 0,
+				foc_angle.sector_tick_cnt[5] ? foc_angle.sector_tick_sum[5]/foc_angle.sector_tick_cnt[5] : 0);
 			SEGGER_RTT_WriteString(0, s);
 		}
 	}

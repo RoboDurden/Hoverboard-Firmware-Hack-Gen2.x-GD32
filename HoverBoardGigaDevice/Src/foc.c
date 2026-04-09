@@ -1,17 +1,28 @@
 #include "../Inc/foc.h"
 #include "../Inc/defines.h"
 
-// Sector start angles (uint16_t: 0..65535 = 0..360 degrees electrical)
-// pos 1 starts at 0°, each sector is 60°
-// This table may need adjustment based on motor/hall alignment
+// Calibrated sector start angles for this specific motor.
+// Measured by recording per-sector hall ticks at constant speed:
+// ticks per sector = [71, 75, 71, 73, 74, 72] (sum 436 = 360°)
 const uint16_t sector_start_angle[7] = {
-	0,            // [0] unused
-	0,            // [1] pos 1: 0°
-	ANGLE_60DEG,  // [2] pos 2: 60°
-	ANGLE_60DEG * 2,  // [3] pos 3: 120°
-	ANGLE_60DEG * 3,  // [4] pos 4: 180°
-	ANGLE_60DEG * 4,  // [5] pos 5: 240°
-	ANGLE_60DEG * 5,  // [6] pos 6: 300°
+	0,      // [0] unused
+	0,      // [1] s1: 0.0°
+	10672,  // [2] s2: 58.6°
+	21945,  // [3] s3: 120.5°
+	32617,  // [4] s4: 179.2°
+	43590,  // [5] s5: 239.4°
+	54713,  // [6] s6: 300.5°
+};
+
+// Sector widths (each sector's actual angular extent)
+static const uint16_t sector_width[7] = {
+	0,
+	10672,  // s1: 58.6°
+	11273,  // s2: 61.9°
+	10672,  // s3: 58.6°
+	10972,  // s4: 60.3°
+	11123,  // s5: 61.1°
+	10822,  // s6: 59.4°
 };
 
 void foc_angle_init(FOC_Angle *a) {
@@ -23,6 +34,12 @@ void foc_angle_init(FOC_Angle *a) {
 	a->transition_tick = 0;
 	a->sector_ticks = 1000;  // ~62ms at 16kHz, safe default (slow speed)
 	a->tick = 0;
+	a->pll_angle = 0;
+	a->pll_velocity = 0;
+	for (int i = 0; i < 6; i++) {
+		a->sector_tick_sum[i] = 0;
+		a->sector_tick_cnt[i] = 0;
+	}
 }
 
 // Determine direction from sector transition
@@ -41,6 +58,9 @@ void foc_angle_update(FOC_Angle *a, uint8_t pos) {
 
 	if (pos < 1 || pos > 6) return;
 
+	// PLL: advance angle by velocity each ISR cycle
+	a->pll_angle += a->pll_velocity;
+
 	// Detect hall transition
 	if (pos != a->sector) {
 		uint32_t now = a->tick;
@@ -49,6 +69,15 @@ void foc_angle_update(FOC_Angle *a, uint8_t pos) {
 		// Only update speed if the elapsed time is reasonable
 		if (elapsed >= 2 && elapsed <= 10000) {
 			a->sector_ticks = elapsed;
+
+			// Calibration: accumulate elapsed time for the sector we just LEFT
+			if (a->sector >= 1 && a->sector <= 6) {
+				uint8_t s = a->sector - 1;
+				if (a->sector_tick_cnt[s] < 60000) {
+					a->sector_tick_sum[s] += elapsed;
+					a->sector_tick_cnt[s]++;
+				}
+			}
 		}
 
 		// Detect rotation direction
@@ -57,25 +86,27 @@ void foc_angle_update(FOC_Angle *a, uint8_t pos) {
 		a->last_sector = a->sector;
 		a->sector = pos;
 		a->transition_tick = now;
+
+		// PLL correction at hall transition: rotor is at the leading edge of the new sector
+		uint16_t measured;
+		if (a->direction >= 0) {
+			measured = sector_start_angle[a->sector];
+		} else {
+			measured = sector_start_angle[a->sector] + sector_width[a->sector];
+		}
+
+		// Compute error in 16-bit signed wrap (handles 0/65535 correctly)
+		int16_t pll_angle_16 = (int16_t)(a->pll_angle >> 16);
+		int16_t error_16 = (int16_t)((uint16_t)measured - (uint16_t)pll_angle_16);
+		int32_t error_32 = (int32_t)error_16 << 16;
+
+		// PI correction: Kp = 1/4 (position), Ki = 1/256 (velocity)
+		a->pll_angle += error_32 >> 2;
+		a->pll_velocity += error_32 >> 8;
 	}
 
-	// Interpolate angle within current sector, respecting direction
-	uint32_t ticks_in_sector = a->tick - a->transition_tick;
-
-	uint16_t frac;
-	if (ticks_in_sector >= a->sector_ticks) {
-		frac = ANGLE_60DEG;
-	} else {
-		frac = (uint16_t)((uint32_t)ticks_in_sector * ANGLE_60DEG / a->sector_ticks);
-	}
-
-	if (a->direction >= 0) {
-		// Forward: angle increases from sector start
-		a->electrical_angle = sector_start_angle[a->sector] + frac + a->angle_offset;
-	} else {
-		// Reverse: angle decreases from sector start + 60°
-		a->electrical_angle = sector_start_angle[a->sector] + ANGLE_60DEG - frac + a->angle_offset;
-	}
+	// Output angle = PLL angle + offset
+	a->electrical_angle = (uint16_t)(a->pll_angle >> 16) + a->angle_offset;
 }
 
 void foc_current_update(FOC_Current *c, uint16_t adc_y, uint16_t adc_b,

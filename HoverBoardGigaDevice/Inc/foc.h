@@ -19,6 +19,14 @@ typedef struct {
 	uint32_t transition_tick;      // ISR tick at last hall transition
 	uint32_t sector_ticks;         // ticks for one sector (speed estimate)
 	uint32_t tick;                 // running ISR tick counter
+
+	// PLL state for smooth angle tracking
+	int32_t pll_angle;             // Q16: top 16 bits = uint16_t electrical angle
+	int32_t pll_velocity;          // Q16: angle units per ISR tick
+
+	// Per-sector calibration: tick sum/count for each sector to detect uneven hall placement
+	uint32_t sector_tick_sum[6];
+	uint16_t sector_tick_cnt[6];
 } FOC_Angle;
 
 // Sector start angles: electrical angle at the leading edge of each sector (1-6)
