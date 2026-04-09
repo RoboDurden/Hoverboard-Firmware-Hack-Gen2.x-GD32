@@ -1,33 +1,34 @@
 #include "../Inc/foc.h"
 #include "../Inc/defines.h"
 
-// Calibrated sector start angles for this specific motor.
-// Measured by recording per-sector hall ticks at constant speed:
-// ticks per sector = [71, 75, 71, 73, 74, 72] (sum 436 = 360°)
+// Sector start angles (default: 6 evenly-spaced 60° sectors).
+// For better accuracy on a specific motor, calibrate per-sector widths
+// using foc_angle->sector_tick_sum/cnt at constant speed and replace
+// these uniform values with measured ratios.
 const uint16_t sector_start_angle[7] = {
-	0,      // [0] unused
-	0,      // [1] s1: 0.0°
-	10672,  // [2] s2: 58.6°
-	21945,  // [3] s3: 120.5°
-	32617,  // [4] s4: 179.2°
-	43590,  // [5] s5: 239.4°
-	54713,  // [6] s6: 300.5°
+	0,                // [0] unused
+	0,                // [1] s1: 0°
+	ANGLE_60DEG,      // [2] s2: 60°
+	ANGLE_60DEG * 2,  // [3] s3: 120°
+	ANGLE_60DEG * 3,  // [4] s4: 180°
+	ANGLE_60DEG * 4,  // [5] s5: 240°
+	ANGLE_60DEG * 5,  // [6] s6: 300°
 };
 
-// Sector widths (each sector's actual angular extent)
+// Sector widths — uniform 60° each by default
 static const uint16_t sector_width[7] = {
 	0,
-	10672,  // s1: 58.6°
-	11273,  // s2: 61.9°
-	10672,  // s3: 58.6°
-	10972,  // s4: 60.3°
-	11123,  // s5: 61.1°
-	10822,  // s6: 59.4°
+	ANGLE_60DEG,
+	ANGLE_60DEG,
+	ANGLE_60DEG,
+	ANGLE_60DEG,
+	ANGLE_60DEG,
+	ANGLE_60DEG,
 };
 
 void foc_angle_init(FOC_Angle *a) {
 	a->electrical_angle = 0;
-	a->angle_offset = 27307;  // 150° — best from alignment and sweep
+	a->angle_offset = 0;  // motor-specific — calibrate via foc_align_rotor() or live trim
 	a->sector = 0;
 	a->last_sector = 0;
 	a->direction = 1;
