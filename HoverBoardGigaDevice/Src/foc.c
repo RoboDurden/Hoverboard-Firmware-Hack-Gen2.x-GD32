@@ -163,8 +163,8 @@ int16_t foc_sin(uint16_t angle) {
 }
 
 int16_t foc_cos(uint16_t angle) {
-	// cos(x) = sin(x + 90°) = sin(x + 16384)
-	return sin_table[(uint8_t)((angle + 16384) >> 8)];
+	// cos(x) = sin(x + 90°); table index offset of 64 = 90°
+	return sin_table[(uint8_t)((angle >> 8) + 64)];
 }
 
 // Clarke transform: 3-phase (Y,B,G) → alpha-beta stationary frame
@@ -276,8 +276,8 @@ int16_t foc_pi_update(FOC_PI *pi, int16_t error) {
 void foc_inverse_clarke(const FOC_AlphaBeta *in, FOC_Phase *out) {
 	out->y = in->alpha;
 	int32_t sqrt3_beta = ((int32_t)in->beta * SQRT3_OVER_2_Q15) >> 15;
-	out->b = (int16_t)((-in->alpha + sqrt3_beta) / 2);
-	out->g = (int16_t)((-in->alpha - sqrt3_beta) / 2);
+	out->b = (int16_t)(-in->alpha / 2 + sqrt3_beta);
+	out->g = (int16_t)(-in->alpha / 2 - sqrt3_beta);
 }
 
 // Calibrate current sensor offsets (zero-current ADC values)
