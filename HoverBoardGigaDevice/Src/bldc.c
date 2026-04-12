@@ -64,14 +64,8 @@ int32_t foc_id_var_sum = 0, foc_iq_var_sum = 0;
 int32_t foc_iy_var_sum = 0, foc_ib_var_sum = 0;
 
 #ifdef FOC_ENABLED
-// Runtime mode: 0=block commutation (startup), 1=FOC
+// Runtime mode: 0=block commutation, 1=FOC. Updated by foc_bldc_step().
 uint8_t foc_mode = 0;
-uint32_t foc_warmup_ticks = 0;  // counts up from 0, FOC allowed after warmup
-// Speed thresholds for mode switching (in ISR ticks per hall sector)
-// Lower ticks = higher speed. Hysteresis prevents oscillation.
-#define FOC_ENGAGE_TICKS  200   // switch to FOC only above ~53 RPM
-#define FOC_DISENGAGE_TICKS 400 // switch back to block below ~27 RPM
-#define FOC_WARMUP_TICKS  48000 // 3 second warmup in block commutation
 #endif
 int32_t bldc_inputFilterPwm = 0;
 int32_t bldc_outputFilterPwm = 0;
