@@ -444,15 +444,13 @@ uint8_t foc_bldc_step(uint8_t pos, int16_t pwm_cmd, int32_t trim,
 
 	// Open-loop voltage FOC. Trim adjusts angle offset around 161° with
 	// ±60° range — covers field weakening exploration without being
-	// overly sensitive. trim=0 → 161° (Id≈0, max efficiency).
-	// trim one way → advance (field weakening, more speed, less efficiency).
-	// trim other way → retard (field strengthening, wasted current).
+	// overly sensitive.
 	foc_angle.angle_offset =
 		(uint16_t)(FOC_ANGLE_OFFSET_BASE + (trim * 109) / 10);
 
 	FOC_DQ vdq;
 	vdq.d = 0;
-	vdq.q = -pwm_cmd;  // Vq negated so FOC rotation matches block commutation
+	vdq.q = -pwm_cmd;
 
 	FOC_AlphaBeta vab;
 	foc_inverse_park(&vdq, &vab, foc_angle.electrical_angle);
