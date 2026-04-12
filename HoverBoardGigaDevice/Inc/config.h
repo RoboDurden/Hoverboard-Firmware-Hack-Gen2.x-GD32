@@ -79,8 +79,7 @@
 // ################################################################################
 
 #define DC_CUR_LIMIT     		15        // Motor DC current limit in amps
-#define DEAD_TIME        		60        // PWM deadtime (60 = 1�s, measured by oscilloscope)
-#define PWM_FREQ         		24000     // 24 kHz — Id/Iq readings unreliable at this freq (ADC window shrinks)
+// PWM_FREQ and DEAD_TIME live in defines.h
 
 // ################################################################################
 
