@@ -1,5 +1,9 @@
 #include "../Inc/foc.h"
 #include "../Inc/defines.h"
+#include <stdio.h>
+#ifdef RTT_REMOTE
+#include "SEGGER_RTT.h"
+#endif
 
 // FOC state (defined here, declared extern in foc.h)
 FOC_Angle foc_angle;
@@ -457,6 +461,32 @@ void foc_sensor_update(uint8_t pos, volatile adc_buf_t *adc) {
 		}
 	#else
 		(void)adc;
+	#endif
+}
+
+// ── Periodic RTT telemetry ────────────────────────────────────────────
+void foc_log_rtt(void) {
+	#if defined(RTT_REMOTE) && defined(PHASE_CURRENT_Y) && defined(PHASE_CURRENT_B)
+		static uint16_t rtt_log_count = 0;
+		if (++rtt_log_count < 3000) return;
+		rtt_log_count = 0;
+
+		extern int32_t steer;
+		extern uint8_t wState;
+		#ifdef FOC_ENABLED
+			uint8_t m_val = foc_mode;
+		#else
+			uint8_t m_val = 0;
+		#endif
+		uint16_t off_deg = (uint32_t)foc_angle.angle_offset * 360 / 65536;
+
+		char s[120];
+		sprintf(s, "wS:0x%02X foc:%d m:%d dir:%+d Id:%+4d Iq:%+4d stk:%u off:%3u str:%+5ld\r\n",
+			wState, (wState & 1) ? 1 : 0, m_val,
+			(int)foc_angle.direction,
+			foc_id_avg, foc_iq_avg,
+			(unsigned)foc_angle.sector_ticks, off_deg, (long)steer);
+		SEGGER_RTT_WriteString(0, s);
 	#endif
 }
 

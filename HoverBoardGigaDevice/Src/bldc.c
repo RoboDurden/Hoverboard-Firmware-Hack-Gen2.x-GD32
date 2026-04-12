@@ -365,36 +365,7 @@ void CalculateBLDC(void)
 	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, CLAMP(y + BLDC_TIMER_MID_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
 	#endif
 
-	// RTT logging for back-EMF observer comparison (every ~3000 cycles)
-	#if defined(RTT_REMOTE) && defined(PHASE_CURRENT_Y) && defined(PHASE_CURRENT_B)
-	{
-		static uint16_t rtt_log_count = 0;
-		if (++rtt_log_count >= 3000) {
-			rtt_log_count = 0;
-			char s[120];
-			uint16_t hall_deg = (uint32_t)foc_angle.electrical_angle * 360 / 65536;
-			uint16_t obs_deg = (uint32_t)foc_observer_angle(&foc_obs) * 360 / 65536;
-			int16_t diff_deg = (int16_t)((int32_t)obs_deg - (int32_t)hall_deg);
-			if (diff_deg > 180) diff_deg -= 360;
-			if (diff_deg < -180) diff_deg += 360;
-			uint16_t off_deg = (uint32_t)foc_angle.angle_offset * 360 / 65536;
-			extern int32_t steer;
-			extern uint8_t wState;
-			#ifdef FOC_ENABLED
-			uint8_t m_val = foc_mode;
-			#else
-			uint8_t m_val = 0;
-			#endif
-			sprintf(s, "wS:0x%02X foc:%d m:%d dir:%+d Id:%+4d Iq:%+4d stk:%u off:%3u str:%+5ld\r\n",
-				wState, (wState & 1) ? 1 : 0, m_val,
-				(int)foc_angle.direction,
-				foc_id_avg, foc_iq_avg,
-				(unsigned)foc_angle.sector_ticks, off_deg, (long)steer);
-			(void)hall_deg; (void)obs_deg; (void)diff_deg;
-			SEGGER_RTT_WriteString(0, s);
-		}
-	}
-	#endif
+	foc_log_rtt();
 
 	// robo23
 	iOdom = iOdom - up_or_down(lastPos, pos); // int32 will overflow at +-2.147.483.648

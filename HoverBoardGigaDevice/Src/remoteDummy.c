@@ -1,6 +1,7 @@
 #include "../Inc/defines.h"
 #include "../Inc/it.h"
 #include "../Inc/bldc.h"
+#include "../Inc/foc.h"
 #include <string.h>
 
 
@@ -183,20 +184,8 @@ void RemoteUpdate(void)
 			iCounterLog++;
 
 			#if defined(PHASE_CURRENT_Y) && defined(PHASE_CURRENT_B)
-				extern adc_buf_t adc_buffer;
 				extern uint8_t pos;
-				#include "../Inc/foc.h"
-				extern FOC_Angle foc_angle;
-				extern FOC_DQ foc_dq;
-				extern FOC_Current foc_current;
-				#ifdef FOC_ENABLED
-					extern uint8_t foc_mode;
-				#else
-					uint8_t foc_mode = 0;
-				#endif
 				uint16_t deg = (uint32_t)foc_angle.electrical_angle * 360 / 65536;
-				uint16_t off_deg = (uint32_t)foc_angle.angle_offset * 360 / 65536;
-				extern int16_t foc_id_avg, foc_iq_avg, foc_iy_avg, foc_ib_avg;
 				sprintf(sMessage, "%spos:%d\tang:%3d\tId:%4d\tIq:%4d\tIy:%4d\tIb:%4d\tiId:%4d\tiIq:%4d\tiIy:%4d\tiIb:%4d",
 					sMessage,pos,deg,
 					foc_dq.d,foc_dq.q,foc_current.iy,foc_current.ib,
