@@ -113,6 +113,16 @@ Total overhead: ~660 bytes Flash for sin table, ~8 bytes RAM for FOC state.
   - full throttle: BC 585 RPM → FOC 629 RPM (+8%)
   - The noticeable "kick" when FOC engages is just this efficiency gain
     manifesting as a step in speed at constant throttle.
+- Field weakening (2026-04-12, via trim-adjusted angle advance):
+  - Full throttle at Id≈0 (base 161°): 629 RPM (back-EMF limit at 27V)
+  - Full throttle with field weakening, PSU at 2A limit: **815 RPM** (+30%)
+  - Full throttle with field weakening, PSU at 5A limit: **>1200 RPM** (+91%)
+  - vs BC baseline (585 RPM): **over 2× the top speed** at the same bus
+    voltage with enough current headroom.
+  - Field weakening injects negative Id to reduce effective back-EMF,
+    letting the motor spin faster than the nominal V/Ke limit. Draws
+    more current (wasted as flux instead of torque), so trade-off is
+    speed vs efficiency. This is the practical payoff of FOC over BC.
 - PLL reset at BC→FOC transition is required for reliability. Without it,
   stale `pll_angle`/`pll_velocity` from accumulated BC tracking error can
   occasionally cause FOC to engage with the voltage vector at the wrong
