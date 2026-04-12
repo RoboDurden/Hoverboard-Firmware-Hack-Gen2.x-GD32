@@ -69,9 +69,9 @@ uint8_t foc_mode = 0;
 uint32_t foc_warmup_ticks = 0;  // counts up from 0, FOC allowed after warmup
 // Speed thresholds for mode switching (in ISR ticks per hall sector)
 // Lower ticks = higher speed. Hysteresis prevents oscillation.
-#define FOC_ENGAGE_TICKS  400   // switch to FOC when faster than this
-#define FOC_DISENGAGE_TICKS 600 // switch back to block when slower
-#define FOC_WARMUP_TICKS  16000 // ~1 second at 16kHz before FOC allowed
+#define FOC_ENGAGE_TICKS  3000  // switch to FOC when faster than ~3.5 RPM
+#define FOC_DISENGAGE_TICKS 4000 // switch back to block when slower than ~2.7 RPM
+#define FOC_WARMUP_TICKS  3200  // ~200 ms warmup before FOC allowed
 #endif
 int32_t bldc_inputFilterPwm = 0;
 int32_t bldc_outputFilterPwm = 0;
@@ -308,8 +308,11 @@ void CalculateBLDC(void)
 	// Update FOC angle estimation and phase currents
 	foc_angle_update(&foc_angle, pos);
 	#if defined(PHASE_CURRENT_Y) && defined(PHASE_CURRENT_B)
+		// Ib offset compensation: startup calibration consistently reads
+		// ~33 counts too high on PB1 (persistent across sessions). Correcting
+		// here keeps the DC bias out of the Clarke/Park transforms.
 		foc_current_update(&foc_current, adc_buffer.phase_current_y, adc_buffer.phase_current_b,
-		                   foc_offset_y, foc_offset_b);
+		                   foc_offset_y, foc_offset_b + 33);
 		foc_clarke(&foc_current, &foc_ab);
 		foc_park(&foc_ab, &foc_dq, foc_angle.electrical_angle);
 
@@ -365,41 +368,160 @@ void CalculateBLDC(void)
 
 #ifdef FOC_ENABLED
 	{
-		// Hardcoded angle offset (calibrated for this motor)
-		foc_angle.angle_offset = 27307;
+		// Block commutation for startup, FOC once spinning.
+		// FOC engages when sector_ticks < FOC_ENGAGE_TICKS (motor fast enough).
+		// Trim controls angle offset over full 360° (for finding new optimum
+		// after inverse Clarke fix).
+		foc_warmup_ticks++;
+		if (foc_mode == 0) {
+			if (foc_warmup_ticks > FOC_WARMUP_TICKS &&
+			    foc_angle.sector_ticks > 0 &&
+			    foc_angle.sector_ticks < FOC_ENGAGE_TICKS) {
+				foc_mode = 1;
+			}
+			bldc_get_pwm(bldc_outputFilterPwm, pos, &y, &b, &g);
+		} else {
+			if (foc_angle.sector_ticks > FOC_DISENGAGE_TICKS ||
+			    foc_angle.sector_ticks == 0) {
+				foc_mode = 0;
+				foc_warmup_ticks = 0;
+				bldc_get_pwm(bldc_outputFilterPwm, pos, &y, &b, &g);
+			} else {
+				// FOC mode. Angle offset: 161° found empirically post-Clarke fix.
+				foc_angle.angle_offset = 29305;  // 161° in Q16
 
-		// Open-loop voltage FOC driven by hall angle (observer runs in parallel for monitoring)
-		FOC_DQ vdq;
-		vdq.d = 0;
-		vdq.q = bldc_outputFilterPwm;
+				// Trim selects control mode:
+				//   steer <= 0: open-loop voltage FOC (Vq = throttle, no Id control)
+				//   steer >  0: closed-loop PI current control, steer scales gains
+				extern int32_t steer;
+				FOC_DQ vdq;
 
-		FOC_AlphaBeta vab;
-		foc_inverse_park(&vdq, &vab, foc_angle.electrical_angle);
+				static uint8_t pi_was_active = 0;
+				if (steer <= 0) {
+					// Open-loop fallback — known working
+					vdq.d = 0;
+					vdq.q = bldc_outputFilterPwm;
+					pi_was_active = 0;
+				} else {
+					// Closed-loop PI current control.
+					// On transition from open-loop, preload Iq integrator so
+					// PI output matches the open-loop Vq (no torque glitch).
+					if (!pi_was_active) {
+						// Preload integrator: PI output ≈ bldc_outputFilterPwm / 4 (scaled down for safety)
+						// integral contributes (integral >> PI_INTEGRAL_SHIFT) / (1 << PI_KP_SHIFT) to output
+						// So to get output = V_preload, set integral = V_preload << (PI_KP_SHIFT + PI_INTEGRAL_SHIFT)
+						int32_t v_preload = bldc_outputFilterPwm / 4;
+						foc_ctrl.pi_q.integral = ((int32_t)v_preload) << (11 + PI_INTEGRAL_SHIFT);
+						foc_ctrl.pi_d.integral = 0;
+						pi_was_active = 1;
+					}
 
-		FOC_Phase foc_voltage;
-		foc_inverse_clarke(&vab, &foc_voltage);
+					// Conservative gains. Limit raised to match open-loop headroom.
+					foc_ctrl.pi_q.kp = 153;
+					foc_ctrl.pi_q.ki = 76;
+					foc_ctrl.pi_q.limit = 1000;  // was 400 — was capping voltage
+					foc_ctrl.pi_d.kp = 102;
+					foc_ctrl.pi_d.ki = 46;
+					foc_ctrl.pi_d.limit = 1000;
 
-		int16_t vmax = foc_voltage.y;
-		if (foc_voltage.b > vmax) vmax = foc_voltage.b;
-		if (foc_voltage.g > vmax) vmax = foc_voltage.g;
-		int16_t vmin = foc_voltage.y;
-		if (foc_voltage.b < vmin) vmin = foc_voltage.b;
-		if (foc_voltage.g < vmin) vmin = foc_voltage.g;
-		int16_t v_offset = -(vmax + vmin) / 2;
+					// iq_ref ≈ throttle/2 → full throttle ≈ 560 counts ≈ 2.4A
+					int16_t iq_ref = bldc_outputFilterPwm / 2;
+					int16_t id_ref = 0;
 
-		y = foc_voltage.y + v_offset;
-		b = foc_voltage.b + v_offset;
-		g = foc_voltage.g + v_offset;
+					// Low-pass filter Id/Iq to remove ripple before PI sees it.
+					// IIR: y = y + (x - y) / 16  (time constant ~1ms at 16 kHz)
+					static int32_t iq_lpf = 0, id_lpf = 0;
+					iq_lpf += ((int32_t)foc_dq.q << 4) - (iq_lpf >> 4);
+					id_lpf += ((int32_t)foc_dq.d << 4) - (id_lpf >> 4);
+					int16_t iq_filt = (int16_t)(iq_lpf >> 8);
+					int16_t id_filt = (int16_t)(id_lpf >> 8);
+
+					int16_t err_q = iq_ref - iq_filt;
+					int16_t err_d = id_ref - id_filt;
+					vdq.q = foc_pi_update(&foc_ctrl.pi_q, err_q);
+					vdq.d = foc_pi_update(&foc_ctrl.pi_d, err_d);
+				}
+
+				FOC_AlphaBeta vab;
+				foc_inverse_park(&vdq, &vab, foc_angle.electrical_angle);
+
+				FOC_Phase foc_voltage;
+				foc_inverse_clarke(&vab, &foc_voltage);
+
+				int16_t vmax = foc_voltage.y;
+				if (foc_voltage.b > vmax) vmax = foc_voltage.b;
+				if (foc_voltage.g > vmax) vmax = foc_voltage.g;
+				int16_t vmin = foc_voltage.y;
+				if (foc_voltage.b < vmin) vmin = foc_voltage.b;
+				if (foc_voltage.g < vmin) vmin = foc_voltage.g;
+				int16_t v_offset = -(vmax + vmin) / 2;
+
+				y = foc_voltage.y + v_offset;
+				b = foc_voltage.b + v_offset;
+				g = foc_voltage.g + v_offset;
+			}
+		}
 	}
 #else
 	// Block commutation only
 	bldc_get_pwm(bldc_outputFilterPwm, pos, &y, &b, &g);
 #endif
 
+	// Step-response test mode: DISABLED — PI overshot and hit 2A limit.
+	// Need more careful approach (ramp instead of step, or lower gains).
+	// #define STEP_TEST_MODE
+	#ifdef STEP_TEST_MODE
+	{
+		// Force sector 1 output (Y floats, B+=pwm, G-=pwm)
+		static uint32_t test_tick = 0;
+		int16_t iq_ref_test = (test_tick & 16000) ? 200 : 0;  // 0.5 Hz toggle (1s high, 1s low)
+		test_tick++;
+
+		// PI on Iq only (Vd=0)
+		foc_ctrl.pi_q.kp = 153;
+		foc_ctrl.pi_q.ki = 76;
+		foc_ctrl.pi_q.limit = 500;  // modest voltage limit
+
+		int16_t err = iq_ref_test - foc_dq.q;
+		int16_t vq_out = foc_pi_update(&foc_ctrl.pi_q, err);
+
+		// Apply Vq at a fixed angle pointing at sector 1 (ignore rotor angle)
+		// For sector 1: Y=0, B=+vq, G=-vq (block-commutation-style output)
+		int16_t y_out = 0;
+		int16_t b_out = vq_out;
+		int16_t g_out = -vq_out;
+
+		ResetTimeout();
+		timer_automatic_output_enable(TIMER_BLDC);
+
+		// Disconnect Y phase (both FETs off) so PSU current = real phase current
+		timer_channel_output_state_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, TIMER_CCX_DISABLE);
+		timer_channel_complementary_output_state_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, TIMER_CCXN_DISABLE);
+		timer_channel_output_state_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_B, TIMER_CCX_ENABLE);
+		timer_channel_complementary_output_state_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_B, TIMER_CCXN_ENABLE);
+		timer_channel_output_state_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_G, TIMER_CCX_ENABLE);
+		timer_channel_complementary_output_state_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_G, TIMER_CCXN_ENABLE);
+
+		timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, BLDC_TIMER_MID_VALUE);
+		timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_B, CLAMP(b_out + BLDC_TIMER_MID_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
+		timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_G, CLAMP(g_out + BLDC_TIMER_MID_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
+
+		// Fast logging (1 kHz = every 16 ISR cycles)
+		#if defined(RTT_REMOTE)
+		if ((test_tick & 15) == 0) {
+			char s[48];
+			sprintf(s, "%lu %d %d %d\r\n",
+				(unsigned long)test_tick, iq_ref_test, foc_dq.q, vq_out);
+			SEGGER_RTT_WriteString(0, s);
+		}
+		#endif
+	}
+	#else
 	// Set PWM output (pwm_res/2 is the mean value, setvalue has to be between 10 and pwm_res-10)
 	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_G, CLAMP(g + BLDC_TIMER_MID_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
 	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_B, CLAMP(b + BLDC_TIMER_MID_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
 	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, CLAMP(y + BLDC_TIMER_MID_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
+	#endif
 
 	// RTT logging for back-EMF observer comparison (every ~3000 cycles)
 	#if defined(RTT_REMOTE) && defined(PHASE_CURRENT_Y) && defined(PHASE_CURRENT_B)
@@ -413,8 +535,13 @@ void CalculateBLDC(void)
 			int16_t diff_deg = (int16_t)((int32_t)obs_deg - (int32_t)hall_deg);
 			if (diff_deg > 180) diff_deg -= 360;
 			if (diff_deg < -180) diff_deg += 360;
-			sprintf(s, "hall:%3u  obs:%3u  diff:%+4d  Id:%4d  Iq:%4d  obs_v:%ld\r\n",
-				hall_deg, obs_deg, diff_deg, foc_id_avg, foc_iq_avg, foc_obs.velocity >> 16);
+			uint16_t off_deg = (uint32_t)foc_angle.angle_offset * 360 / 65536;
+			extern int32_t steer;
+			sprintf(s, "str:%+5ld off:%3u m:%d Id:%+4d Iq:%+4d stk:%u\r\n",
+				(long)steer, off_deg, foc_mode,
+				foc_id_avg, foc_iq_avg,
+				(unsigned)foc_angle.sector_ticks);
+			(void)hall_deg; (void)obs_deg; (void)diff_deg;
 			SEGGER_RTT_WriteString(0, s);
 		}
 	}

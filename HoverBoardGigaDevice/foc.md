@@ -10,17 +10,17 @@
   - Shunt resistors: 2x R004 (4mΩ) SMD
   - Op-amp: HM8632 (C32X marking), dual RRIO CMOS, 6.5MHz, 520µA
   - Feedback: 3x 10KΩ (1002 marking) resistors
-  - Op-amp gain: ~20x (estimated from 1A → ~100 ADC counts)
+  - Op-amp gain: ~46x (measured: 232 ADC counts per amp)
   - Biased at ~VCC/2 (~2000 ADC counts at zero current)
-  - ~0.01A per ADC count (10mA resolution)
-  - PB0 = TIMER_BLDC_CHANNEL_Y (CH0/PA8 low-side)
-  - PB1 = TIMER_BLDC_CHANNEL_B (CH1/PA9 low-side)
-  - No shunt on TIMER_BLDC_CHANNEL_G (CH2/PA10)
-  - Third phase derived via Kirchhoff: Ig = -(Iy + Ib)
-  - NOTE: firmware channel names (Y/B/G) may not match physical motor wire
-    colors. Robo Durden's photo of the same board labels the shunts as
-    "Blue shunt" and "Green shunt" by wire color. The firmware-to-ADC
-    mapping is correct regardless of wire color naming.
+  - **Calibrated: 232 counts/A = 4.3 mA per count** (locked-rotor DC method)
+  - PB0 = physical **yellow** wire shunt (firmware calls it "Iy")
+  - PB1 = physical **blue** wire shunt (firmware calls it "Ib")
+  - Physical **green** wire = no shunt (derived via Kirchhoff)
+  - NOTE: firmware channel names (Y/B/G) do NOT match physical wire colors.
+    PB0 (firmware "Y") is on the yellow wire; PB1 (firmware "B") is on
+    the blue wire. The 150° angle offset compensates for the mapping.
+  - **PB1 has -33 count standstill offset** (PB0 reads +2). Not from ADC
+    timing — cause unknown.
 
 ## Architecture
 
@@ -85,23 +85,42 @@ Total overhead: ~660 bytes Flash for sin table, ~8 bytes RAM for FOC state.
 
 ### What works
 - **Open-loop voltage FOC**: Vd=0, Vq=bldc_outputFilterPwm. Motor runs
-  silently in both directions, self-starts from standstill.
-- Synchronized ADC sampling of phase currents (DMA triggered from timer update)
+  with hall-driven angle. Block commutation handles startup, FOC engages
+  above ~27 RPM (transition needs smoothing — see below).
+- **ADC sampling verified at correct PWM phase**: timer ISR fires at
+  cnt=53 (valley, low-side ON). Confirmed by direct counter reads in
+  ISR. Toggle init=0 must not be changed.
 - Automatic zero-current offset calibration at startup (~200ms, motor off)
-- Hall-based angle estimation with direction-aware interpolation
-- Clarke and Park transforms producing Id/Iq in the rotating frame
-- 150° angle offset (lowest Id_rms = 28.1)
-- Lower pitch vibration than block commutation (more sinusoidal output)
+- Hall-based angle estimation with PLL interpolation
+- Clarke and Park transforms producing Id/Iq — **Id measurement verified
+  correct** by cross-checking against PSU current at multiple angles.
+- **Current sensors calibrated**: 232 ADC counts per amp (4.3 mA/count).
+  Measured via locked-rotor DC method (see `current-calibration` branch).
+- **Phase wire mapping confirmed**: PB0=yellow, PB1=blue, green=no shunt.
+  Firmware Y/B/G names don't match physical wire colors.
+- 150° angle offset optimal at low speed, ~145° at ~210 RPM (speed-dependent)
+- SVPWM centering (min-max method) active
+- ISR execution time: 12 µs (24 kHz PWM feasible)
+- Block commutation: 572 RPM at 0.8A (reliable baseline)
 
 ### What doesn't work yet
-- **PI current controllers**: When enabled, the PI opposes motor motion.
-  The motor starts fast (PI output small), then slows as iq_ref ramps up.
-  Inverting current sign made it worse. Root cause: sign convention mismatch
-  in the feedback chain (shunt polarity → Clarke → Park → PI direction).
-  
-  **To debug**: Log Id/Iq via RTT while open-loop runs at constant speed.
-  Check: does Iq read positive or negative when motor spins forward with
-  positive Vq? The PI reference must match this sign.
+- **PI current controllers**: Never tested with correct gains. Previous
+  attempts used Kp=2-3 (5× too aggressive vs reference Kp=0.6). The
+  exact cause of failure was never pinned down — could be gains, sign
+  convention, anti-windup, or all three. Now that we have calibrated
+  current sensors (232 counts/A), the gains can be properly scaled.
+- **Optimal angle is speed-dependent**: 150° at low RPM, ~145° at
+  ~210 RPM. Cause: motor inductive impedance (ωL) shifts the current
+  phase relative to voltage at higher speed. The PI current loop would
+  handle this automatically; without it, a velocity-proportional advance
+  or per-speed calibration is needed.
+- **Ib standstill offset**: PB1 reads -33 at zero current (PB0 reads +2).
+  Confirmed NOT from ADC timing. Cause unknown (op-amp offset, PCB
+  asymmetry, or startup calibration issue).
+- **Block→FOC transition**: just implemented, too jarring in initial test.
+  Needs smoothing or better thresholds.
+- **Open-loop FOC draws excessive current at low speed**: no current
+  limiting. The motor is a low-impedance load when back-EMF is small.
 
 ## Angle offset calibration
 
@@ -216,16 +235,31 @@ to the rotor.
 
 ## PI controller (not yet working)
 
+### Previous attempts (failed)
+
 Values tried:
 - Kp_d=2, Ki_d=1, limit=400 (flux)
 - Kp_q=3, Ki_q=1, limit=400 (torque)
 - iq_ref = bldc_outputFilterPwm / 8 with soft ramp
 
 Attempt with ramp: motor started fast (PI output small) then slowed as
-iq_ref ramped up — PI was opposing motion. Inverting current sign was worse.
+iq_ref ramped up. Inverting current sign was worse. Exact cause never
+determined — likely multiple issues compounding (gains 5× too high,
+sign convention, no anti-windup, no speed gating, no calibration).
 
-Now that ISR-rate analysis shows iIq=+40 for positive speed, the PI reference
-sign should match. The iIb offset of -22 may still cause issues.
+### What's different now (for next attempt)
+
+- **Calibrated current sensors**: 232 counts/A. Reference gains can be
+  properly scaled for our hardware.
+- **Id measurement verified**: minimum PSU current aligns with Id=0 at
+  multiple angles. The dq frame is correct.
+- **ADC timing verified**: samples at valley, correct for low-side shunts.
+- **Reference gains known**: Iq Kp=0.6/Ki=0.6, Id Kp=0.4/Ki=0.36 (Q11).
+  These need scaling by ratio of reference's counts/A to our 232 counts/A.
+- **Block commutation startup**: PI only needs to run above transition
+  speed, not from standstill.
+- **The Ib -33 offset**: should be investigated/fixed before PI attempt,
+  as it feeds a DC bias into the Clarke transform.
 
 ## Reference implementation analysis
 
@@ -351,21 +385,161 @@ The actual back-EMF shape should be measured before deciding. For now,
 sinusoidal FOC is a good default — it works on both motor types and the
 smoothness improvement over 6-step is significant regardless.
 
+## ISR timing and ADC sample point (measured 2025-04-11)
+
+### ISR execution time
+
+Measured by reading TIMER_BLDC counter at start and end of
+CalculateBLDC, logged via RTT:
+
+- **CalculateBLDC execution time: 12 µs** (rock solid, no variation)
+- PWM period at 16 kHz: 62.5 µs → **50.5 µs headroom**
+- At 24 kHz (41.7 µs period): 29.7 µs headroom — safe
+- At 32 kHz (31.25 µs period): 19.2 µs headroom — still OK
+
+**Conclusion: 24 kHz is feasible.** Just change `PWM_FREQ` in config.h.
+
+### ADC trigger point in the PWM cycle
+
+Timer counter when CalculateBLDC starts: **cnt ≈ 777** (consistent ±5).
+Timer period = 2250. Counter bounces 0 (valley) → 2250 (peak) → 0.
+
+**Critical correction:** cnt=777 is NOT where the ADC triggers — it's
+where CalculateBLDC reads the counter after the full chain of delays:
+
+```
+timer update event → timer ISR → adc_software_trigger → ADC scans
+4 channels (~8.7µs) → DMA complete → DMA ISR → CalculateBLDC reads cnt
+                                                              ≈ 10 µs total
+```
+
+Working backwards: 10 µs at 72 MHz = ~720 counts of delay.
+- If update fired at **valley (cnt=0)**: 0 + 720 = 720. We see 777. **Match.**
+- If update fired at **peak (cnt=2250)**: 2250 - 720 = 1530. **No match.**
+
+**Verified directly** by reading the counter inside the timer ISR
+itself (before ADC/DMA delays):
+
+```
+trig:  53  skip:2195  bldc: 793  isr:12us   (consistent over 50+ samples)
+```
+
+- **trig=53**: kept event fires at cnt=53 — **valley** (0 + ISR entry latency of 53/72MHz = 0.74 µs) ✅
+- **skip=2195**: skipped event fires at cnt=2195 — **peak** (2250 - 0.76 µs latency) ✅
+- **bldc=793**: CalculateBLDC starts 793-53 = 740 counts = 10.3 µs after trigger (ADC scan + DMA) ✅
+
+**∴ The update event fires at the valley.** The ADC samples the phase
+currents at cnt ≈ 53–650 (during the scan, 0.7–9 µs after the valley).
+This is **near the valley — correct for low-side shunt sampling.**
+
+```
+Valley=0  trig   ADC samples here     bldc=793            Peak=2250
+  |________|53____|====|_________________|__________________________|
+  0              ~120  ~650            793                        2250
+                  ↑ phase currents sampled (low-side ON) ✓
+```
+
+### The current timing is correct
+
+**No fix needed for ADC sample timing.** The toggle as-is (init=0)
+keeps the valley events. The ADC samples near the valley where all
+low-side FETs are conducting — the optimal point for low-side shunts.
+
+### Why Option C (toggle flip) broke the motor
+
+Flipping `interrupt_toggle` init from 0 to 1 moved the ADC trigger
+from the **valley** event to the **peak** event. At the peak, all
+high-side FETs are ON and low-side FETs are OFF — no current through
+the shunts. The ADC read garbage, the current offsets were wrong, and
+the FOC commutation broke. The motor made tones but couldn't spin.
+
+**The toggle must stay at 0.**
+
+### The iIb standstill bias is NOT from sample timing
+
+PB1 reads -33 at zero current (PB0 reads +2). Earlier sessions measured
+-22; the value varies but is consistently negative on PB1 only. Since
+the ADC is sampling at the correct point (near valley), this has a
+different cause. Possible explanations:
+- Op-amp input offset voltage
+- PCB layout asymmetry between the two shunt channels
+- Startup calibration running before the motor is fully settled
+- Genuine small current from the motor's hall sensor bias circuit
+
+**Observed effect on measured Id:** After the inverse Clarke fix
+(2026-04-12), at 633 RPM Id=0 at 161° offset. At 50 RPM with the
+same offset, Id=+15. This speed-dependent offset could be:
+1. **Real inductive phase shift** (but should go negative at higher
+   speed, not positive at lower speed — unlikely).
+2. **Ib offset leaking through incomplete averaging**:
+   - Ib_bias = -33 counts → Iβ_bias ≈ -38 counts after Clarke
+   - ISR averaging window = 62.5 ms = 0.78 electrical cycles at 50 RPM
+     (fractional) vs 9.9 cycles at 633 RPM (near-integer)
+   - Fractional cycle residual leaks ~5-15 counts into averaged Id
+   - This matches the +15 observation
+3. **Hall PLL transient** effects at low speed (long intervals between
+   corrections).
+
+**Practical impact:** negligible (0.065A). 161° offset works across
+speed range without needing velocity-proportional scaling. If precise
+PI current control later shows issues at low speed, fixing the Ib
+offset should be the first investigation.
+
+### Current sensor calibration (2025-04-11)
+
+Measured via locked-rotor DC calibration (see `current-calibration`
+branch for code and blog post):
+
+**~232 ADC counts per amp (~4.3 mA per ADC count)**
+
+Phase wire identification:
+- PB0 (firmware "Iy") = physical yellow wire shunt
+- PB1 (firmware "Ib") = physical blue wire shunt
+- Physical green = no shunt (derived via Kirchhoff)
+
+Firmware channel names (Y/B/G) don't match physical wire colors.
+The 150° angle offset compensates for the actual mapping.
+
+### Reference project is fully hall-based
+
+Verified by reading source of `hoverboard-firmware-hack-FOC`: zero
+references to back-EMF / observer / sensorless. The `n_commDeacv`
+speed threshold switches between block commutation modulation and
+sinusoidal FOC modulation — both fed by the same hall-PLL angle.
+The "FOC" in its name means the *current* is field-oriented (PI on
+Id/Iq), not the angle source.
+
+### Back-EMF observer experiment (completed, parked)
+
+Voltage-model observer (E = V - R*I - L*dI/dt) with PLL:
+- Open-loop math verified correct (R-sweep with PLL bypass: mean Ed≈-1)
+- R calibrated: r_scaled=1 optimal
+- L*dI/dt disabled: consecutive-sample dI dominated by ADC noise
+- Closed-loop (observer driving FOC) unstable at bench speeds (~100 RPM):
+  back-EMF signal too weak vs closed-loop coupling
+- Code kept for monitoring/redundancy, not for primary control
+
 ## Next steps (priority order)
 
-1. **Reduce PI gains dramatically**: Match reference — Iq Kp=0.6 Ki=0.6,
-   Id Kp=0.4 Ki=0.36. Our values of 2-3 were far too aggressive.
-   This is the most likely fix for the PI current loop.
-2. **Add anti-windup back-calculation**: Replace simple integrator clamp
-   with Kb-based back-calculation for smoother saturation recovery.
-3. **Fix Ib calibration**: The -22 offset on iIb suggests the auto-cal
-   runs too early. Try longer delay or running average filter like
-   the reference (which averages over 2000 cycles).
-4. **Verify current sign**: With correct (lower) gains, re-test PI.
-   If iIq=+40 for positive speed with `adc-offset`, the sign is correct.
-   If PI still opposes, try `offset-adc`.
-5. **Add SVPWM centering**: Simple min-max offset after inverse Clarke.
-   Free ~15% voltage headroom.
+1. ~~Fix ADC sample timing~~: **Not needed** — verified correct (valley).
+2. **Smooth block→FOC transition**: currently jarring. Consider ramping
+   the angle offset from the block commutation equivalent to the FOC
+   offset over several ISR cycles, or adjusting thresholds.
+3. **Increase PWM to 24 kHz**: ISR at 12 µs has plenty of headroom.
+   Moves switching out of audible range. One-line config change.
+4. **Address speed-dependent angle offset**: the optimal angle shifts
+   with speed (~150° at low RPM, ~145° at 210 RPM). Options:
+   a. Velocity-proportional advance (needs correct gain calibration)
+   b. PI current loop (handles this automatically)
+   c. Lookup table from empirical trim sweep data
+5. **Investigate Ib standstill offset** (-33 counts on PB1, +2 on PB0).
+   May affect PI loop performance. Fix or compensate before PI attempt.
+6. **Re-attempt PI current loop** with reference gains scaled for our
+   232 counts/A calibration. Back-calculation anti-windup. Gate above
+   block→FOC transition speed.
+7. **Verify current sign convention**: at steady speed, confirm iq_ref
+   sign matches measured iIq direction before enabling PI.
+8. ~~SVPWM centering~~: already implemented (min-max method in bldc.c).
 
 ## Ideas and suggestions
 
