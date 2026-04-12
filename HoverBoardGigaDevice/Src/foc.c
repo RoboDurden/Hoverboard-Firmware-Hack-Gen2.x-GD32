@@ -473,7 +473,10 @@ uint8_t foc_bldc_step(uint8_t pos, int16_t pwm_cmd, int32_t trim,
 	return 1;
 }
 
-void foc_init(void) {
+#ifdef FOC_ENABLED
+// When FOC_ENABLED, foc.c owns InitBldc() — bldcBC.c is compiled out.
+// BC output is provided by foc_block_pwm() inside foc_bldc_step().
+void InitBldc(void) {
 	extern FOC_Angle foc_angle;
 	extern FOC_Controller foc_ctrl;
 	extern FOC_Observer foc_obs;
@@ -489,3 +492,4 @@ void foc_init(void) {
 		                      &adc_buffer.phase_current_y, &adc_buffer.phase_current_b);
 	#endif
 }
+#endif

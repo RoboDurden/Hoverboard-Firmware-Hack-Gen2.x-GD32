@@ -157,8 +157,4 @@ static inline uint16_t foc_observer_angle(const FOC_Observer *obs) {
 // Force the observer angle/velocity (e.g., from halls during startup)
 void foc_observer_set(FOC_Observer *obs, uint16_t angle, int32_t velocity);
 
-// One-shot startup init: angle/controller/observer + phase-current offset
-// calibration. Call once after ADC is ready.
-void foc_init(void);
-
 #endif

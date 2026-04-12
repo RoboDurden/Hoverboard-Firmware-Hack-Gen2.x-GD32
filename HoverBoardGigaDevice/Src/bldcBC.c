@@ -1,5 +1,5 @@
 #include "../Inc/bldcBC.h"
-#ifdef BLDC_BC
+#if defined(BLDC_BC) && !defined(FOC_ENABLED)
 
 //----------------------------------------------------------------------------
 // Block PWM calculation based on position
