@@ -122,6 +122,20 @@ void foc_controller_update(FOC_Controller *ctrl,
                            uint16_t angle,
                            FOC_Phase *voltage_out);
 
+// Full BLDC drive step: block commutation ↔ open-loop voltage FOC,
+// with automatic transition based on speed and the foc_enable flag.
+//
+//   pos             — hall-derived commutation sector (1..6)
+//   pwm_cmd         — throttle command, signed PWM value (±BLDC_TIMER_MID_VALUE)
+//   trim            — steer input for angle offset tuning (±1000)
+//   foc_enable      — 1 to allow transition to FOC, 0 to stay in block commutation
+//   y, b, g         — output phase PWM values (±BLDC_TIMER_MID_VALUE range)
+//
+// Returns current mode: 0 = block commutation, 1 = FOC.
+uint8_t foc_bldc_step(uint8_t pos, int16_t pwm_cmd, int32_t trim,
+                      uint8_t foc_enable,
+                      int *y, int *b, int *g);
+
 // Back-EMF observer using Id as the angle error signal.
 // In open-loop voltage FOC with Vd=0, Id is non-zero only when the
 // assumed angle is misaligned with the rotor. The observer maintains

@@ -104,9 +104,11 @@ void foc_angle_update(FOC_Angle *a, uint8_t pos) {
 		int16_t error_16 = (int16_t)((uint16_t)measured - (uint16_t)pll_angle_16);
 		int32_t error_32 = (int32_t)error_16 << 16;
 
-		// PI correction: Kp = 1/4 (position), Ki = 1/256 (velocity)
-		a->pll_angle += error_32 >> 2;
-		a->pll_velocity += error_32 >> 8;
+		// PI correction: Kp = 1/2 (position, faster so FOC doesn't "kick"
+		// from stale PLL state when mode changes), Ki = 1/64 (velocity,
+		// also faster for better tracking during BC so FOC engages clean)
+		a->pll_angle += error_32 >> 1;
+		a->pll_velocity += error_32 >> 6;
 	}
 
 	// Output angle = PLL angle + offset
@@ -385,4 +387,78 @@ void foc_controller_update(FOC_Controller *ctrl,
 
 	// Inverse Clarke: alpha-beta → 3-phase voltages
 	foc_inverse_clarke(&vab, voltage_out);
+}
+
+// ── Block commutation ↔ open-loop voltage FOC state machine ───────────
+
+// Thresholds in sector_ticks (ISR cycles per hall sector).
+// Lower ticks = higher RPM. At 16 kHz with 6 sectors × 15 pole pairs:
+//   RPM = 60 × 16000 / (sector_ticks × 90) = 10666 / sector_ticks
+#define FOC_BLDC_ENGAGE_TICKS  200    // engage FOC above ~53 RPM
+#define FOC_BLDC_DISENGAGE_TICKS 400  // fall back to block below ~27 RPM
+#define FOC_BLDC_WARMUP_TICKS  48000  // 3 s block commutation after startup
+
+// FOC angle offset (empirically tuned post-Clarke fix). Base is 161°.
+// Trim adjusts ±180° around it for tuning.
+#define FOC_ANGLE_OFFSET_BASE  29305  // 161° in Q16
+
+extern FOC_Angle foc_angle;
+extern FOC_DQ foc_dq;
+
+// 6-step block commutation table (one phase at +pwm, one at -pwm, one floating)
+static void foc_block_pwm(int16_t pwm, uint8_t pos, int *y, int *b, int *g)
+{
+	switch (pos) {
+		case 1: *y = 0;    *b = pwm;  *g = -pwm; break;
+		case 2: *y = -pwm; *b = pwm;  *g = 0;    break;
+		case 3: *y = -pwm; *b = 0;    *g = pwm;  break;
+		case 4: *y = 0;    *b = -pwm; *g = pwm;  break;
+		case 5: *y = pwm;  *b = -pwm; *g = 0;    break;
+		case 6: *y = pwm;  *b = 0;    *g = -pwm; break;
+		default: *y = 0;   *b = 0;    *g = 0;    break;
+	}
+}
+
+uint8_t foc_bldc_step(uint8_t pos, int16_t pwm_cmd, int32_t trim,
+                      uint8_t foc_enable,
+                      int *y, int *b, int *g)
+{
+	// Button state directly selects mode. No auto-transitions.
+	//   foc_enable = 0 → block commutation (safe, always works)
+	//   foc_enable = 1 → open-loop voltage FOC (user ensures motor is moving first)
+	// PLL in foc_angle is updated every ISR cycle (in bldc.c) regardless of
+	// mode, so when FOC engages the electrical angle is already tracked.
+	// No hard reset — that caused a voltage "kick" at engagement.
+	if (!foc_enable) {
+		foc_block_pwm(pwm_cmd, pos, y, b, g);
+		return 0;
+	}
+
+	// Open-loop voltage FOC. Trim adjusts angle offset around 161°.
+	foc_angle.angle_offset =
+		(uint16_t)(FOC_ANGLE_OFFSET_BASE + (trim * 328) / 10);
+
+	FOC_DQ vdq;
+	vdq.d = 0;
+	vdq.q = -pwm_cmd;  // Vq negated so FOC rotation matches block commutation
+
+	FOC_AlphaBeta vab;
+	foc_inverse_park(&vdq, &vab, foc_angle.electrical_angle);
+
+	FOC_Phase voltage;
+	foc_inverse_clarke(&vab, &voltage);
+
+	// SVPWM centering
+	int16_t vmax = voltage.y;
+	if (voltage.b > vmax) vmax = voltage.b;
+	if (voltage.g > vmax) vmax = voltage.g;
+	int16_t vmin = voltage.y;
+	if (voltage.b < vmin) vmin = voltage.b;
+	if (voltage.g < vmin) vmin = voltage.g;
+	int16_t v_offset = -(vmax + vmin) / 2;
+
+	*y = voltage.y + v_offset;
+	*b = voltage.b + v_offset;
+	*g = voltage.g + v_offset;
+	return 1;
 }

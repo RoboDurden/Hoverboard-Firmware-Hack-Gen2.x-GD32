@@ -101,7 +101,13 @@ Total overhead: ~660 bytes Flash for sin table, ~8 bytes RAM for FOC state.
 - 150° angle offset optimal at low speed, ~145° at ~210 RPM (speed-dependent)
 - SVPWM centering (min-max method) active
 - ISR execution time: 12 µs (24 kHz PWM feasible)
-- Block commutation: 572 RPM at 0.8A (reliable baseline)
+- Block commutation baseline (2026-04-12, PSU 27V):
+  - speed +1000 → 523 RPM anticlockwise
+  - speed -1000 → 515 RPM clockwise
+  - Throttle sign: forward stick = positive throttle
+- FOC (post-Clarke fix): 633 RPM at 0.7A — **faster than block commutation**
+  (23-25 RPM more speed, less current) at the same bus voltage. Confirms
+  FOC is more efficient at producing torque per applied voltage.
 
 ### What doesn't work yet
 - **PI current controllers**: Never tested with correct gains. Previous

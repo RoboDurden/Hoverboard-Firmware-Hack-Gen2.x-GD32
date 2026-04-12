@@ -69,9 +69,9 @@ uint8_t foc_mode = 0;
 uint32_t foc_warmup_ticks = 0;  // counts up from 0, FOC allowed after warmup
 // Speed thresholds for mode switching (in ISR ticks per hall sector)
 // Lower ticks = higher speed. Hysteresis prevents oscillation.
-#define FOC_ENGAGE_TICKS  3000  // switch to FOC when faster than ~3.5 RPM
-#define FOC_DISENGAGE_TICKS 4000 // switch back to block when slower than ~2.7 RPM
-#define FOC_WARMUP_TICKS  3200  // ~200 ms warmup before FOC allowed
+#define FOC_ENGAGE_TICKS  200   // switch to FOC only above ~53 RPM
+#define FOC_DISENGAGE_TICKS 400 // switch back to block below ~27 RPM
+#define FOC_WARMUP_TICKS  48000 // 3 second warmup in block commutation
 #endif
 int32_t bldc_inputFilterPwm = 0;
 int32_t bldc_outputFilterPwm = 0;
@@ -367,101 +367,13 @@ void CalculateBLDC(void)
 	bldc_outputFilterPwm = filter_reg >> iFILTER_SHIFT;
 
 #ifdef FOC_ENABLED
-	{
-		// Block commutation for startup, FOC once spinning.
-		// FOC engages when sector_ticks < FOC_ENGAGE_TICKS (motor fast enough).
-		// Trim controls angle offset over full 360° (for finding new optimum
-		// after inverse Clarke fix).
-		foc_warmup_ticks++;
-		if (foc_mode == 0) {
-			if (foc_warmup_ticks > FOC_WARMUP_TICKS &&
-			    foc_angle.sector_ticks > 0 &&
-			    foc_angle.sector_ticks < FOC_ENGAGE_TICKS) {
-				foc_mode = 1;
-			}
-			bldc_get_pwm(bldc_outputFilterPwm, pos, &y, &b, &g);
-		} else {
-			if (foc_angle.sector_ticks > FOC_DISENGAGE_TICKS ||
-			    foc_angle.sector_ticks == 0) {
-				foc_mode = 0;
-				foc_warmup_ticks = 0;
-				bldc_get_pwm(bldc_outputFilterPwm, pos, &y, &b, &g);
-			} else {
-				// FOC mode. Angle offset: 161° found empirically post-Clarke fix.
-				foc_angle.angle_offset = 29305;  // 161° in Q16
-
-				// Trim selects control mode:
-				//   steer <= 0: open-loop voltage FOC (Vq = throttle, no Id control)
-				//   steer >  0: closed-loop PI current control, steer scales gains
-				extern int32_t steer;
-				FOC_DQ vdq;
-
-				static uint8_t pi_was_active = 0;
-				if (steer <= 0) {
-					// Open-loop fallback — known working
-					vdq.d = 0;
-					vdq.q = bldc_outputFilterPwm;
-					pi_was_active = 0;
-				} else {
-					// Closed-loop PI current control.
-					// On transition from open-loop, preload Iq integrator so
-					// PI output matches the open-loop Vq (no torque glitch).
-					if (!pi_was_active) {
-						// Preload integrator: PI output ≈ bldc_outputFilterPwm / 4 (scaled down for safety)
-						// integral contributes (integral >> PI_INTEGRAL_SHIFT) / (1 << PI_KP_SHIFT) to output
-						// So to get output = V_preload, set integral = V_preload << (PI_KP_SHIFT + PI_INTEGRAL_SHIFT)
-						int32_t v_preload = bldc_outputFilterPwm / 4;
-						foc_ctrl.pi_q.integral = ((int32_t)v_preload) << (11 + PI_INTEGRAL_SHIFT);
-						foc_ctrl.pi_d.integral = 0;
-						pi_was_active = 1;
-					}
-
-					// Conservative gains. Limit raised to match open-loop headroom.
-					foc_ctrl.pi_q.kp = 153;
-					foc_ctrl.pi_q.ki = 76;
-					foc_ctrl.pi_q.limit = 1000;  // was 400 — was capping voltage
-					foc_ctrl.pi_d.kp = 102;
-					foc_ctrl.pi_d.ki = 46;
-					foc_ctrl.pi_d.limit = 1000;
-
-					// iq_ref ≈ throttle/2 → full throttle ≈ 560 counts ≈ 2.4A
-					int16_t iq_ref = bldc_outputFilterPwm / 2;
-					int16_t id_ref = 0;
-
-					// Low-pass filter Id/Iq to remove ripple before PI sees it.
-					// IIR: y = y + (x - y) / 16  (time constant ~1ms at 16 kHz)
-					static int32_t iq_lpf = 0, id_lpf = 0;
-					iq_lpf += ((int32_t)foc_dq.q << 4) - (iq_lpf >> 4);
-					id_lpf += ((int32_t)foc_dq.d << 4) - (id_lpf >> 4);
-					int16_t iq_filt = (int16_t)(iq_lpf >> 8);
-					int16_t id_filt = (int16_t)(id_lpf >> 8);
-
-					int16_t err_q = iq_ref - iq_filt;
-					int16_t err_d = id_ref - id_filt;
-					vdq.q = foc_pi_update(&foc_ctrl.pi_q, err_q);
-					vdq.d = foc_pi_update(&foc_ctrl.pi_d, err_d);
-				}
-
-				FOC_AlphaBeta vab;
-				foc_inverse_park(&vdq, &vab, foc_angle.electrical_angle);
-
-				FOC_Phase foc_voltage;
-				foc_inverse_clarke(&vab, &foc_voltage);
-
-				int16_t vmax = foc_voltage.y;
-				if (foc_voltage.b > vmax) vmax = foc_voltage.b;
-				if (foc_voltage.g > vmax) vmax = foc_voltage.g;
-				int16_t vmin = foc_voltage.y;
-				if (foc_voltage.b < vmin) vmin = foc_voltage.b;
-				if (foc_voltage.g < vmin) vmin = foc_voltage.g;
-				int16_t v_offset = -(vmax + vmin) / 2;
-
-				y = foc_voltage.y + v_offset;
-				b = foc_voltage.b + v_offset;
-				g = foc_voltage.g + v_offset;
-			}
-		}
-	}
+	// FOC on/off is driven by wStateMaster bit 0 from the joystick controller
+	// (see joystick's -f option). Block commutation runs when FOC is off.
+	extern uint8_t wState;
+	extern int32_t steer;
+	foc_mode = foc_bldc_step(pos, (int16_t)bldc_outputFilterPwm, steer,
+	                         (wState & 0x01) ? 1 : 0,
+	                         &y, &b, &g);
 #else
 	// Block commutation only
 	bldc_get_pwm(bldc_outputFilterPwm, pos, &y, &b, &g);
@@ -537,10 +449,17 @@ void CalculateBLDC(void)
 			if (diff_deg < -180) diff_deg += 360;
 			uint16_t off_deg = (uint32_t)foc_angle.angle_offset * 360 / 65536;
 			extern int32_t steer;
-			sprintf(s, "str:%+5ld off:%3u m:%d Id:%+4d Iq:%+4d stk:%u\r\n",
-				(long)steer, off_deg, foc_mode,
+			extern uint8_t wState;
+			#ifdef FOC_ENABLED
+			uint8_t m_val = foc_mode;
+			#else
+			uint8_t m_val = 0;
+			#endif
+			sprintf(s, "wS:0x%02X foc:%d m:%d dir:%+d Id:%+4d Iq:%+4d stk:%u off:%3u str:%+5ld\r\n",
+				wState, (wState & 1) ? 1 : 0, m_val,
+				(int)foc_angle.direction,
 				foc_id_avg, foc_iq_avg,
-				(unsigned)foc_angle.sector_ticks);
+				(unsigned)foc_angle.sector_ticks, off_deg, (long)steer);
 			(void)hall_deg; (void)obs_deg; (void)diff_deg;
 			SEGGER_RTT_WriteString(0, s);
 		}
