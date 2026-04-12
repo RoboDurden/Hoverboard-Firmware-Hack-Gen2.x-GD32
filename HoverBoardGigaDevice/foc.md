@@ -108,6 +108,18 @@ Total overhead: ~660 bytes Flash for sin table, ~8 bytes RAM for FOC state.
 - FOC (post-Clarke fix): 633 RPM at 0.7A — **faster than block commutation**
   (23-25 RPM more speed, less current) at the same bus voltage. Confirms
   FOC is more efficient at producing torque per applied voltage.
+- Matched-throttle A/B comparison (2026-04-12, user-toggled via joystick):
+  - throttle 226: BC 124 RPM → FOC 133 RPM (+7%)
+  - full throttle: BC 585 RPM → FOC 629 RPM (+8%)
+  - The noticeable "kick" when FOC engages is just this efficiency gain
+    manifesting as a step in speed at constant throttle.
+- PLL reset at BC→FOC transition is required for reliability. Without it,
+  stale `pll_angle`/`pll_velocity` from accumulated BC tracking error can
+  occasionally cause FOC to engage with the voltage vector at the wrong
+  angle, manifesting as "screaming" (braking torque, Id/Iq jumps, motor
+  stalls). Hard-reset pll_angle to the current hall sector centre and
+  pll_velocity to 0 on every BC→FOC transition. Small initial torque
+  impulse is tolerable.
 
 ### What doesn't work yet
 - **PI current controllers**: Never tested with correct gains. Previous

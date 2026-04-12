@@ -419,19 +419,27 @@ static void foc_block_pwm(int16_t pwm, uint8_t pos, int *y, int *b, int *g)
 	}
 }
 
+extern const uint16_t sector_start_angle[7];
+
 uint8_t foc_bldc_step(uint8_t pos, int16_t pwm_cmd, int32_t trim,
                       uint8_t foc_enable,
                       int *y, int *b, int *g)
 {
-	// Button state directly selects mode. No auto-transitions.
-	//   foc_enable = 0 → block commutation (safe, always works)
-	//   foc_enable = 1 → open-loop voltage FOC (user ensures motor is moving first)
-	// PLL in foc_angle is updated every ISR cycle (in bldc.c) regardless of
-	// mode, so when FOC engages the electrical angle is already tracked.
-	// No hard reset — that caused a voltage "kick" at engagement.
+	static uint8_t was_foc_enabled = 0;
 	if (!foc_enable) {
+		was_foc_enabled = 0;
 		foc_block_pwm(pwm_cmd, pos, y, b, g);
 		return 0;
+	}
+
+	// Hard reset PLL on BC → FOC transition. Testing whether this
+	// eliminates the "stuck state" where FOC fails to engage after
+	// certain BC sequences. The "kick" is the cost.
+	if (!was_foc_enabled && pos >= 1 && pos <= 6) {
+		uint16_t centre = sector_start_angle[pos] + (ANGLE_60DEG / 2);
+		foc_angle.pll_angle = (int32_t)centre << 16;
+		foc_angle.pll_velocity = 0;
+		was_foc_enabled = 1;
 	}
 
 	// Open-loop voltage FOC. Trim adjusts angle offset around 161°.
