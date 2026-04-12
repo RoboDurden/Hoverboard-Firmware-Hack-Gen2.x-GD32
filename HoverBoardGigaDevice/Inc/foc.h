@@ -157,4 +157,23 @@ static inline uint16_t foc_observer_angle(const FOC_Observer *obs) {
 // Force the observer angle/velocity (e.g., from halls during startup)
 void foc_observer_set(FOC_Observer *obs, uint16_t angle, int32_t velocity);
 
+// Shared FOC state (defined in foc.c)
+extern FOC_Angle foc_angle;
+extern FOC_Current foc_current;
+extern FOC_AlphaBeta foc_ab;
+extern FOC_DQ foc_dq;
+extern FOC_Controller foc_ctrl;
+extern FOC_Observer foc_obs;
+extern uint16_t foc_offset_y, foc_offset_b;
+
+// ISR-rate averaging (debug telemetry)
+extern int32_t foc_id_sum, foc_iq_sum, foc_iy_sum, foc_ib_sum;
+extern uint16_t foc_avg_count;
+extern int16_t foc_id_avg, foc_iq_avg, foc_iy_avg, foc_ib_avg;
+extern int32_t foc_id_var_sum, foc_iq_var_sum, foc_iy_var_sum, foc_ib_var_sum;
+
+#ifdef FOC_ENABLED
+extern uint8_t foc_mode;
+#endif
+
 #endif

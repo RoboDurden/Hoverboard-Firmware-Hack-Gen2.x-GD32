@@ -1,6 +1,30 @@
 #include "../Inc/foc.h"
 #include "../Inc/defines.h"
 
+// FOC state (defined here, declared extern in foc.h)
+FOC_Angle foc_angle;
+FOC_Current foc_current;
+FOC_AlphaBeta foc_ab;
+FOC_DQ foc_dq;
+FOC_Controller foc_ctrl;
+FOC_Observer foc_obs;
+uint16_t foc_offset_y = 2000;  // calibrated at startup
+uint16_t foc_offset_b = 2000;
+
+// ISR-rate averaging for debugging
+int32_t foc_id_sum = 0, foc_iq_sum = 0;
+int32_t foc_iy_sum = 0, foc_ib_sum = 0;
+uint16_t foc_avg_count = 0;
+int16_t foc_id_avg = 0, foc_iq_avg = 0;
+int16_t foc_iy_avg = 0, foc_ib_avg = 0;
+int32_t foc_id_var_sum = 0, foc_iq_var_sum = 0;
+int32_t foc_iy_var_sum = 0, foc_ib_var_sum = 0;
+
+#ifdef FOC_ENABLED
+// Runtime mode: 0=block commutation, 1=FOC. Updated by foc_bldc_step().
+uint8_t foc_mode = 0;
+#endif
+
 // Sector start angles (default: 6 evenly-spaced 60° sectors).
 // For better accuracy on a specific motor, calibrate per-sector widths
 // using foc_angle->sector_tick_sum/cnt at constant speed and replace
@@ -402,9 +426,6 @@ void foc_controller_update(FOC_Controller *ctrl,
 // Trim adjusts ±180° around it for tuning.
 #define FOC_ANGLE_OFFSET_BASE  29305  // 161° in Q16
 
-extern FOC_Angle foc_angle;
-extern FOC_DQ foc_dq;
-
 // 6-step block commutation table (one phase at +pwm, one at -pwm, one floating)
 static void foc_block_pwm(int16_t pwm, uint8_t pos, int *y, int *b, int *g)
 {
@@ -477,10 +498,6 @@ uint8_t foc_bldc_step(uint8_t pos, int16_t pwm_cmd, int32_t trim,
 // When FOC_ENABLED, foc.c owns InitBldc() — bldcBC.c is compiled out.
 // BC output is provided by foc_block_pwm() inside foc_bldc_step().
 void InitBldc(void) {
-	extern FOC_Angle foc_angle;
-	extern FOC_Controller foc_ctrl;
-	extern FOC_Observer foc_obs;
-	extern uint16_t foc_offset_y, foc_offset_b;
 	extern adc_buf_t adc_buffer;
 
 	foc_angle_init(&foc_angle);

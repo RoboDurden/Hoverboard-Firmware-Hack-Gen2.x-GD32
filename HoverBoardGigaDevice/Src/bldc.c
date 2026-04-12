@@ -44,29 +44,6 @@ volatile uint8_t hall = 0;        // Global hall state
 uint8_t pos;
 uint8_t lastPos;
 
-// FOC state
-FOC_Angle foc_angle;
-FOC_Current foc_current;
-FOC_AlphaBeta foc_ab;
-FOC_DQ foc_dq;
-FOC_Controller foc_ctrl;
-FOC_Observer foc_obs;
-uint16_t foc_offset_y = 2000;  // calibrated at startup
-uint16_t foc_offset_b = 2000;
-
-// ISR-rate averaging for debugging
-int32_t foc_id_sum = 0, foc_iq_sum = 0;
-int32_t foc_iy_sum = 0, foc_ib_sum = 0;
-uint16_t foc_avg_count = 0;
-int16_t foc_id_avg = 0, foc_iq_avg = 0;
-int16_t foc_iy_avg = 0, foc_ib_avg = 0;
-int32_t foc_id_var_sum = 0, foc_iq_var_sum = 0;
-int32_t foc_iy_var_sum = 0, foc_ib_var_sum = 0;
-
-#ifdef FOC_ENABLED
-// Runtime mode: 0=block commutation, 1=FOC. Updated by foc_bldc_step().
-uint8_t foc_mode = 0;
-#endif
 int32_t bldc_inputFilterPwm = 0;
 int32_t bldc_outputFilterPwm = 0;
 uint8_t iDrivingModeOverride = 0;
