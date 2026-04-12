@@ -1,5 +1,4 @@
 #include "../Inc/bldcBC.h"
-#include "../Inc/foc.h"
 #ifdef BLDC_BC
 
 //----------------------------------------------------------------------------
@@ -47,31 +46,7 @@ void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g)
   }	
 }
 
-extern const uint8_t hall_to_pos[8];
-
 void InitBldc()
 {
-	extern FOC_Angle foc_angle;
-	extern FOC_Controller foc_ctrl;
-	extern FOC_Observer foc_obs;
-	extern uint16_t foc_offset_y, foc_offset_b;
-	extern adc_buf_t adc_buffer;
-
-	foc_angle_init(&foc_angle);
-	foc_controller_init(&foc_ctrl);
-	foc_observer_init(&foc_obs);
-
-	#if defined(PHASE_CURRENT_Y) && defined(PHASE_CURRENT_B)
-		foc_calibrate_offsets(&foc_offset_y, &foc_offset_b,
-		                      &adc_buffer.phase_current_y, &adc_buffer.phase_current_b);
-	#endif
-
-	#ifdef FOC_ENABLED
-		// Angle offset must be set per motor. Options:
-		// 1. Hardcode it in foc_angle_init() — simplest but motor-specific
-		// 2. Call foc_align_rotor() — requires bench testing to find a safe ALIGN_VOLTAGE
-		// 3. Use joystick trim axis to set live (see remoteUart -> steer mapping)
-		// 4. EEPROM/flash storage of calibration value
-	#endif
 }
 #endif

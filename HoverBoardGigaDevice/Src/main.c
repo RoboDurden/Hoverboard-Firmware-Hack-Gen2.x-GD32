@@ -4,6 +4,7 @@
 #include "../Inc/defines.h"
 #include "../Inc/it.h"
 #include "../Inc/bldc.h"
+#include "../Inc/foc.h"
 #include "../Inc/commsMasterSlave.h"
 
 //#include "../Inc/commsSteering.h"
@@ -176,6 +177,7 @@ int main (void)
 	PWM_init();
 
 	InitBldc();		// virtual function implemented by bldcBC.c and bldcSINE.c
+	foc_init();
 	DriverInit(iDrivingMode);
 
 
