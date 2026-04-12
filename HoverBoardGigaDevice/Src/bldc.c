@@ -1,10 +1,6 @@
 //#include "../Inc/defines.h"
 #include "../Inc/bldc.h"
 #include "../Inc/foc.h"
-#include <stdio.h>
-#ifdef RTT_REMOTE
-#include "SEGGER_RTT.h"
-#endif
 
 /*
 // Internal constants
@@ -309,61 +305,10 @@ void CalculateBLDC(void)
 	bldc_get_pwm(bldc_outputFilterPwm, pos, &y, &b, &g);
 #endif
 
-	// Step-response test mode: DISABLED — PI overshot and hit 2A limit.
-	// Need more careful approach (ramp instead of step, or lower gains).
-	// #define STEP_TEST_MODE
-	#ifdef STEP_TEST_MODE
-	{
-		// Force sector 1 output (Y floats, B+=pwm, G-=pwm)
-		static uint32_t test_tick = 0;
-		int16_t iq_ref_test = (test_tick & 16000) ? 200 : 0;  // 0.5 Hz toggle (1s high, 1s low)
-		test_tick++;
-
-		// PI on Iq only (Vd=0)
-		foc_ctrl.pi_q.kp = 153;
-		foc_ctrl.pi_q.ki = 76;
-		foc_ctrl.pi_q.limit = 500;  // modest voltage limit
-
-		int16_t err = iq_ref_test - foc_dq.q;
-		int16_t vq_out = foc_pi_update(&foc_ctrl.pi_q, err);
-
-		// Apply Vq at a fixed angle pointing at sector 1 (ignore rotor angle)
-		// For sector 1: Y=0, B=+vq, G=-vq (block-commutation-style output)
-		int16_t y_out = 0;
-		int16_t b_out = vq_out;
-		int16_t g_out = -vq_out;
-
-		ResetTimeout();
-		timer_automatic_output_enable(TIMER_BLDC);
-
-		// Disconnect Y phase (both FETs off) so PSU current = real phase current
-		timer_channel_output_state_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, TIMER_CCX_DISABLE);
-		timer_channel_complementary_output_state_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, TIMER_CCXN_DISABLE);
-		timer_channel_output_state_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_B, TIMER_CCX_ENABLE);
-		timer_channel_complementary_output_state_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_B, TIMER_CCXN_ENABLE);
-		timer_channel_output_state_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_G, TIMER_CCX_ENABLE);
-		timer_channel_complementary_output_state_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_G, TIMER_CCXN_ENABLE);
-
-		timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, BLDC_TIMER_MID_VALUE);
-		timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_B, CLAMP(b_out + BLDC_TIMER_MID_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
-		timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_G, CLAMP(g_out + BLDC_TIMER_MID_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
-
-		// Fast logging (1 kHz = every 16 ISR cycles)
-		#if defined(RTT_REMOTE)
-		if ((test_tick & 15) == 0) {
-			char s[48];
-			sprintf(s, "%lu %d %d %d\r\n",
-				(unsigned long)test_tick, iq_ref_test, foc_dq.q, vq_out);
-			SEGGER_RTT_WriteString(0, s);
-		}
-		#endif
-	}
-	#else
 	// Set PWM output (pwm_res/2 is the mean value, setvalue has to be between 10 and pwm_res-10)
 	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_G, CLAMP(g + BLDC_TIMER_MID_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
 	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_B, CLAMP(b + BLDC_TIMER_MID_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
 	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_Y, CLAMP(y + BLDC_TIMER_MID_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
-	#endif
 
 	foc_log_rtt();
 
