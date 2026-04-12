@@ -276,49 +276,8 @@ void CalculateBLDC(void)
 	#else
 		pos = hall_to_pos[hall];
 	#endif
-	// Update FOC angle estimation and phase currents
-	foc_angle_update(&foc_angle, pos);
-	#if defined(PHASE_CURRENT_Y) && defined(PHASE_CURRENT_B)
-		// Ib offset compensation: startup calibration consistently reads
-		// ~33 counts too high on PB1 (persistent across sessions). Correcting
-		// here keeps the DC bias out of the Clarke/Park transforms.
-		foc_current_update(&foc_current, adc_buffer.phase_current_y, adc_buffer.phase_current_b,
-		                   foc_offset_y, foc_offset_b + 33);
-		foc_clarke(&foc_current, &foc_ab);
-		foc_park(&foc_ab, &foc_dq, foc_angle.electrical_angle);
-
-		// Back-EMF observer: seed from halls once motor is spinning, then let it run free
-		// Re-seed only if observer is way off from hall (catches drift)
-		static uint8_t obs_seeded = 0;
-		int16_t obs_hall_diff = (int16_t)(foc_angle.electrical_angle - foc_observer_angle(&foc_obs));
-		if (!obs_seeded || obs_hall_diff > 5461 || obs_hall_diff < -5461) {  // > 30°
-			if (foc_angle.sector_ticks > 0 && foc_angle.sector_ticks < 5000) {
-				// hall velocity = ANGLE_60DEG (10923) per sector_ticks ISR cycles, in Q16
-				int32_t hall_velocity = ((int32_t)10923 << 16) / (int32_t)foc_angle.sector_ticks;
-				if (foc_angle.direction < 0) hall_velocity = -hall_velocity;
-				foc_observer_set(&foc_obs, foc_angle.electrical_angle, hall_velocity);
-				obs_seeded = 1;
-			}
-		}
-		foc_observer_update(&foc_obs, foc_dq.d);
-
-		// Accumulate for ISR-rate averaging (compute avg every 1000 cycles = ~62ms)
-		foc_id_sum += foc_dq.d;
-		foc_iq_sum += foc_dq.q;
-		foc_iy_sum += foc_current.iy;
-		foc_ib_sum += foc_current.ib;
-		foc_avg_count++;
-		if (foc_avg_count >= 1000) {
-			foc_id_avg = foc_id_sum / 1000;
-			foc_iq_avg = foc_iq_sum / 1000;
-			foc_iy_avg = foc_iy_sum / 1000;
-			foc_ib_avg = foc_ib_sum / 1000;
-			// Variance pass (approximate: use avg from this batch)
-			foc_id_var_sum = foc_iq_var_sum = foc_iy_var_sum = foc_ib_var_sum = 0;
-			foc_id_sum = foc_iq_sum = foc_iy_sum = foc_ib_sum = 0;
-			foc_avg_count = 0;
-		}
-	#endif
+	// Run one FOC sensor update: angle, currents, Clarke/Park, observer, averaging
+	foc_sensor_update(pos, &adc_buffer);
 
 // Add this check before setting PWM:
 	if (pos == 0) 	// 0b000 and 0b111 should never happen with the three hall sensors

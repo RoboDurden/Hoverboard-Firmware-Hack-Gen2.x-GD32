@@ -2,6 +2,7 @@
 #define FOC_H
 
 #include <stdint.h>
+#include "defines.h"
 
 // Electrical angle is represented as 0..65535 (uint16_t) mapping to 0..2*PI
 // This avoids float and wraps naturally on overflow
@@ -136,6 +137,11 @@ uint8_t foc_bldc_step(uint8_t pos, int16_t pwm_cmd, int32_t trim,
                       uint8_t foc_enable,
                       int *y, int *b, int *g);
 
+// Run one per-ISR sensor update cycle: advance angle PLL, read phase
+// currents, Clarke/Park, seed/update back-EMF observer, and accumulate
+// averages. All state is held in the global foc_* variables.
+void foc_sensor_update(uint8_t pos, volatile adc_buf_t *adc);
+
 // Back-EMF observer using Id as the angle error signal.
 // In open-loop voltage FOC with Vd=0, Id is non-zero only when the
 // assumed angle is misaligned with the rotor. The observer maintains
@@ -170,7 +176,6 @@ extern uint16_t foc_offset_y, foc_offset_b;
 extern int32_t foc_id_sum, foc_iq_sum, foc_iy_sum, foc_ib_sum;
 extern uint16_t foc_avg_count;
 extern int16_t foc_id_avg, foc_iq_avg, foc_iy_avg, foc_ib_avg;
-extern int32_t foc_id_var_sum, foc_iq_var_sum, foc_iy_var_sum, foc_ib_var_sum;
 
 #ifdef FOC_ENABLED
 extern uint8_t foc_mode;
