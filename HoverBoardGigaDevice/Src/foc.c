@@ -22,7 +22,7 @@ uint16_t foc_avg_count = 0;
 int16_t foc_id_avg = 0, foc_iq_avg = 0;
 int16_t foc_iy_avg = 0, foc_ib_avg = 0;
 
-#ifdef FOC_ENABLED
+#ifdef BLDC_FOC
 // Runtime mode: 0=block commutation, 1=FOC. Updated by foc_bldc_step().
 uint8_t foc_mode = 0;
 #endif
@@ -473,7 +473,7 @@ void foc_log_rtt(void) {
 
 		extern int32_t steer;
 		extern uint8_t wState;
-		#ifdef FOC_ENABLED
+		#ifdef BLDC_FOC
 			uint8_t m_val = foc_mode;
 		#else
 			uint8_t m_val = 0;
@@ -571,8 +571,8 @@ uint8_t foc_bldc_step(uint8_t pos, int16_t pwm_cmd, int32_t trim,
 	return 1;
 }
 
-#ifdef FOC_ENABLED
-// When FOC_ENABLED, foc.c owns InitBldc() — bldcBC.c is compiled out.
+#ifdef BLDC_FOC
+// When BLDC_FOC, foc.c owns InitBldc() — bldcBC.c is compiled out.
 // BC output is provided by foc_block_pwm() inside foc_bldc_step().
 void InitBldc(void) {
 	extern adc_buf_t adc_buffer;

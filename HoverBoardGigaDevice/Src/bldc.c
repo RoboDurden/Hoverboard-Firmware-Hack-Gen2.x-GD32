@@ -292,7 +292,7 @@ void CalculateBLDC(void)
 	filter_reg = filter_reg - (filter_reg >> iFILTER_SHIFT) + bldc_inputFilterPwm;
 	bldc_outputFilterPwm = filter_reg >> iFILTER_SHIFT;
 
-#ifdef FOC_ENABLED
+#ifdef BLDC_FOC
 	// FOC on/off is driven by wStateMaster bit 0 from the joystick controller
 	// (see joystick's -f option). Block commutation runs when FOC is off.
 	extern uint8_t wState;

@@ -181,7 +181,7 @@ extern int32_t foc_id_sum, foc_iq_sum, foc_iy_sum, foc_ib_sum;
 extern uint16_t foc_avg_count;
 extern int16_t foc_id_avg, foc_iq_avg, foc_iy_avg, foc_ib_avg;
 
-#ifdef FOC_ENABLED
+#ifdef BLDC_FOC
 extern uint8_t foc_mode;
 #endif
 
