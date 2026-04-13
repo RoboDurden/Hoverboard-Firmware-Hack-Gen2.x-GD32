@@ -607,8 +607,8 @@ void ADC_init(void)
 	
 	// Enable DMA channel 0
 	TARGET_dma_channel_enable(DMA_CH0);
-
-
+	
+	
 	#ifdef REMOTE_AUTODETECT
 		TARGET_adc_channel_length_config(ADC_REGULAR_CHANNEL, 1);
 		TARGET_adc_regular_channel_config(0, PIN_TO_CHANNEL(TODO_PIN), ADC_SAMPLETIME_13POINT5);
@@ -630,9 +630,9 @@ void ADC_init(void)
 			adc_regular_channel_config(3, PIN_TO_CHANNEL(PA3), ADC_SAMPLETIME_13POINT5);
 		#endif
 	#endif
-
+	
 	TARGET_adc_data_alignment_config(ADC_DATAALIGN_RIGHT);
-
+	
 	// Set trigger of ADC
 	TARGET_adc_external_trigger_config(ADC_REGULAR_CHANNEL, ENABLE);
 	TARGET_adc_external_trigger_source_config(ADC_REGULAR_CHANNEL, ADC_EXTTRIG_REGULAR_NONE);
@@ -642,19 +642,19 @@ void ADC_init(void)
 	#ifndef REMOTE_AUTODETECT
 		TARGET_adc_vbat_disable();
 	#endif
-
+	
 	// ADC analog watchdog disable
 	TARGET_adc_watchdog_disable();
-
+	
 	// Enable ADC (must be before calibration)
 	TARGET_adc_enable();
-
+	
 	// Calibrate ADC values
 	TARGET_adc_calibration_enable();
-
+	
 	// Enable DMA request
 	TARGET_adc_dma_mode_enable();
-
+    
 	// Set ADC to scan mode
 	TARGET_adc_special_function_config(ADC_SCAN_MODE, ENABLE);
 }

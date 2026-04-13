@@ -39,7 +39,6 @@ volatile uint8_t hall = 0;        // Global hall state
 
 uint8_t pos;
 uint8_t lastPos;
-
 int32_t bldc_inputFilterPwm = 0;
 int32_t bldc_outputFilterPwm = 0;
 uint8_t iDrivingModeOverride = 0;
@@ -285,13 +284,16 @@ void CalculateBLDC(void)
 	}
 
 	extern uint16_t iDriverDoEvery;		// set in Driver:DriverInit()
-	if (buzzerTimer%iDriverDoEvery==0)
+	if (buzzerTimer%iDriverDoEvery==0)	
 		bldc_inputFilterPwm = Driver(iDrivingModeOverride,iBldcInput);		// interpret the input as pwm/speed/torque/position.
-
+	
 	// Calculate low-pass filter for pwm value
 	filter_reg = filter_reg - (filter_reg >> iFILTER_SHIFT) + bldc_inputFilterPwm;
 	bldc_outputFilterPwm = filter_reg >> iFILTER_SHIFT;
+	
+	//bldc_outputFilterPwm = bldc_inputFilterPwm;		// does not work for drivingMode 1, low-pass is needed :-(
 
+	// Update PWM channels based on position y(ellow), b(lue), g(reen)
 #ifdef BLDC_FOC
 	// FOC on/off is driven by wStateMaster bit 0 from the joystick controller
 	// (see joystick's -f option). Block commutation runs when FOC is off.
