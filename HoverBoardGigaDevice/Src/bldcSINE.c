@@ -88,8 +88,11 @@ uint16_t angle_idx = 0;
 int pwmGo = 0;
 
 #ifdef BLDC_SINE_BOOSTER
-extern uint32_t uPwmBoost;
-extern uint32_t uDiv24;
+// BLDC_TIMER_MID_VALUE depends on the runtime variable SystemCoreClock, so
+// these can't be const-initialised at file scope under gcc. Initialised in
+// InitBldc().
+uint32_t uPwmBoost;	// 13% = 196 for 12 kHz
+uint32_t uDiv24;	// 16.777.215 = <<24
 #endif
 
 #if TARGET == 2
@@ -460,11 +463,6 @@ void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g)
 
 int16_t v_offsetLog;
 int16_t pwmGoBoost;
-// BLDC_TIMER_MID_VALUE depends on the runtime variable SystemCoreClock, so
-// these can't be const-initialised at file scope under gcc. Initialised in
-// InitBldc().
-uint32_t uPwmBoost;	// 13% = 196 for 12 kHz
-uint32_t uDiv24;	// 16.777.215 = <<24
 //const uint32_t uDiv24 = ((BLDC_SINE_BOOSTER/100.0)/uPwmBoost)*16777215;	// higher then 15% reduces max speed
 
 
