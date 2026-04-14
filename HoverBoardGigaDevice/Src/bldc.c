@@ -1,6 +1,6 @@
 //#include "../Inc/defines.h"
 #include "../Inc/bldc.h"
-#include "../Inc/foc.h"
+#include "../Inc/bldcFOC.h"
 
 /*
 // Internal constants

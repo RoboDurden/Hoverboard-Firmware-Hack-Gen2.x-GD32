@@ -175,7 +175,7 @@ int main (void)
 	// Init PWM
 	PWM_init();
 
-	InitBldc();		// virtual function implemented by bldcBC.c, bldcSINE.c, or foc.c
+	InitBldc();		// virtual function implemented by bldcBC.c, bldcSINE.c, or bldcFOC.c
 	DriverInit(iDrivingMode);
 
 

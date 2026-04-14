@@ -1,11 +1,11 @@
-#include "../Inc/foc.h"
+#include "../Inc/bldcFOC.h"
 #include "../Inc/defines.h"
 #include <stdio.h>
 #ifdef RTT_REMOTE
 #include "SEGGER_RTT.h"
 #endif
 
-// FOC state (defined here, declared extern in foc.h)
+// FOC state (defined here, declared extern in bldcFOC.h)
 FOC_Angle foc_angle;
 FOC_Current foc_current;
 FOC_AlphaBeta foc_ab;
@@ -572,7 +572,7 @@ static uint8_t foc_bldc_step(uint8_t pos, int16_t pwm_cmd, int32_t trim,
 }
 
 #ifdef BLDC_FOC
-// When BLDC_FOC, foc.c owns bldc_get_pwm() and InitBldc() — bldcBC.c is compiled out.
+// When BLDC_FOC, bldcFOC.c owns bldc_get_pwm() and InitBldc() — bldcBC.c is compiled out.
 // FOC on/off is driven by wStateMaster bit 0 from the joystick controller
 // (see joystick's -f option). Block commutation runs when FOC is off.
 void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) {

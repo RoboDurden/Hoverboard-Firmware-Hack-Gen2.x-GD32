@@ -1,5 +1,5 @@
-#ifndef FOC_H
-#define FOC_H
+#ifndef BLDCFOC_H
+#define BLDCFOC_H
 
 #include <stdint.h>
 #include "defines.h"
@@ -153,7 +153,7 @@ static inline uint16_t foc_observer_angle(const FOC_Observer *obs) {
 // Force the observer angle/velocity (e.g., from halls during startup)
 void foc_observer_set(FOC_Observer *obs, uint16_t angle, int32_t velocity);
 
-// Shared FOC state (defined in foc.c)
+// Shared FOC state (defined in bldcFOC.c)
 extern FOC_Angle foc_angle;
 extern FOC_Current foc_current;
 extern FOC_AlphaBeta foc_ab;
