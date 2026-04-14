@@ -116,9 +116,12 @@ void TIMEOUT_IrqHandler(void)
 
 //----------------------------------------------------------------------------
 // Timer0_Update_Handler
-// Is called when upcouting of timer0 is finished and the UPDATE-flag is set
-// AND when downcouting of timer0 is finished and the UPDATE-flag is set
-// -> pwm of timer0 running with 16kHz -> interrupt every 31,25us
+// Fires on the PWM update event. TIMER0 is center-aligned and would normally
+// raise UPIF on both overflow AND underflow (i.e. every 31.25us at 16kHz PWM),
+// but PWM_init sets repetitioncounter = 1 so UPIF fires only once per full
+// period — every 62.5us. See GD32F1x0 User Manual Rev3.6 §15.1.4, subsection
+// "Update event (from overflow/underflow) rate configuration":
+//   https://gd32mcu.com/data/documents/userManual/GD32F1x0_User_Manual_Rev3.6.pdf
 //----------------------------------------------------------------------------
 extern uint32_t steerCounter;								// Steer counter for setting update rate
 uint32_t iPwmTicks = 0, iPwmTicks0 = 0, iPwmCounter = 0, iPwmTime=0, iPwmRate=0;
@@ -133,23 +136,19 @@ void TARGET_TIMER0_BRK_UP_TRG_COM_IRQHandler(void)
 {
 	if (timer_interrupt_flag_get(TIMER_BLDC, TIMER_INT_UP))
 	{
-		static uint8_t interrupt_toggle = 0;	// Static variable to keep track of calls; by Gemini2.5pro
-		interrupt_toggle = 1 - interrupt_toggle;	// Invert the toggle on each entry
-		if (interrupt_toggle)		// Only execute every second call as libray/hardware will trigger on up AND down, ignoring timerBldc_paramter_struct.alignedmode = TIMER_COUNTER_CENTER_DOWN
-		{
-			// Fire the ADC trigger first so the sample instant is earlier and
-			// more deterministic relative to the PWM valley.
-			TARGET_adc_software_trigger_enable(ADC_REGULAR_CHANNEL);
-			//adc_software_trigger_enable(ADC0, ADC_REGULAR_CHANNEL); //jma: ADC0 added for GD32F103
+		// Fire the ADC trigger first so the sample instant is earlier and
+		// more deterministic relative to the PWM valley.
+		TARGET_adc_software_trigger_enable(ADC_REGULAR_CHANNEL);
+		//adc_software_trigger_enable(ADC0, ADC_REGULAR_CHANNEL); //jma: ADC0 added for GD32F103
 
-			if (msTicks > iPwmTime)
-			{
-				iPwmTime = msTicks + 1000;
-				iPwmRate = iPwmCounter;
-				iPwmCounter = 0;
-			}
-			else iPwmCounter++;
+		if (msTicks > iPwmTime)
+		{
+			iPwmTime = msTicks + 1000;
+			iPwmRate = iPwmCounter;
+			iPwmCounter = 0;
 		}
+		else iPwmCounter++;
+
 		// Clear timer update interrupt flag
 		timer_interrupt_flag_clear(TIMER_BLDC, TIMER_INT_UP);
 	}

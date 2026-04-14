@@ -390,7 +390,13 @@ void PWM_init(void)
 	timerBldc_paramter_struct.alignedmode = TIMER_COUNTER_CENTER_BOTH;	//changed to TIMER_COUNTER_CENTER_BOTH from TIMER_COUNTER_CENTER_DOWN by deepseek for SVM;
 	timerBldc_paramter_struct.period = BLDC_TIMER_PERIOD;
 	timerBldc_paramter_struct.clockdivision = TIMER_CKDIV_DIV1;
-	timerBldc_paramter_struct.repetitioncounter = 0;
+	// Center-aligned fires UPIF at both overflow and underflow; with repetition=1
+	// UPIF fires once per full PWM period instead, removing the need for the
+	// software toggle workaround in it.c.
+	// See GD32F1x0 User Manual Rev3.6 §15.1.4 subsections "Counter center-aligned
+	// counting" and "Update event (from overflow/underflow) rate configuration":
+	//   https://gd32mcu.com/data/documents/userManual/GD32F1x0_User_Manual_Rev3.6.pdf
+	timerBldc_paramter_struct.repetitioncounter = 1;
 	timer_auto_reload_shadow_disable(TIMER_BLDC);
 	
 	// Initialize timer with basic parameter struct
