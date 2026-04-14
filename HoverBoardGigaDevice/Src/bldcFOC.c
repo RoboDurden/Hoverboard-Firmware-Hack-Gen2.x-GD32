@@ -465,7 +465,7 @@ void foc_sensor_update(uint8_t pos, volatile adc_buf_t *adc) {
 }
 
 // ── Periodic RTT telemetry ────────────────────────────────────────────
-void foc_log_rtt(void) {
+static void foc_log_rtt(void) {
 	#if defined(RTT_REMOTE) && defined(PHASE_CURRENT_Y) && defined(PHASE_CURRENT_B)
 		static uint16_t rtt_log_count = 0;
 		if (++rtt_log_count < 3000) return;
@@ -581,6 +581,7 @@ void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) {
 	foc_mode = foc_bldc_step((uint8_t)pos, (int16_t)pwm, steer,
 	                         (wState & 0x01) ? 1 : 0,
 	                         y, b, g);
+	foc_log_rtt();
 }
 
 void InitBldc(void) {

@@ -128,10 +128,6 @@ void foc_controller_update(FOC_Controller *ctrl,
 // averages. All state is held in the global foc_* variables.
 void foc_sensor_update(uint8_t pos, volatile adc_buf_t *adc);
 
-// Emit one periodic RTT telemetry line (no-op unless RTT_REMOTE and phase
-// current sensing are both compiled in). Throttled internally.
-void foc_log_rtt(void);
-
 // Back-EMF observer using Id as the angle error signal.
 // In open-loop voltage FOC with Vd=0, Id is non-zero only when the
 // assumed angle is misaligned with the rotor. The observer maintains
