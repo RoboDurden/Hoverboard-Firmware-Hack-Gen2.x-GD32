@@ -1,7 +1,6 @@
 #include "../Inc/defines.h"
 #include "../Inc/it.h"
 #include "../Inc/bldc.h"
-#include "../Inc/foc.h"
 #include <string.h>
 
 
@@ -166,9 +165,9 @@ void RemoteUpdate(void)
 		}
 	
 		steer = 0;
-		//speed = CLAMP((fRemoteScaleMax*iRemoteMax/100) * (ABS( (int)(((msTicks-msTicksInit)/iRemotePeriod+250) % 1000) - 500) - 250),-iRemoteMax,iRemoteMax);   // repeats from +300 to -300 to +300 :-)
-		//speed = CLAMP(speed , -iRemoteMax, iRemoteMax);
-		speed = 300;  // constant speed, one direction — for testing FOC quality
+		speed = CLAMP((fRemoteScaleMax*iRemoteMax/100) * (ABS( (int)(((msTicks-msTicksInit)/iRemotePeriod+250) % 1000) - 500) - 250),-iRemoteMax,iRemoteMax);   // repeats from +300 to -300 to +300 :-)
+		speed = CLAMP(speed , -iRemoteMax, iRemoteMax);
+		//speed = 300;
 		//speed = 0;	// uncomment this to turn the motor manually when TEST_HALL2LED
 		//speed = 1.5*1024;
 	#else
@@ -183,16 +182,7 @@ void RemoteUpdate(void)
 			iTimeNextLog = msTicks + 200;
 			iCounterLog++;
 
-			#if defined(PHASE_CURRENT_Y) && defined(PHASE_CURRENT_B)
-				extern uint8_t pos;
-				uint16_t deg = (uint32_t)foc_angle.electrical_angle * 360 / 65536;
-				sprintf(sMessage, "%spos:%d\tang:%3d\tId:%4d\tIq:%4d\tIy:%4d\tIb:%4d\tiId:%4d\tiIq:%4d\tiIy:%4d\tiIb:%4d",
-					sMessage,pos,deg,
-					foc_dq.d,foc_dq.q,foc_current.iy,foc_current.ib,
-					foc_id_avg,foc_iq_avg,foc_iy_avg,foc_ib_avg);
-			#else
-				sprintf(sMessage, "%s%5.02f V\t%5.02f A\todom: %6d\ttarget: %5d\trevs: %5d\ttorque: %5d",sMessage,batteryVoltage,currentDC,iOdom,speed,revs32>>(REVS32_SHIFT-10),torque32);
-			#endif
+			sprintf(sMessage, "%s%5.02f V\t%5.02f A\todom: %6d\ttarget: %5d\trevs: %5d\ttorque: %5d",sMessage,batteryVoltage,currentDC,iOdom,speed,revs32>>(REVS32_SHIFT-10),torque32);
 
 			if (iCounterLog%10==0)
 			{
