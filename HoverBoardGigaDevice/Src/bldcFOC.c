@@ -1,5 +1,12 @@
 #include "../Inc/bldcFOC.h"
 #include "../Inc/defines.h"
+
+#ifdef BLDC_FOC
+
+#if !defined(PHASE_CURRENT_A) || !defined(PHASE_CURRENT_B)
+	#error "BLDC_FOC requires PHASE_CURRENT_A and PHASE_CURRENT_B. Add them to your board's Inc/defines/defines_X-Y-Z.h (see defines_2-1-20.h for an example)."
+#endif
+
 #include <stdio.h>
 #ifdef RTT_REMOTE
 #include "SEGGER_RTT.h"
@@ -22,10 +29,8 @@ uint16_t foc_avg_count = 0;
 int16_t foc_id_avg = 0, foc_iq_avg = 0;
 int16_t foc_ia_avg = 0, foc_ib_avg = 0;
 
-#ifdef BLDC_FOC
 // Runtime mode: 0=block commutation, 1=FOC. Updated by bldc_get_pwm().
 static uint8_t foc_mode = 0;
-#endif
 
 // Sector start angles (default: 6 evenly-spaced 60° sectors).
 // For better accuracy on a specific motor, calibrate per-sector widths
@@ -420,68 +425,59 @@ void foc_controller_update(FOC_Controller *ctrl,
 void foc_sensor_update(uint8_t pos, volatile adc_buf_t *adc) {
 	foc_angle_update(&foc_angle, pos);
 
-	#if defined(PHASE_CURRENT_A) && defined(PHASE_CURRENT_B)
-		// Ib offset compensation: startup calibration consistently reads
-		// ~33 counts too high on PB1 (persistent across sessions). Correcting
-		// here keeps the DC bias out of the Clarke/Park transforms.
-		foc_current_update(&foc_current, adc->phase_current_a, adc->phase_current_b,
-		                   foc_offset_a, foc_offset_b + 33);
-		foc_clarke(&foc_current, &foc_ab);
-		foc_park(&foc_ab, &foc_dq, foc_angle.electrical_angle);
+	// Ib offset compensation: startup calibration consistently reads
+	// ~33 counts too high on PB1 (persistent across sessions). Correcting
+	// here keeps the DC bias out of the Clarke/Park transforms.
+	foc_current_update(&foc_current, adc->phase_current_a, adc->phase_current_b,
+	                   foc_offset_a, foc_offset_b + 33);
+	foc_clarke(&foc_current, &foc_ab);
+	foc_park(&foc_ab, &foc_dq, foc_angle.electrical_angle);
 
-		// Back-EMF observer: seed from halls once motor is spinning, then let it run free.
-		// Re-seed only if observer is way off from hall (catches drift).
-		static uint8_t obs_seeded = 0;
-		int16_t obs_hall_diff = (int16_t)(foc_angle.electrical_angle - foc_observer_angle(&foc_obs));
-		if (!obs_seeded || obs_hall_diff > 5461 || obs_hall_diff < -5461) {  // > 30°
-			if (foc_angle.sector_ticks > 0 && foc_angle.sector_ticks < 5000) {
-				// hall velocity = ANGLE_60DEG (10923) per sector_ticks ISR cycles, in Q16
-				int32_t hall_velocity = ((int32_t)10923 << 16) / (int32_t)foc_angle.sector_ticks;
-				if (foc_angle.direction < 0) hall_velocity = -hall_velocity;
-				foc_observer_set(&foc_obs, foc_angle.electrical_angle, hall_velocity);
-				obs_seeded = 1;
-			}
+	// Back-EMF observer: seed from halls once motor is spinning, then let it run free.
+	// Re-seed only if observer is way off from hall (catches drift).
+	static uint8_t obs_seeded = 0;
+	int16_t obs_hall_diff = (int16_t)(foc_angle.electrical_angle - foc_observer_angle(&foc_obs));
+	if (!obs_seeded || obs_hall_diff > 5461 || obs_hall_diff < -5461) {  // > 30°
+		if (foc_angle.sector_ticks > 0 && foc_angle.sector_ticks < 5000) {
+			// hall velocity = ANGLE_60DEG (10923) per sector_ticks ISR cycles, in Q16
+			int32_t hall_velocity = ((int32_t)10923 << 16) / (int32_t)foc_angle.sector_ticks;
+			if (foc_angle.direction < 0) hall_velocity = -hall_velocity;
+			foc_observer_set(&foc_obs, foc_angle.electrical_angle, hall_velocity);
+			obs_seeded = 1;
 		}
-		foc_observer_update(&foc_obs, foc_dq.d);
+	}
+	foc_observer_update(&foc_obs, foc_dq.d);
 
-		// Accumulate for ISR-rate averaging (compute avg every 1000 cycles = ~62ms)
-		foc_id_sum += foc_dq.d;
-		foc_iq_sum += foc_dq.q;
-		foc_ia_sum += foc_current.ia;
-		foc_ib_sum += foc_current.ib;
-		foc_avg_count++;
-		if (foc_avg_count >= 1000) {
-			foc_id_avg = foc_id_sum / 1000;
-			foc_iq_avg = foc_iq_sum / 1000;
-			foc_ia_avg = foc_ia_sum / 1000;
-			foc_ib_avg = foc_ib_sum / 1000;
-			foc_id_sum = foc_iq_sum = foc_ia_sum = foc_ib_sum = 0;
-			foc_avg_count = 0;
-		}
-	#else
-		(void)adc;
-	#endif
+	// Accumulate for ISR-rate averaging (compute avg every 1000 cycles = ~62ms)
+	foc_id_sum += foc_dq.d;
+	foc_iq_sum += foc_dq.q;
+	foc_ia_sum += foc_current.ia;
+	foc_ib_sum += foc_current.ib;
+	foc_avg_count++;
+	if (foc_avg_count >= 1000) {
+		foc_id_avg = foc_id_sum / 1000;
+		foc_iq_avg = foc_iq_sum / 1000;
+		foc_ia_avg = foc_ia_sum / 1000;
+		foc_ib_avg = foc_ib_sum / 1000;
+		foc_id_sum = foc_iq_sum = foc_ia_sum = foc_ib_sum = 0;
+		foc_avg_count = 0;
+	}
 }
 
 // ── Periodic RTT telemetry ────────────────────────────────────────────
 static void foc_log_rtt(void) {
-	#if defined(RTT_REMOTE) && defined(PHASE_CURRENT_A) && defined(PHASE_CURRENT_B)
+	#ifdef RTT_REMOTE
 		static uint16_t rtt_log_count = 0;
 		if (++rtt_log_count < 3000) return;
 		rtt_log_count = 0;
 
 		extern int32_t steer;
 		extern uint8_t wState;
-		#ifdef BLDC_FOC
-			uint8_t m_val = foc_mode;
-		#else
-			uint8_t m_val = 0;
-		#endif
 		uint16_t off_deg = (uint32_t)foc_angle.angle_offset * 360 / 65536;
 
 		char s[120];
 		sprintf(s, "wS:0x%02X foc:%d m:%d dir:%+d Id:%+4d Iq:%+4d stk:%u off:%3u str:%+5ld\r\n",
-			wState, (wState & 1) ? 1 : 0, m_val,
+			wState, (wState & 1) ? 1 : 0, foc_mode,
 			(int)foc_angle.direction,
 			foc_id_avg, foc_iq_avg,
 			(unsigned)foc_angle.sector_ticks, off_deg, (long)steer);
@@ -570,8 +566,7 @@ static uint8_t foc_bldc_step(uint8_t pos, int16_t pwm_cmd, int32_t trim,
 	return 1;
 }
 
-#ifdef BLDC_FOC
-// When BLDC_FOC, bldcFOC.c owns bldc_get_pwm() and InitBldc() — bldcBC.c is compiled out.
+// FOC owns bldc_get_pwm() and InitBldc(); bldcBC.c and bldcSINE.c are excluded.
 // FOC on/off is driven by wStateMaster bit 0 from the joystick controller
 // (see joystick's -f option). Block commutation runs when FOC is off.
 void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) {
@@ -590,9 +585,8 @@ void InitBldc(void) {
 	foc_controller_init(&foc_ctrl);
 	foc_observer_init(&foc_obs);
 
-	#if defined(PHASE_CURRENT_A) && defined(PHASE_CURRENT_B)
-		foc_calibrate_offsets(&foc_offset_a, &foc_offset_b,
-		                      &adc_buffer.phase_current_a, &adc_buffer.phase_current_b);
-	#endif
+	foc_calibrate_offsets(&foc_offset_a, &foc_offset_b,
+	                      &adc_buffer.phase_current_a, &adc_buffer.phase_current_b);
 }
-#endif
+
+#endif // BLDC_FOC

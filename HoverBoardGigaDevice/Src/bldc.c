@@ -271,8 +271,10 @@ void CalculateBLDC(void)
 	#else
 		pos = hall_to_pos[hall];
 	#endif
+#ifdef BLDC_FOC
 	// Run one FOC sensor update: angle, currents, Clarke/Park, observer, averaging
 	foc_sensor_update(pos, &adc_buffer);
+#endif
 
 // Add this check before setting PWM:
 	if (pos == 0) 	// 0b000 and 0b111 should never happen with the three hall sensors
