@@ -356,6 +356,58 @@ Implemented but disabled by default. Activates above 4800 RPM by
 injecting negative Id current. Uses speed-dependent Vq_max lookup table
 to constrain torque at high speed.
 
+### Driving modes: `DRIVING_MODE` vs `CTRL_MOD_REQ` / `CTRL_TYP_SEL`
+
+The two firmwares structure the control selection differently.
+
+**This repo — `DRIVING_MODE`** (`config.h:40`, seeds mutable global
+`iDrivingMode` in `main.c:33`):
+
+| Value | Meaning | Feedback signal |
+|---|---|---|
+| 0 | raw PWM | — (open loop) |
+| 1 | speed (revs/s × 1024) | `revs32` (hall) |
+| 2 | torque (Nm × 1024) | `torque32` |
+| 3 | position (odometer) | `iOdom` |
+
+Closed-loop uses a hand-written scalar PID (`driver.c`) with per-mode
+gains in `aoPIDInit[]`. The commutation strategy (`BLDC_BC`, `BLDC_SINE`,
+`BLDC_FOC`) is an **orthogonal compile-time `#define`** — the PID sits
+above commutation. Faults force `iDrivingModeOverride = 0` for a
+soft-brake PWM=0 (`bldc.c:216`). `RemoteROS2` hard-requires mode 1
+(`#error` at `RemoteROS2.c:223`).
+
+**Reference FOC — two runtime axes:**
+
+`CTRL_TYP_SEL` — commutation strategy:
+- `COM_CTRL` (0) trapezoidal
+- `SIN_CTRL` (1) sinusoidal
+- `FOC_CTRL` (2) field-oriented
+
+`CTRL_MOD_REQ` — setpoint interpretation:
+- `OPEN_MODE` (0) — FOC only
+- `VLT_MODE` (1) voltage (default)
+- `SPD_MODE` (2) speed — FOC only
+- `TRQ_MODE` (3) torque — FOC only
+
+Both are live-adjustable over the serial param table (`comms.c:90-91`:
+`CTRL_MOD`, `CTRL_TYP`). Variant overrides re-`#undef` `CTRL_MOD_REQ`
+per hardware (HOVERCAR→VLT, SKATEBOARD→TRQ). Faults disable via
+`b_motEna` rather than mode swap.
+
+**Contrasts:**
+- Our `DRIVING_MODE` ≈ their `CTRL_MOD_REQ` alone; the FOC firmware
+  adds a second dimension (commutation type) that we handle at compile
+  time.
+- We have a position mode (`iOdom`); they don't. They have a voltage
+  mode (direct Vd/Vq setpoint without outer loop); we don't — our
+  mode 0 is pre-commutation raw PWM.
+- They restrict `SPD_MODE`/`TRQ_MODE`/`OPEN_MODE` to `FOC_CTRL`. Ours
+  work across commutation schemes because the PID is above it.
+- Both support runtime mode changes — ours via `remoteDummy` /
+  `remoteOptimizePID` which also re-run `DriverInit()` to reload PID
+  gains; theirs via the serial param table.
+
 ## SVPWM vs SPWM
 
 Our current implementation uses **SPWM** (sinusoidal PWM) — the inverse
