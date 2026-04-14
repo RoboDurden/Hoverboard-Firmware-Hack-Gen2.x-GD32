@@ -395,6 +395,50 @@ Both are live-adjustable over the serial param table (`comms.c:90-91`:
 per hardware (HOVERCAR→VLT, SKATEBOARD→TRQ). Faults disable via
 `b_motEna` rather than mode swap.
 
+**What each `CTRL_MOD_REQ` value actually does in FOC:**
+
+- `OPEN_MODE` (0) — no controller. Ramped voltage at a synthesized or
+  hall-estimated angle. Startup / very-low-speed only. Regulator outputs
+  forced off at `BLDC_controller.c:1773`.
+- `VLT_MODE` (1) — input maps directly to a **Vq setpoint** (q-axis
+  voltage in the rotor-synchronous dq frame). No current or speed loop.
+  Inverse Park of `(Vd=0, Vq=throttle)` at the current electrical angle
+  produces sinusoidal phase voltages synchronized to the rotor. Behaves
+  like voltage-fed DC: fast response, speed droops under load, no
+  freewheel (actively drives toward 0V).
+- `SPD_MODE` (2) — outer PI on measured RPM → Iq reference → inner Iq PI
+  → Vq. Closed-loop speed. Cruise-control switches here
+  (`BLDC_controller.c:1781`).
+- `TRQ_MODE` (3) — input maps to Iq reference → inner Iq PI → Vq. Holds
+  commanded torque regardless of speed. Target=0 gives **true
+  freewheeling** (no active braking), which is why hovercar/skateboard
+  variants default to it.
+
+`SPD_MODE`/`TRQ_MODE`/`OPEN_MODE` are FOC-only because they need
+(or assume) the dq pipeline — `COM_CTRL`/`SIN_CTRL` never compute Id/Iq.
+
+**On Clarke/Park in `VLT_MODE`:**
+
+The transforms run in both directions every cycle, but only the forward
+(voltage) path is load-bearing:
+
+- **Forward** (voltage → PWM): `(Vd=0, Vq=throttle)` → inverse Park →
+  `(Vα, Vβ)` → inverse Clarke → `(Va, Vb, Vc)` → PWM. Active. This is
+  where the rotor-synchronous sinusoidal modulation happens.
+- **Measurement** (current → dq): `(Ia, Ib, Ic)` → Clarke → Park →
+  `(Id, Iq)`. Still computed, but nothing consumes the result in
+  `VLT_MODE`. Available for telemetry only.
+
+So `VLT_MODE` runs the full FOC *forward* pipeline (rotor-synchronized
+sinusoidal voltages) without any current feedback loop — it can operate
+even with broken or uncalibrated current sensors. This is effectively
+what our current open-loop implementation does: `Vd=0`, `Vq=speed_input`,
+inverse-transform to PWM, ignore measured currents.
+
+Our `DRIVING_MODE = 0` is *not* equivalent to `VLT_MODE` — ours is raw
+PWM before commutation, theirs is a dq-frame voltage setpoint that still
+goes through the full inverse transform.
+
 **Contrasts:**
 - Our `DRIVING_MODE` ≈ their `CTRL_MOD_REQ` alone; the FOC firmware
   adds a second dimension (commutation type) that we handle at compile
