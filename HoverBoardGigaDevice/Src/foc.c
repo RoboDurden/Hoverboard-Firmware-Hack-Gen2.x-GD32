@@ -23,8 +23,8 @@ int16_t foc_id_avg = 0, foc_iq_avg = 0;
 int16_t foc_iy_avg = 0, foc_ib_avg = 0;
 
 #ifdef BLDC_FOC
-// Runtime mode: 0=block commutation, 1=FOC. Updated by foc_bldc_step().
-uint8_t foc_mode = 0;
+// Runtime mode: 0=block commutation, 1=FOC. Updated by bldc_get_pwm().
+static uint8_t foc_mode = 0;
 #endif
 
 // Sector start angles (default: 6 evenly-spaced 60° sectors).
@@ -519,9 +519,9 @@ static void foc_block_pwm(int16_t pwm, uint8_t pos, int *y, int *b, int *g)
 
 extern const uint16_t sector_start_angle[7];
 
-uint8_t foc_bldc_step(uint8_t pos, int16_t pwm_cmd, int32_t trim,
-                      uint8_t foc_enable,
-                      int *y, int *b, int *g)
+static uint8_t foc_bldc_step(uint8_t pos, int16_t pwm_cmd, int32_t trim,
+                             uint8_t foc_enable,
+                             int *y, int *b, int *g)
 {
 	static uint8_t was_foc_enabled = 0;
 	if (!foc_enable) {
@@ -572,8 +572,17 @@ uint8_t foc_bldc_step(uint8_t pos, int16_t pwm_cmd, int32_t trim,
 }
 
 #ifdef BLDC_FOC
-// When BLDC_FOC, foc.c owns InitBldc() — bldcBC.c is compiled out.
-// BC output is provided by foc_block_pwm() inside foc_bldc_step().
+// When BLDC_FOC, foc.c owns bldc_get_pwm() and InitBldc() — bldcBC.c is compiled out.
+// FOC on/off is driven by wStateMaster bit 0 from the joystick controller
+// (see joystick's -f option). Block commutation runs when FOC is off.
+void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) {
+	extern uint8_t wState;
+	extern int32_t steer;
+	foc_mode = foc_bldc_step((uint8_t)pos, (int16_t)pwm, steer,
+	                         (wState & 0x01) ? 1 : 0,
+	                         y, b, g);
+}
+
 void InitBldc(void) {
 	extern adc_buf_t adc_buffer;
 

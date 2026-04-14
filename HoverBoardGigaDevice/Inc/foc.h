@@ -123,20 +123,6 @@ void foc_controller_update(FOC_Controller *ctrl,
                            uint16_t angle,
                            FOC_Phase *voltage_out);
 
-// Full BLDC drive step: block commutation ↔ open-loop voltage FOC,
-// with automatic transition based on speed and the foc_enable flag.
-//
-//   pos             — hall-derived commutation sector (1..6)
-//   pwm_cmd         — throttle command, signed PWM value (±BLDC_TIMER_MID_VALUE)
-//   trim            — steer input for angle offset tuning (±1000)
-//   foc_enable      — 1 to allow transition to FOC, 0 to stay in block commutation
-//   y, b, g         — output phase PWM values (±BLDC_TIMER_MID_VALUE range)
-//
-// Returns current mode: 0 = block commutation, 1 = FOC.
-uint8_t foc_bldc_step(uint8_t pos, int16_t pwm_cmd, int32_t trim,
-                      uint8_t foc_enable,
-                      int *y, int *b, int *g);
-
 // Run one per-ISR sensor update cycle: advance angle PLL, read phase
 // currents, Clarke/Park, seed/update back-EMF observer, and accumulate
 // averages. All state is held in the global foc_* variables.
@@ -180,9 +166,5 @@ extern uint16_t foc_offset_y, foc_offset_b;
 extern int32_t foc_id_sum, foc_iq_sum, foc_iy_sum, foc_ib_sum;
 extern uint16_t foc_avg_count;
 extern int16_t foc_id_avg, foc_iq_avg, foc_iy_avg, foc_ib_avg;
-
-#ifdef BLDC_FOC
-extern uint8_t foc_mode;
-#endif
 
 #endif

@@ -294,18 +294,7 @@ void CalculateBLDC(void)
 	//bldc_outputFilterPwm = bldc_inputFilterPwm;		// does not work for drivingMode 1, low-pass is needed :-(
 
 	// Update PWM channels based on position y(ellow), b(lue), g(reen)
-#ifdef BLDC_FOC
-	// FOC on/off is driven by wStateMaster bit 0 from the joystick controller
-	// (see joystick's -f option). Block commutation runs when FOC is off.
-	extern uint8_t wState;
-	extern int32_t steer;
-	foc_mode = foc_bldc_step(pos, (int16_t)bldc_outputFilterPwm, steer,
-	                         (wState & 0x01) ? 1 : 0,
-	                         &y, &b, &g);
-#else
-	// Block commutation only
 	bldc_get_pwm(bldc_outputFilterPwm, pos, &y, &b, &g);
-#endif
 
 	// Set PWM output (pwm_res/2 is the mean value, setvalue has to be between 10 and pwm_res-10)
 	timer_channel_output_pulse_value_config(TIMER_BLDC, TIMER_BLDC_CHANNEL_G, CLAMP(g + BLDC_TIMER_MID_VALUE, BLDC_TIMER_MIN_VALUE, BLDC_TIMER_MAX_VALUE));
