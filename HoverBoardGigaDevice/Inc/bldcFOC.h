@@ -40,13 +40,13 @@ void foc_angle_update(FOC_Angle *a, uint8_t pos);
 
 // Phase currents after offset removal
 typedef struct {
-	int16_t iy;   // yellow phase current (ADC - offset)
-	int16_t ib;   // blue phase current
-	int16_t ig;   // green phase (derived: -(iy + ib))
+	int16_t ia;   // phase A current (ADC - offset)
+	int16_t ib;   // phase B current
+	int16_t ic;   // phase C (derived: -(ia + ib))
 } FOC_Current;
 
-void foc_current_update(FOC_Current *c, uint16_t adc_y, uint16_t adc_b,
-                        uint16_t offset_y, uint16_t offset_b);
+void foc_current_update(FOC_Current *c, uint16_t adc_a, uint16_t adc_b,
+                        uint16_t offset_a, uint16_t offset_b);
 
 // Alpha-beta (stationary frame) and d-q (rotating frame) currents
 typedef struct {
@@ -60,7 +60,6 @@ typedef struct {
 } FOC_DQ;
 
 // Clarke transform: 3-phase → alpha-beta (stationary frame)
-// Uses yellow as phase A reference
 void foc_clarke(const FOC_Current *in, FOC_AlphaBeta *out);
 
 // Park transform: alpha-beta → d-q (rotating frame)
@@ -88,11 +87,11 @@ void foc_pi_init(FOC_PI *pi, int16_t kp, int16_t ki, int16_t limit);
 int16_t foc_pi_update(FOC_PI *pi, int16_t error);
 void foc_pi_reset(FOC_PI *pi);
 
-// Inverse Clarke: alpha-beta → 3-phase voltages (Y, B, G)
+// Inverse Clarke: alpha-beta → 3-phase voltages (A, B, C)
 typedef struct {
-	int16_t y;
+	int16_t a;
 	int16_t b;
-	int16_t g;
+	int16_t c;
 } FOC_Phase;
 
 void foc_inverse_clarke(const FOC_AlphaBeta *in, FOC_Phase *out);
@@ -109,8 +108,8 @@ void foc_controller_init(FOC_Controller *ctrl);
 
 // Calibrate current offsets by sampling ADC with motor off
 // Call at startup before enabling motor. Blocks for ~200ms.
-void foc_calibrate_offsets(uint16_t *offset_y, uint16_t *offset_b,
-                           volatile uint16_t *adc_y, volatile uint16_t *adc_b);
+void foc_calibrate_offsets(uint16_t *offset_a, uint16_t *offset_b,
+                           volatile uint16_t *adc_a, volatile uint16_t *adc_b);
 
 // Align rotor to a known angle and determine the hall-to-electrical angle offset.
 // Applies a voltage at 0° electrical, waits for rotor to settle, reads halls.
@@ -156,11 +155,11 @@ extern FOC_AlphaBeta foc_ab;
 extern FOC_DQ foc_dq;
 extern FOC_Controller foc_ctrl;
 extern FOC_Observer foc_obs;
-extern uint16_t foc_offset_y, foc_offset_b;
+extern uint16_t foc_offset_a, foc_offset_b;
 
 // ISR-rate averaging (debug telemetry)
-extern int32_t foc_id_sum, foc_iq_sum, foc_iy_sum, foc_ib_sum;
+extern int32_t foc_id_sum, foc_iq_sum, foc_ia_sum, foc_ib_sum;
 extern uint16_t foc_avg_count;
-extern int16_t foc_id_avg, foc_iq_avg, foc_iy_avg, foc_ib_avg;
+extern int16_t foc_id_avg, foc_iq_avg, foc_ia_avg, foc_ib_avg;
 
 #endif

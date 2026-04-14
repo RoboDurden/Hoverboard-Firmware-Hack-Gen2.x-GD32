@@ -12,15 +12,15 @@ FOC_AlphaBeta foc_ab;
 FOC_DQ foc_dq;
 FOC_Controller foc_ctrl;
 FOC_Observer foc_obs;
-uint16_t foc_offset_y = 2000;  // calibrated at startup
+uint16_t foc_offset_a = 2000;  // calibrated at startup
 uint16_t foc_offset_b = 2000;
 
 // ISR-rate averaging for debugging
 int32_t foc_id_sum = 0, foc_iq_sum = 0;
-int32_t foc_iy_sum = 0, foc_ib_sum = 0;
+int32_t foc_ia_sum = 0, foc_ib_sum = 0;
 uint16_t foc_avg_count = 0;
 int16_t foc_id_avg = 0, foc_iq_avg = 0;
-int16_t foc_iy_avg = 0, foc_ib_avg = 0;
+int16_t foc_ia_avg = 0, foc_ib_avg = 0;
 
 #ifdef BLDC_FOC
 // Runtime mode: 0=block commutation, 1=FOC. Updated by bldc_get_pwm().
@@ -141,11 +141,11 @@ void foc_angle_update(FOC_Angle *a, uint8_t pos) {
 	a->electrical_angle = (uint16_t)(a->pll_angle >> 16) + a->angle_offset;
 }
 
-void foc_current_update(FOC_Current *c, uint16_t adc_y, uint16_t adc_b,
-                        uint16_t offset_y, uint16_t offset_b) {
-	c->iy = (int16_t)adc_y - (int16_t)offset_y;
+void foc_current_update(FOC_Current *c, uint16_t adc_a, uint16_t adc_b,
+                        uint16_t offset_a, uint16_t offset_b) {
+	c->ia = (int16_t)adc_a - (int16_t)offset_a;
 	c->ib = (int16_t)adc_b - (int16_t)offset_b;
-	c->ig = -(c->iy + c->ib);
+	c->ic = -(c->ia + c->ib);
 }
 
 // 256-entry Q15 sine table (one full period, 0..360°)
@@ -195,17 +195,16 @@ int16_t foc_cos(uint16_t angle) {
 	return sin_table[(uint8_t)((angle >> 8) + 64)];
 }
 
-// Clarke transform: 3-phase (Y,B,G) → alpha-beta stationary frame
-// Using yellow as phase A:
-//   Iα = Iy
-//   Iβ = (Iy + 2*Ib) / √3
+// Clarke transform: 3-phase → alpha-beta stationary frame
+//   Iα = Ia
+//   Iβ = (Ia + 2*Ib) / √3
 // For integer math: 1/√3 ≈ 18919/32768 (Q15)
 #define INV_SQRT3_Q15  18919
 
 void foc_clarke(const FOC_Current *in, FOC_AlphaBeta *out) {
-	out->alpha = in->iy;
-	// beta = (iy + 2*ib) / sqrt(3)
-	out->beta = (int16_t)(((int32_t)(in->iy + 2 * in->ib) * INV_SQRT3_Q15) >> 15);
+	out->alpha = in->ia;
+	// beta = (ia + 2*ib) / sqrt(3)
+	out->beta = (int16_t)(((int32_t)(in->ia + 2 * in->ib) * INV_SQRT3_Q15) >> 15);
 }
 
 // Park transform: alpha-beta → d-q rotating frame
@@ -295,31 +294,31 @@ int16_t foc_pi_update(FOC_PI *pi, int16_t error) {
 }
 
 // Inverse Clarke: alpha-beta → 3-phase
-// Vy = Vα
+// Va = Vα
 // Vb = (-Vα + √3*Vβ) / 2
-// Vg = (-Vα - √3*Vβ) / 2
+// Vc = (-Vα - √3*Vβ) / 2
 // √3/2 in Q15 = 28378
 #define SQRT3_OVER_2_Q15 28378
 
 void foc_inverse_clarke(const FOC_AlphaBeta *in, FOC_Phase *out) {
-	out->y = in->alpha;
+	out->a = in->alpha;
 	int32_t sqrt3_beta = ((int32_t)in->beta * SQRT3_OVER_2_Q15) >> 15;
 	out->b = (int16_t)(-in->alpha / 2 + sqrt3_beta);
-	out->g = (int16_t)(-in->alpha / 2 - sqrt3_beta);
+	out->c = (int16_t)(-in->alpha / 2 - sqrt3_beta);
 }
 
 // Calibrate current sensor offsets (zero-current ADC values)
 // Samples ADC 1000 times over ~200ms with motor off
-void foc_calibrate_offsets(uint16_t *offset_y, uint16_t *offset_b,
-                           volatile uint16_t *adc_y, volatile uint16_t *adc_b) {
-	uint32_t sum_y = 0, sum_b = 0;
+void foc_calibrate_offsets(uint16_t *offset_a, uint16_t *offset_b,
+                           volatile uint16_t *adc_a, volatile uint16_t *adc_b) {
+	uint32_t sum_a = 0, sum_b = 0;
 	for (int i = 0; i < 1000; i++) {
-		sum_y += *adc_y;
+		sum_a += *adc_a;
 		sum_b += *adc_b;
 		// Small delay — the DMA refreshes ADC values continuously
 		for (volatile int d = 0; d < 500; d++);
 	}
-	*offset_y = (uint16_t)(sum_y / 1000);
+	*offset_a = (uint16_t)(sum_a / 1000);
 	*offset_b = (uint16_t)(sum_b / 1000);
 }
 
@@ -421,12 +420,12 @@ void foc_controller_update(FOC_Controller *ctrl,
 void foc_sensor_update(uint8_t pos, volatile adc_buf_t *adc) {
 	foc_angle_update(&foc_angle, pos);
 
-	#if defined(PHASE_CURRENT_Y) && defined(PHASE_CURRENT_B)
+	#if defined(PHASE_CURRENT_A) && defined(PHASE_CURRENT_B)
 		// Ib offset compensation: startup calibration consistently reads
 		// ~33 counts too high on PB1 (persistent across sessions). Correcting
 		// here keeps the DC bias out of the Clarke/Park transforms.
-		foc_current_update(&foc_current, adc->phase_current_y, adc->phase_current_b,
-		                   foc_offset_y, foc_offset_b + 33);
+		foc_current_update(&foc_current, adc->phase_current_a, adc->phase_current_b,
+		                   foc_offset_a, foc_offset_b + 33);
 		foc_clarke(&foc_current, &foc_ab);
 		foc_park(&foc_ab, &foc_dq, foc_angle.electrical_angle);
 
@@ -448,15 +447,15 @@ void foc_sensor_update(uint8_t pos, volatile adc_buf_t *adc) {
 		// Accumulate for ISR-rate averaging (compute avg every 1000 cycles = ~62ms)
 		foc_id_sum += foc_dq.d;
 		foc_iq_sum += foc_dq.q;
-		foc_iy_sum += foc_current.iy;
+		foc_ia_sum += foc_current.ia;
 		foc_ib_sum += foc_current.ib;
 		foc_avg_count++;
 		if (foc_avg_count >= 1000) {
 			foc_id_avg = foc_id_sum / 1000;
 			foc_iq_avg = foc_iq_sum / 1000;
-			foc_iy_avg = foc_iy_sum / 1000;
+			foc_ia_avg = foc_ia_sum / 1000;
 			foc_ib_avg = foc_ib_sum / 1000;
-			foc_id_sum = foc_iq_sum = foc_iy_sum = foc_ib_sum = 0;
+			foc_id_sum = foc_iq_sum = foc_ia_sum = foc_ib_sum = 0;
 			foc_avg_count = 0;
 		}
 	#else
@@ -466,7 +465,7 @@ void foc_sensor_update(uint8_t pos, volatile adc_buf_t *adc) {
 
 // ── Periodic RTT telemetry ────────────────────────────────────────────
 static void foc_log_rtt(void) {
-	#if defined(RTT_REMOTE) && defined(PHASE_CURRENT_Y) && defined(PHASE_CURRENT_B)
+	#if defined(RTT_REMOTE) && defined(PHASE_CURRENT_A) && defined(PHASE_CURRENT_B)
 		static uint16_t rtt_log_count = 0;
 		if (++rtt_log_count < 3000) return;
 		rtt_log_count = 0;
@@ -557,17 +556,17 @@ static uint8_t foc_bldc_step(uint8_t pos, int16_t pwm_cmd, int32_t trim,
 	foc_inverse_clarke(&vab, &voltage);
 
 	// SVPWM centering
-	int16_t vmax = voltage.y;
+	int16_t vmax = voltage.a;
 	if (voltage.b > vmax) vmax = voltage.b;
-	if (voltage.g > vmax) vmax = voltage.g;
-	int16_t vmin = voltage.y;
+	if (voltage.c > vmax) vmax = voltage.c;
+	int16_t vmin = voltage.a;
 	if (voltage.b < vmin) vmin = voltage.b;
-	if (voltage.g < vmin) vmin = voltage.g;
+	if (voltage.c < vmin) vmin = voltage.c;
 	int16_t v_offset = -(vmax + vmin) / 2;
 
-	*y = voltage.y + v_offset;
+	*y = voltage.a + v_offset;
 	*b = voltage.b + v_offset;
-	*g = voltage.g + v_offset;
+	*g = voltage.c + v_offset;
 	return 1;
 }
 
@@ -591,9 +590,9 @@ void InitBldc(void) {
 	foc_controller_init(&foc_ctrl);
 	foc_observer_init(&foc_obs);
 
-	#if defined(PHASE_CURRENT_Y) && defined(PHASE_CURRENT_B)
-		foc_calibrate_offsets(&foc_offset_y, &foc_offset_b,
-		                      &adc_buffer.phase_current_y, &adc_buffer.phase_current_b);
+	#if defined(PHASE_CURRENT_A) && defined(PHASE_CURRENT_B)
+		foc_calibrate_offsets(&foc_offset_a, &foc_offset_b,
+		                      &adc_buffer.phase_current_a, &adc_buffer.phase_current_b);
 	#endif
 }
 #endif

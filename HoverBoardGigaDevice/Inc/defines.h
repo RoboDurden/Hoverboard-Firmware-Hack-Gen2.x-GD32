@@ -271,8 +271,8 @@ typedef struct
 {
   uint16_t v_batt;
 	uint16_t current_dc;
-	#if defined(PHASE_CURRENT_Y) && defined(PHASE_CURRENT_B)
-		uint16_t phase_current_y;
+	#if defined(PHASE_CURRENT_A) && defined(PHASE_CURRENT_B)
+		uint16_t phase_current_a;
 		uint16_t phase_current_b;
 	#endif
 	#ifdef REMOTE_ADC

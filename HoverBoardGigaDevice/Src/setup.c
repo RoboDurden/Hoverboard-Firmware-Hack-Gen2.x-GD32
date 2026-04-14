@@ -621,8 +621,8 @@ void ADC_init(void)
 		#ifdef CURRENT_DC
 			TARGET_adc_regular_channel_config(1, PIN_TO_CHANNEL(CURRENT_DC), ADC_SAMPLETIME_13POINT5);
 		#endif
-		#if defined(PHASE_CURRENT_Y) && defined(PHASE_CURRENT_B)
-			TARGET_adc_regular_channel_config(2, PIN_TO_CHANNEL(PHASE_CURRENT_Y), ADC_SAMPLETIME_13POINT5);
+		#if defined(PHASE_CURRENT_A) && defined(PHASE_CURRENT_B)
+			TARGET_adc_regular_channel_config(2, PIN_TO_CHANNEL(PHASE_CURRENT_A), ADC_SAMPLETIME_13POINT5);
 			TARGET_adc_regular_channel_config(3, PIN_TO_CHANNEL(PHASE_CURRENT_B), ADC_SAMPLETIME_13POINT5);
 		#endif
 		#ifdef REMOTE_ADC

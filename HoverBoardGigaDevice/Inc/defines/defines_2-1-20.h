@@ -23,9 +23,9 @@
 //#define CURRENT_DC P??		// no DC bus shunt on this board
 // Per-phase current sensing: 2x R004 (4mΩ) shunt resistors on low-side FETs,
 // amplified by dual op-amp (~20x gain). Confirmed by phase identification test:
-// PB0 responds to Y-low, PB1 responds to B-low. No shunt on green phase.
-#define PHASE_CURRENT_Y	PB0		// 4mΩ shunt + op-amp on yellow low-side
-#define PHASE_CURRENT_B	PB1		// 4mΩ shunt + op-amp on blue low-side
+// PB0 responds to phase A low-side, PB1 to phase B. No shunt on phase C.
+#define PHASE_CURRENT_A	PB0		// 4mΩ shunt + op-amp on phase A low-side
+#define PHASE_CURRENT_B	PB1		// 4mΩ shunt + op-amp on phase B low-side
 
 #define SELF_HOLD	PB12
 #define BUTTON PA12
