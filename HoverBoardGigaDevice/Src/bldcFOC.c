@@ -1,5 +1,4 @@
 #include "../Inc/bldcFOC.h"
-#include "../Inc/defines.h"
 
 #ifdef BLDC_FOC
 
@@ -12,25 +11,92 @@
 #include "SEGGER_RTT.h"
 #endif
 
-// FOC state (defined here, declared extern in bldcFOC.h)
-FOC_Angle foc_angle;
-FOC_Current foc_current;
-FOC_AlphaBeta foc_ab;
-FOC_DQ foc_dq;
-FOC_Controller foc_ctrl;
-FOC_Observer foc_obs;
-uint16_t foc_offset_a = 2000;  // calibrated at startup
-uint16_t foc_offset_b = 2000;
+// ── Internal types and state ──────────────────────────────────────────
+// All FOC types and globals are file-local; only foc_sensor_update is
+// exposed via bldcFOC.h.
 
-// ISR-rate averaging for debugging
-int32_t foc_id_sum = 0, foc_iq_sum = 0;
-int32_t foc_ia_sum = 0, foc_ib_sum = 0;
-uint16_t foc_avg_count = 0;
-int16_t foc_id_avg = 0, foc_iq_avg = 0;
-int16_t foc_ia_avg = 0, foc_ib_avg = 0;
+// Electrical angle: 0..65535 maps to 0..2*PI (avoids float, wraps naturally)
+#define ANGLE_60DEG   10922   // 65536 / 6
+#define ANGLE_120DEG  21845
+#define ANGLE_180DEG  32768
+#define ANGLE_360DEG  65536   // wraps to 0
+
+typedef struct {
+	uint16_t electrical_angle;     // 0..65535 = 0..2*PI (includes offset)
+	uint16_t angle_offset;         // hall-to-electrical angle offset
+	uint8_t  sector;               // current hall sector (1-6)
+	uint8_t  last_sector;          // previous hall sector
+	int8_t   direction;            // +1 = forward, -1 = reverse
+	uint32_t transition_tick;      // ISR tick at last hall transition
+	uint32_t sector_ticks;         // ticks for one sector (speed estimate)
+	uint32_t tick;                 // running ISR tick counter
+	int32_t  pll_angle;            // Q16: top 16 bits = uint16_t electrical angle
+	int32_t  pll_velocity;         // Q16: angle units per ISR tick
+	uint32_t sector_tick_sum[6];   // per-sector calibration sums
+	uint16_t sector_tick_cnt[6];
+} FOC_Angle;
+
+typedef struct {
+	int16_t ia, ib, ic;            // phase A/B currents (ic derived: -(ia+ib))
+} FOC_Current;
+
+typedef struct {
+	int16_t alpha, beta;
+} FOC_AlphaBeta;
+
+typedef struct {
+	int16_t d;   // flux component (driven to 0)
+	int16_t q;   // torque component
+} FOC_DQ;
+
+typedef struct {
+	int16_t a, b, c;
+} FOC_Phase;
+
+#define PI_INTEGRAL_SHIFT 10  // integrator accumulates at 1/1024 rate
+
+typedef struct {
+	int16_t kp, ki;
+	int32_t integral;
+	int16_t limit;
+} FOC_PI;
+
+typedef struct {
+	FOC_PI pi_d, pi_q;
+	int16_t iq_ref, id_ref;
+} FOC_Controller;
+
+// Back-EMF observer: uses Id as angle error signal (in open-loop voltage FOC,
+// Id is non-zero only when the assumed angle is misaligned with the rotor).
+typedef struct {
+	int32_t angle;     // Q16
+	int32_t velocity;  // Q16: angle units per ISR tick
+	int8_t  sign;      // sign of Id→angle correction
+} FOC_Observer;
+
+static FOC_Angle foc_angle;
+static FOC_Current foc_current;
+static FOC_AlphaBeta foc_ab;
+static FOC_DQ foc_dq;
+static FOC_Controller foc_ctrl;
+static FOC_Observer foc_obs;
+static uint16_t foc_offset_a = 2000;  // calibrated at startup
+static uint16_t foc_offset_b = 2000;
+
+// ISR-rate averaging for telemetry
+static int32_t foc_id_sum = 0, foc_iq_sum = 0;
+static int32_t foc_ia_sum = 0, foc_ib_sum = 0;
+static uint16_t foc_avg_count = 0;
+static int16_t foc_id_avg = 0, foc_iq_avg = 0;
+static int16_t foc_ia_avg = 0, foc_ib_avg = 0;
 
 // Runtime mode: 0=block commutation, 1=FOC. Updated by bldc_get_pwm().
 static uint8_t foc_mode = 0;
+
+// Get observer angle as uint16_t
+static inline uint16_t foc_observer_angle(const FOC_Observer *obs) {
+	return (uint16_t)(obs->angle >> 16);
+}
 
 // Sector start angles (default: 6 evenly-spaced 60° sectors).
 // For better accuracy on a specific motor, calibrate per-sector widths
