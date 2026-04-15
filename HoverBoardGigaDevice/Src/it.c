@@ -137,6 +137,11 @@ void TARGET_TIMER0_BRK_UP_TRG_COM_IRQHandler(void)
 		interrupt_toggle = 1 - interrupt_toggle;	// Invert the toggle on each entry
 		if (interrupt_toggle)		// Only execute every second call as libray/hardware will trigger on up AND down, ignoring timerBldc_paramter_struct.alignedmode = TIMER_COUNTER_CENTER_DOWN
 		{
+			// Fire the ADC trigger first so the sample instant is earlier and
+			// more deterministic relative to the PWM valley.
+			TARGET_adc_software_trigger_enable(ADC_REGULAR_CHANNEL);
+			//adc_software_trigger_enable(ADC0, ADC_REGULAR_CHANNEL); //jma: ADC0 added for GD32F103
+
 			if (msTicks > iPwmTime)
 			{
 				iPwmTime = msTicks + 1000;
@@ -144,10 +149,6 @@ void TARGET_TIMER0_BRK_UP_TRG_COM_IRQHandler(void)
 				iPwmCounter = 0;
 			}
 			else iPwmCounter++;
-
-			// Start ADC conversion
-			TARGET_adc_software_trigger_enable(ADC_REGULAR_CHANNEL);
-			//adc_software_trigger_enable(ADC0, ADC_REGULAR_CHANNEL); //jma: ADC0 added for GD32F103
 		}
 		// Clear timer update interrupt flag
 		timer_interrupt_flag_clear(TIMER_BLDC, TIMER_INT_UP);
