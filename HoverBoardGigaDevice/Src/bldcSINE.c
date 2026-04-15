@@ -87,6 +87,14 @@ uint16_t angle_deg_final = 0;
 uint16_t angle_idx = 0;
 int pwmGo = 0;
 
+#ifdef BLDC_SINE_BOOSTER
+// BLDC_TIMER_MID_VALUE depends on the runtime variable SystemCoreClock, so
+// these can't be const-initialised at file scope under gcc. Initialised in
+// InitBldc().
+uint32_t uPwmBoost;	// 13% = 196 for 12 kHz
+uint32_t uDiv24;	// 16.777.215 = <<24
+#endif
+
 #if TARGET == 2
 
 uint32_t InitEXTI(uint32_t iPinArduino) 
@@ -132,6 +140,10 @@ void InitBldc()
 	aHallEXTI[0] = InitEXTI(HALL_A);
 	aHallEXTI[1] = InitEXTI(HALL_B);
 	aHallEXTI[2] = InitEXTI(HALL_C);
+	#ifdef BLDC_SINE_BOOSTER
+		uPwmBoost = (134*BLDC_TIMER_MID_VALUE)>>10;	// 13% = 196 for 12 kHz
+		uDiv24 = (uint32_t)((0.15/uPwmBoost)*16777215);	// 16.777.215 = <<24
+	#endif
 }
 
 
@@ -295,6 +307,10 @@ void InitBldc()
 	aHallEXTI[0] = InitEXTI(HALL_A);
 	aHallEXTI[1] = InitEXTI(HALL_B);
 	aHallEXTI[2] = InitEXTI(HALL_C);		// PA2 on 2.1.4 !
+	#ifdef BLDC_SINE_BOOSTER
+		uPwmBoost = (134*BLDC_TIMER_MID_VALUE)>>10;	// 13% = 196 for 12 kHz
+		uDiv24 = (uint32_t)((0.15/uPwmBoost)*16777215);	// 16.777.215 = <<24
+	#endif
 }
 
 void _HandleEXTI()
@@ -447,8 +463,6 @@ void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g)
 
 int16_t v_offsetLog;
 int16_t pwmGoBoost;
-const uint32_t uPwmBoost = (134*BLDC_TIMER_MID_VALUE)>>10;	// 13% = 196 for 12 kHz
-const uint32_t uDiv24 = (0.15/uPwmBoost)*16777215;	// 16.777.215 = <<24
 //const uint32_t uDiv24 = ((BLDC_SINE_BOOSTER/100.0)/uPwmBoost)*16777215;	// higher then 15% reduces max speed
 
 
