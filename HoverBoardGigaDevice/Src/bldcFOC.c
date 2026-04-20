@@ -50,7 +50,7 @@ static uint8_t prev_mode;
 /* PI integrators (Phase 2 populates pi_step body; kept here for symmetry with
  * the declared state boundary). */
 static pi_state_t iq_pi, id_pi;
-static volatile int16_t foc_trq_v_max = 3000;
+static volatile int16_t foc_trq_v_max = 6000;
 static int16_t iq_target;   /* Phase 2: diagnostic — last throttle-to-Iq target */
 
 /* Diagnostics + bench overrides. */

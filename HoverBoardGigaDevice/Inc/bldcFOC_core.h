@@ -13,7 +13,7 @@
 #define FOC_VQ_MAX             20000
 #define FOC_ANGLE_OFFSET_BASE  156
 #define FOC_OUT_SHIFT          4
-#define FOC_IQ_MAX             500
+#define FOC_IQ_MAX             1500    /* ~11.7 A — within hub-motor continuous rating */
 #define FOC_RTT_LOG_DIV        160
 #define FOC_AVG_SHIFT          10
 
