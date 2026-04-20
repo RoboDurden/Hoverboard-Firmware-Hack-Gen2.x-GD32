@@ -217,6 +217,10 @@ int main (void)
 		}
 		SetEnable(1);
 
+		#ifdef BLDC_FOC
+			RttMainPoll();
+		#endif
+
 		// Reload watchdog (watchdog fires after 1,6 seconds)
 		fwdgt_counter_reload();
 	}
@@ -464,9 +468,12 @@ iBug = 10;
 
 		if (wState & STATE_Shutoff)	ShutOff();
 
+		#ifdef BLDC_FOC
+			RttMainPoll();
+		#endif
 
 		//Delay(DELAY_IN_MAIN_LOOP);
-		
+
 		fwdgt_counter_reload(); // Reload watchdog until device is off
   }
 }
