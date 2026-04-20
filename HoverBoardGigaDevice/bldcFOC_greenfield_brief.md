@@ -48,6 +48,243 @@ a leak. Do the sensing at the top of `bldc_get_pwm`.
 
 ---
 
+## Implementation phases
+
+Implement in four phases. Each phase lands core helpers + host tests +
+glue, flashes to the target, and is verified against a bench gate before
+the next phase begins. Earlier phases don't depend on later-phase code;
+later phases only add dispatch branches and a handful of helpers.
+
+Within a phase: write `_core` helpers and their host tests first (tests
+green before flash), then wire glue in `bldcFOC.c`, then flash and verify.
+Do not advance past a phase's bench gate until the listed criteria are
+met — later phases are harder to debug if the earlier invariants aren't
+solid.
+
+### Phase 1 — Sense + VLT (+ DTC helper, off by default)
+
+End state: full sense pipeline + voltage-FOC output path live in one
+flash. BC path remains in dispatch (mode 0) as a no-drive bring-up
+diagnostic. DTC code compiled in but `foc_dtc_en = 0` at boot so angle
+tuning sees residual Id as pure alignment error. `FOC_ANGLE_OFFSET_BASE`
+is empirically tuned during this phase (with DTC first off, then on).
+Online Hall boundary learner converges under cruise — BC cruise if
+tuning hasn't been done yet, VLT cruise otherwise.
+
+Rationale for the merged phase: BC-only mode can verify ADC calib, RTT
+plumbing, gross PLL sanity, and the Hall learner — but *cannot* cleanly
+verify Park/Clarke correctness, `lead_q8` sign/scale, DTC scaling, or
+direction-aware hall snap. Those only surface under driven current. A
+separate BC-only flash therefore buys flash ceremony, not diagnostic
+separation; merging keeps BC available as a pre-flight mode without
+making it a gating flash.
+
+Core (`Src/bldcFOC_core.c`, `Inc/bldcFOC_core.h`):
+- All six frame-struct types (`iph_t`, `ab_i_t`, `ab_v_t`, `ab_pwm_t`,
+  `dq_i_t`, `dq_v_t`) plus `foc_state_t`, `pll_state_t`, `pll_edge_t`,
+  `pi_gains_t`, `pi_state_t`. Declare the full header up front so later
+  phases add implementations, not declarations.
+- Q15 constants, sine half-table.
+- `wrap_angle`, `sin_q15`, `cos_q15`.
+- `signed_shift` (static inline in header; host-testable now even though
+  `pi_step` is Phase 2).
+- `clarke`, `park`, `ipark`, `ab_scale_for_pwm`, `iclarke_svpwm`.
+- `ema_step`.
+- `dtc_term`, `dtc_apply`.
+- `pll_advance`, `pll_edge`, `hall_widths_update`.
+- `get_pwm_bc`.
+
+Glue (`Src/bldcFOC.c`):
+- `InitBldc` (prev_mode = 0xFF sentinel; sensorless forces `calib_done
+  = 1`; pre-warms `steer_ema` from `steer` at boot; other statics
+  zero-init via C runtime).
+- `foc_sample` steps 1–9, including the always-on steer LPF update in
+  step 2 and the θ composition in step 6 that always adds the scaled
+  smoothed steer as a live trim.
+- Hall learner window accumulation, steady-state gate,
+  `hall_widths_update` call at window close.
+- Dispatch in `bldc_get_pwm`: calib gate (short-circuit zero) →
+  `pos_force` (BC at forced pos) → mode switch: BC (mode 0), VLT
+  (mode 1), TRQ/SPD fall through to BC for now. VLT branch: `vq_cmd =
+  pwm × FOC_VQ_MAX / BLDC_TIMER_MID_VALUE` (int32 widen, clamp to
+  ±FOC_VQ_MAX), Vd = 0, ipark → ab_scale_for_pwm → iclarke_svpwm →
+  optional `dtc_apply` → int16 locals → int* copy.
+- Deferred RTT snapshot populate + `FocRttPoll` format/emit.
+
+Host tests (`test/`):
+- `test_sincos.c` — full coverage from the Host-tests section.
+- `test_transforms.c` — Clarke of balanced phase currents (iy + ib + ig
+  = 0) gives `α ≈ k, β ≈ 0`; Park + iPark identity round-trip at
+  arbitrary θ; iClarke + SVPWM preserves line-to-line voltages (not
+  phase sum); SVPWM min-max injection delivers the ~15% headroom (peak
+  phase-to-common at `√3/2 ≈ 0.866` of raw sinusoidal);
+  `ab_scale_for_pwm` is a plain right-shift by `FOC_OUT_SHIFT`.
+- `test_pll.c` — full coverage (advance + edge, forward/reverse,
+  glitches, first-call seed, velocity clamp, direction-aware snap).
+- `test_hall_cal.c` — synthetic dwell histograms through
+  `hall_widths_update`; convergence, EMA attenuation, Σ drift bound,
+  `total == 0` guard.
+- `test_pi.c` — `signed_shift` round-trip (positive / negative / zero
+  shift) and `ema_step` settling. Full `pi_step` body test deferred to
+  Phase 2.
+- `test_bc.c` — BC 6-step table parity with `bldcBC.c`, `pos` sanity
+  (`0`, out-of-range → zero output), linearity in `pwm`, zero phase sum.
+- `test_dtc.c` — `dtc_term` monotonic, zero crossing, saturation at
+  ±FOC_DTC_MAX, sign preservation. `dtc_apply` balanced-phase linear-
+  region zero-sum + clipped-region non-zero sum (locks in the current
+  `FOC_DTC_MAX`).
+
+Bench bring-up:
+1. Flash. Boot with `mode_req = 0` (BC, no FOC output driven).
+2. **Pre-flight sanity** (quick check, not a ceremonial gate; if any of
+   this is wrong, don't proceed to VLT):
+   - `adc_raw_a/b` settles near 2000 within ~64 ms; `Ia/Ib` near 0 at
+     rest.
+   - Hand-spin wheel: RTT `ang:` advances, wraps at 359, direction sign
+     matches physical rotation.
+   - BC behaviour identical to pre-FOC (throttle response, direction,
+     feel).
+3. **Pre-warm the Hall learner** (optional but recommended): BC-cruise
+   ~10 s above 100 RPM mech and verify `sector_width_q8[]` entries
+   diverge from 15360 with Σ held at `360°<<8` within rounding. Letting
+   the learner converge before VLT tuning keeps the first angle-tune
+   pass from chasing a drifting θ. Alternative: set `foc_hall_learn_en
+   = 0` via OpenOCD for the initial VLT tune, re-enable after baking
+   `FOC_ANGLE_OFFSET_BASE` in source.
+4. Switch to VLT (`mode_req = 1`) and run the bench gate below.
+
+Bench gate (VLT):
+- VLT at steady throttle: `Id avg` / `Iq avg` flat, not sinusoidal
+  (confirms Park family — if sinusoidal, transpose sin signs and
+  retest).
+- Tune `FOC_ANGLE_OFFSET_BASE` in source with DTC off until `Id avg ≈
+  0` in VLT forward at constant throttle (expect ~125° for this motor
+  under brief conventions). This is the phase in which
+  `FOC_ANGLE_OFFSET_BASE` is empirically dialled in using the steer
+  trim; see "Steer trim" for the bake-in procedure. **Tune at a
+  canonical mid-speed cruise** (e.g. ~300 RPM mech, `velocity_q8 ≈
+  430`). `Id_meas = 0` is a bench convenience, **not** a physical
+  invariant of perfect alignment: under Vd=0, the d-axis steady-state
+  equation gives `Id_true = (ω·Lq·Iq)/R` — non-zero and speed-dependent.
+  Expect `Id avg` to drift 5–20 counts with throttle / speed once baked;
+  that's cross-coupling, not misalignment, and TRQ mode cancels it
+  closed-loop in Phase 2.
+- `foc_dtc_en = 1` via OpenOCD `mwb`; re-tune `FOC_ANGLE_OFFSET_BASE`
+  (expect a few degrees shift as torque-per-amp improves). Leave DTC
+  on for Phase 2 and Phase 3.
+- VLT RPM tracks BC at low throttle; ~15% higher than BC at full
+  throttle (the SVPWM headroom).
+- Forward / reverse VLT yield converged angle offsets within ~2–3° of
+  each other once DTC is on and the velocity-proportional θ lead is in
+  place (step 6). Residual is dead-time bias + ω·Lq·Iq cross-coupling.
+  Larger asymmetry (e.g. ≥10°) points at the direction-aware hall snap
+  or at the `lead_q8` sign/scale, not at `FOC_ANGLE_OFFSET_BASE`.
+
+### Phase 2 — TRQ mode
+
+End state: closed-loop Iq/Id PI with back-calc anti-windup. Throttle
+commands `iq_target`; the PI produces Vd / Vq clamped to
+`±foc_trq_v_max`.
+
+Core additions:
+- `pi_step` body (accumulate raw err into `integrator_raw`, combine with
+  Kp term using `signed_shift(integrator_raw, ki_shift)` on readout,
+  clamp to ±clamp, on saturation subtract
+  `signed_shift(excess, aw_shift) << ki_shift` from `integrator_raw`).
+  See the PI discussion in the Architecture section for the full-
+  precision-accumulator rationale.
+
+Glue additions:
+- TRQ branch in mode dispatch: map throttle → `iq_target` (int32 widen,
+  clamp to ±FOC_IQ_MAX), Iq PI (target `iq_target`, measured
+  `i_rotor.q`) → Vq, Id PI (target 0, measured `i_rotor.d`) → Vd.
+  Output chain identical to VLT.
+- Both PI integrators reset when `mode_req != prev_mode` — covers
+  entry from any prior mode. `prev_mode = state.mode_req` at the end
+  of the switch path (already written in Phase 1).
+- Sensorless build: TRQ short-circuits to zero output (no measurement
+  → PI runaway otherwise).
+
+Host test additions (`test_pi.c`):
+- Integrator output grows by `err >> Ki_shift` per step at constant
+  error (raw accumulator grows by `err`; output shift happens on read).
+- **Small-err no-dead-zone**: for `|err| < (1 << ki_shift)`, the output
+  still grows — specifically, after `2^ki_shift / err` steps of constant
+  sub-shift `err`, output increments by 1. Dead zone only exists in the
+  naive "shift-on-write" version the brief used to recommend; this test
+  locks in that we're on the full-precision-accumulator side.
+- Output saturates to `±clamp`.
+- Anti-windup back-calc subtracts `excess >> AW_shift` from the
+  integrator's **output contribution** on saturation, integrator bounded.
+- Zero error holds output constant.
+- Caller-side integrator reset (`integrator_raw = 0`) returns to zero
+  output.
+- **Sign-symmetric integration**: feeding alternating `+err, -err` for
+  equal counts returns the integrator exactly to its starting value
+  (locks in the `signed_shift` rounding fix — naive ASR would drift).
+
+Bench gate:
+- TRQ at throttle=0: quiet, near-zero current draw.
+- TRQ engage / disengage: no kick (integrator reset works).
+- TRQ cruise with DTC + Hall learner on: 6×electrical ripple on Id/Iq
+  reduced versus the Phase 1 VLT baseline.
+- TRQ-as-canary check: if PI output pins at ±`foc_trq_v_max` while
+  `Iq` is far from `iq_target`, VLT alignment is insufficient — re-run
+  Phase 1 angle tuning (with DTC and Hall learner in their final
+  state). Do not tune PI gains against an angle-offset residual.
+
+### Phase 3 — SPD mode
+
+End state: closed-loop speed control via an outer PI on top of the
+Phase 2 Iq PI. Throttle commands `speed_target` (Q8 electrical deg/ISR);
+the outer PI consumes `velocity_q8` from the Hall PLL and emits
+`iq_target`; the inner Iq / Id PIs handle current exactly as in TRQ.
+
+Core additions: none — `pi_step` already landed in Phase 2. Speed
+dynamics are ~1000× slower than current dynamics, so the outer loop
+reuses the same helper with much larger shifts.
+
+Glue additions:
+- A third `pi_state_t` for the speed loop (`speed_pi`), plus constants
+  `FOC_SPEED_MAX` (Q8 deg/ISR cap on commanded velocity),
+  `FOC_SPEED_KP_SHIFT`, `FOC_SPEED_KI_SHIFT`, `FOC_SPEED_AW_SHIFT`.
+- SPD branch in mode dispatch: `speed_target = (int32_t)pwm ×
+  FOC_SPEED_MAX / BLDC_TIMER_MID_VALUE` (widen-multiply, clamp), run
+  outer PI with `err = speed_target - pll.velocity_q8` and clamp
+  `±FOC_IQ_MAX` → this is the Iq target for the inner loop. Then run
+  Iq PI (target from outer loop, measured `i_rotor.q`) and Id PI
+  (target 0, measured `i_rotor.d`) as in TRQ, same output chain.
+- Reset all three integrators (speed, Iq, Id) when `mode_req !=
+  prev_mode`.
+- Sensorless build: SPD short-circuits to zero output (no current
+  measurement → inner loop would run open; same reasoning as TRQ).
+
+Host test additions (`test_pi.c`): none new — outer PI exercises the
+same `pi_step` body.
+
+Bench gate:
+- SPD at throttle=0: motor freewheels to ~zero velocity.
+- SPD engage / disengage: no kick (all three integrators reset).
+- Throttle step commands new cruise RPM; PLL velocity converges to
+  target. Overshoot <25% on a step is acceptable; settle within a few
+  seconds.
+- Under hand-braking load on the bench, velocity holds within ~10%
+  of target until the inner Iq saturates at ±FOC_IQ_MAX. At
+  saturation, anti-windup on the outer PI prevents runaway when the
+  brake releases.
+
+Tuning notes:
+- Start conservative: `FOC_SPEED_KP_SHIFT = 6`, `FOC_SPEED_KI_SHIFT =
+  14`, `FOC_SPEED_AW_SHIFT = 2`. Current loop's Ki shift of 10 is
+  wildly too aggressive at the mechanical time constant — the
+  integrator would wind out before the motor moves.
+- `FOC_SPEED_MAX` is user choice (e.g. `576` Q8 deg/ISR ≈ 400 RPM
+  mech for 15 PP at 16 kHz). Full throttle maps there.
+- The outer PI's output clamp is `±FOC_IQ_MAX` — same cap the TRQ
+  path already enforces, re-used here rather than a new constant.
+
+---
+
 ## Hardware facts (verified empirically on layout 2-1-20)
 
 - **MCU**: GD32F130C8T6 — 72 MHz Cortex-M3, no FPU, 8 KB RAM, 64 KB flash.
@@ -67,18 +304,27 @@ a leak. Do the sensing at the top of `bldc_get_pwm`.
 Globals that already exist in the project and `bldcFOC.c` may read:
 
 ```c
-extern uint8_t          wState;       // remote state; bits 0-1 = requested mode
+extern uint8_t          wState;       // remote state; bits 0-1 = mode
 extern volatile uint8_t hall;         // 3-bit hall state, updated each ISR in bldc.c
 extern adc_buf_t        adc_buffer;   // DMA-filled; fields .phase_current_a, .phase_current_b
+extern int32_t          steer;        // joystick steer axis, -1000..+1000, written each UART packet
 ```
 
-**Do not read `steer` from FOC.** An earlier revision of this brief suggested
-using `steer` as a "bring-up knob" added into θ. That was wrong. `steer` is
-a live joystick analog axis written every UART packet — even at rest it
-jitters ±10–30 counts, which at `steer >> 4` silently adds 1–3° of angular
-noise to every Id/Iq reading, wrecking the "trim differs by direction/speed"
-analysis. Use `angle_trim_q8` (tune mode) or edit `FOC_ANGLE_OFFSET_BASE` in
-source; leave `steer` alone.
+**`steer` is a live θ trim, always on.** Every ISR, the raw `steer` is
+low-pass-filtered and scaled to a Q8 angular offset that is added into θ
+in `foc_sample` step 6 unconditionally. The rider rotates the joystick
+stick to dial in the rotor alignment — watch `Id avg` in the RTT plot,
+find the stick position where Id sits nearest zero and the wheel
+accelerates (not brakes) under positive throttle, leave the stick there.
+No button, no mode, no latch — the stick position *is* the trim.
+
+Scaling: full stick deflection (±1000 counts) maps to
+`±FOC_STEER_TRIM_RANGE_DEG = ±30°` *nominal* — integer rounding of the
+per-count factor actually delivers ±31.25° at full deflection (see
+"Steer trim" for the math). That range is enough to cover a ±30° error
+in `FOC_ANGLE_OFFSET_BASE` without being so coarse the stick feels
+jumpy. See "Steer trim" for the LPF, scaling helper, and bake-in
+procedure.
 
 ---
 
@@ -89,40 +335,24 @@ Ordering matches the reference `hoverboard-firmware-hack-FOC` project:
 ```
 0 = BC   (block commutation, FOC off)
 1 = VLT  (voltage FOC)
-2 = SPD  (speed FOC — stub, fall through to BC)
+2 = SPD  (speed FOC — outer PI on top of TRQ; see Phase 3)
 3 = TRQ  (torque FOC)
 ```
 
 Bit 5 of `wState` (value 32) is `STATE_LedBattLevel` — don't touch it. The
-joystick controller already sets bit 5 and fills bits 0-1 with the mode.
-**Bit 2 (`STATE_FocTune = 4`)** is the tune-mode request, held high while
-the joystick's tune button is pressed (see "Tune mode" below). Bit 2 is
-firmware-side `STATE_LedRed`, but that LED output is gated off when bit 5
-(`STATE_LedBattLevel`) is set — the joystick always sets bit 5, so LED_RED
-never flickers from this reuse. Other bits (3–4, 7) are joystick-managed
-status / LED bits; bit 6 is firmware's `STATE_Disable` kill switch — not
-FOC's concern. **FOC reads bits 0-1 and bit 2 only, and only reads — never
-writes `wState`.**
+joystick controller sets bit 5 and fills bits 0-1 with the mode. Other
+bits (2–4, 7) are joystick-managed status / LED bits; bit 6 is firmware's
+`STATE_Disable` kill switch — not FOC's concern. FOC reads bits 0-1 only.
+Bit 2 (`STATE_FocTune`) was the old tune-button flag and is now unused by
+FOC — the joystick may still set it from its `-T` CLI arg, but firmware
+ignores it.
 
 **Latching discipline**: `wState` is written by the UART ISR
-(`remoteUart.c:179` writes it on each incoming joystick packet) and read by
-the FOC DMA ISR. Since `wState` is `uint8_t`, a single load or store is
-atomic on M3 (single LDRB/STRB). But *two* reads of `wState` are not
-atomic as a pair — a UART-ISR preempt between them would give
-`mode_req` from packet N and `tune_req` from packet N+1, splitting
-behaviour across the sense and dispatch halves of the same tick. **Latch
-exactly once per FOC ISR**, at the top of `foc_sample` (step 1), by
-snapshotting `wState` into a local `uint8_t` and deriving both fields from
-that snapshot:
-
-```c
-uint8_t ws = wState;                              // single LDRB — atomic
-uint8_t mode_req = ws & 0x03;
-uint8_t tune_req = (ws & STATE_FocTune) != 0;
-```
-
-Use the latched values everywhere downstream. Do not re-read `wState`
-inside mode handlers or dispatch.
+(`remoteUart.c:179` writes it on each incoming joystick packet) and read
+by the FOC DMA ISR. Since `wState` is `uint8_t`, a single load is atomic
+on M3 (single LDRB). Read once at the top of `foc_sample` (step 1) and
+derive `mode_req = wState & 0x03` from the local snapshot. Don't re-read
+`wState` inside mode handlers or dispatch.
 
 ---
 
@@ -148,7 +378,6 @@ typedef struct {
     dq_i_t  i_rotor;   // after Park
     int16_t theta;     // electrical angle used (deg, 0..359) — one θ per ISR
     uint8_t mode_req;  // wState & 0x03, latched once at top of foc_sample
-    uint8_t tune_req;  // (wState & STATE_FocTune) != 0, latched alongside mode_req
 } foc_state_t;
 ```
 
@@ -206,7 +435,9 @@ typedef struct {
 } pi_gains_t;
 
 typedef struct {
-    int32_t integrator;    // int32 — err over many ISRs accumulates past int16 range
+    int32_t integrator_raw;    // full-precision err accumulator (NOT the Ki-shifted output);
+                               // shift is applied on read inside pi_step, not on write.
+                               // int32 — err accumulates past int16 range over many ISRs.
 } pi_state_t;
 
 typedef struct {
@@ -216,9 +447,16 @@ typedef struct {
     uint16_t sector_dwell;     // ISRs since last hall edge
 } pll_state_t;
 
+typedef enum {
+    PLL_EDGE_VALID  = 0,   // real adjacent-sector edge; consumed_* populated
+    PLL_EDGE_SEED   = 1,   // first-call seed; no prior dwell to consume
+    PLL_EDGE_GLITCH = 2,   // delta not ±1 (hall noise); caller must invalidate any in-flight learner window
+} pll_edge_kind_t;
+
 typedef struct {
-    uint16_t consumed_dwell;   // ISRs spent in the sector that just ended
-    int8_t   consumed_sector;  // 0..5 index into sector_width_q8[] for that sector
+    uint16_t        consumed_dwell;   // ISRs spent in the sector that just ended; 0 unless kind == VALID
+    int8_t          consumed_sector;  // 0..5 index into sector_width_q8[]; -1 unless kind == VALID
+    pll_edge_kind_t kind;             // disambiguates VALID / SEED / GLITCH at the callsite
 } pll_edge_t;
 
 int16_t    pi_step    (pi_state_t  *state, int16_t err, int16_t clamp, pi_gains_t gains);
@@ -236,42 +474,68 @@ Rationale for the shapes — the "compute, don't store" principle drives most of
   accumulator with last-known velocity and increments `sector_dwell`.
   `pll_edge` is called conditionally on top. Transient hall glitches don't
   freeze θ and don't break the dwell count.
-- **Integrator is `int32_t`** — anti-windup bounds it, but with err up to
-  ±2500 counts and multi-ISR accumulation, `int16` would saturate inside
-  the bound.
+- **Integrator accumulates `err` at full precision; Ki shift applied on
+  read.** Naive "add `err >> ki_shift` per tick" drops the low bits of
+  every sample: with `ki_shift = 10` and `|err| < 1024`, the increment
+  rounds to 0 and the I-term goes deaf below a ~8 A error threshold
+  (far above `FOC_IQ_MAX = 500`) — so TRQ degenerates to P-only. The
+  fix is canonical fixed-point PI: `integrator_raw += err;` each tick
+  (no shift), then compute `ki_term = signed_shift(integrator_raw,
+  ki_shift)` inside the output sum. Anti-windup operates on
+  `integrator_raw` with scaled excess: `integrator_raw -=
+  signed_shift(excess, aw_shift) << ki_shift` (undo the output-side
+  shift so AW subtracts the *raw-units* equivalent of "excess in
+  output units"). `int32_t` is mandatory — with err up to ±2500 counts
+  and no per-tick shift, the accumulator reaches `±2^31` in ~2.4 hours
+  of continuous max-err operation; AW clamps it in practice.
 - **Gains passed by value** — same function serves Iq and Id even if their
   gains later diverge; host tests can sweep. Zero M3 cost (AAPCS packs the
   3-byte struct into one register; `-O2` inlines + constant-propagates to
   the same code as a compile-time `#define`).
-- **Reset via `state->integrator = 0`** at the callsite — caller handles
+- **Reset via `state->integrator_raw = 0`** at the callsite — caller handles
   mode-transition resets explicitly. No hidden reset logic inside `pi_step`.
 - **Shifts branch on sign inside `pi_step`** — `err >> negative_shift` is
   undefined behavior in C (and the M3's `LSR` masks the shift count). Use:
   ```c
   static inline int32_t signed_shift(int32_t v, int8_t s) {
-      return (s >= 0) ? (v >> s) : (v << (-s));
+      if (s <= 0) return v << (-s);
+      int32_t bias = (v < 0) ? -((int32_t)1 << (s - 1))
+                             :  ((int32_t)1 << (s - 1));
+      return (v + bias) >> s;
   }
   int32_t kp_term = signed_shift(err, gains.kp_shift);
   int32_t ki_inc  = signed_shift(err, gains.ki_shift);
   ```
-  Same helper for `aw_shift` (anti-windup excess). One predictable branch per
-  call; with constant `gains` (the common case — Iq and Id PIs use compile-
-  time literals), `-O2` constant-folds the branch away entirely.
+  Rounds half-away-from-zero, matching the `(x + 128) >> 8` pattern used
+  for θ composition in `foc_sample` step 6. ARM ASR on signed values
+  rounds toward floor, so a raw `err >> ki_shift` accumulates a systematic
+  negative bias in the integrator (e.g. `-500 >> 10 = -1`, `+500 >> 10 = 0`
+  — symmetric error magnitudes, asymmetric integrator deltas). The bias
+  addition kills that drift. Same helper for `kp_shift` and `aw_shift`
+  (anti-windup excess). Two predictable branches per call; with constant
+  `gains` (the common case — Iq and Id PIs use compile-time literals),
+  `-O2` constant-folds both away entirely.
   **Declared `static inline` in `bldcFOC_core.h`** so host tests can
   exercise it directly — a private-in-the-TU version would force tests
   to cover it only through `pi_step`'s observable behaviour, which is a
   weaker guarantee and awkward to debug when a shift edge case breaks.
-- **`pi_step` body** — integrate first (`state->integrator += ki_inc`),
-  combine (`out = kp_term + state->integrator`), clamp to `±clamp`, and
-  on saturation back-calc the excess (`integrator -= signed_shift(excess,
-  gains.aw_shift)`) where `excess = out_unclamped − clamp_bound` (signed —
-  positive when clipped high, negative when clipped low). The subtraction
-  always pushes the integrator back toward the rail it exceeded. AW fires
-  only on the step where saturation actually happened; steady-state-at-
-  clamp still applies AW each step, which is the desired behaviour (stops
-  the integrator from ratcheting further against the rail).
+- **`pi_step` body** — accumulate raw err (`state->integrator_raw += err`),
+  then compute the output as `kp_term + signed_shift(integrator_raw,
+  gains.ki_shift)`, clamp to `±clamp`, and on saturation back-calc the
+  excess in raw-accumulator units:
+  `integrator_raw -= signed_shift(excess, gains.aw_shift) << gains.ki_shift;`
+  where `excess = out_unclamped − clamp_bound` (signed — positive when
+  clipped high, negative when clipped low). The `<< ki_shift` lifts the
+  AW correction from output units back to raw-accumulator units so one
+  "AW tick" decrements the Ki-scaled output by `excess >> aw_shift`,
+  independent of ki_shift. The subtraction always pushes the integrator
+  back toward the rail it exceeded. AW fires only on the step where
+  saturation actually happened; steady-state-at-clamp still applies AW
+  each step, which is the desired behaviour (stops the integrator from
+  ratcheting further against the rail).
 - **Designated-initializer init**: `pll_state_t pll = { .prev_pos = 0 };`,
-  `pi_state_t iq_pi = { 0 };`. No separate `*_init` functions.
+  `pi_state_t iq_pi = { 0 };` (zeroes `integrator_raw`). No separate
+  `*_init` functions.
 - **PLL is split into `pll_advance` + `pll_edge`** — `pll_advance(state)`
   runs every ISR and does the bookkeeping half: `angle_accum_q8 +=
   velocity_q8` (wrap), `sector_dwell += 1`. `pll_edge(state, pos, widths)`
@@ -280,7 +544,9 @@ Rationale for the shapes — the "compute, don't store" principle drives most of
   snap, and dwell/prev_pos reset. This split keeps the common path pure
   accumulator math and lets the Hall-width learner in `bldcFOC.c` read
   the just-consumed dwell straight from `pll_edge`'s return value
-  (`{consumed_dwell, consumed_sector}`). The pos == 0 glitch case needs no
+  (`{consumed_dwell, consumed_sector, kind}` — the `kind` enum lets the
+  caller dispatch `VALID` / `SEED` / `GLITCH` without needing to reason
+  about `pos` deltas itself). The `pos == 0` glitch case needs no
   special handling — the caller just doesn't call `pll_edge`, the
   accumulator keeps advancing via `pll_advance`, prev_pos stays put.
   Host tests exercise `pll_advance` and `pll_edge` independently: advance
@@ -317,7 +583,10 @@ contortions required.
 
 **`Src/bldcFOC.c`** — glue that touches hardware or project globals:
 - `InitBldc` (sets `prev_mode = 0xFF` sentinel; sensorless builds force
-  `calib_done = 1`; all other statics zero-init via C runtime)
+  `calib_done = 1`; pre-warms the steer LPF as `steer_ema = (int32_t)steer
+  << FOC_STEER_LPF_SHIFT;` so the LPF's 64 ms time constant is honoured
+  from ISR #1 regardless of stick-at-boot position; all other statics
+  zero-init via C runtime)
 - `bldc_get_pwm` (reads `wState`, `hall`, `adc_buffer`; calls core
   helpers; writes `*y`, `*b`, `*g`). ISR-side log work: populate
   `log_snapshot`, set `log_pending` — **no `sprintf`** (see "Deferred RTT log").
@@ -381,12 +650,12 @@ File-local statics, kept small and deliberate:
 - **PLL**: a single `pll_state_t` (accumulator, velocity, prev_pos, sector_dwell — see Architecture section).
 - **Calibration**: offsets for channels A/B, running sums, sample count (incl. the `FOC_CALIB_DISCARD`-sample discard prefix) — all `#if`-gated behind `defined(PHASE_CURRENT_A) && defined(PHASE_CURRENT_B)`. The `calib_done` flag is **not** gated (dispatch reads it every build); sensorless builds force `calib_done = 1` at `InitBldc`. See `foc_sample` step 3.
 - **EMAs** of Id/Iq for display (see averaging below).
-- **Mode tracking**: `prev_mode` only (for integrator reset on transitions; init `prev_mode = 0xFF` — see "Mode dispatch & calibration gating"). The current `mode_req` and `tune_req` live on the per-ISR `foc_state_t` snapshot, not as statics — they're latched once at the top of `foc_sample` and read from the snapshot downstream.
+- **Mode tracking**: `prev_mode` only (for integrator reset on transitions; init `prev_mode = 0xFF` — see "Mode dispatch & calibration gating"). The current `mode_req` lives on the per-ISR `foc_state_t` snapshot, not as a static — it's latched once at the top of `foc_sample` and read from the snapshot downstream.
 - **TRQ PI**: two `pi_state_t` (Iq and Id integrators), plus `iq_target` and `volatile int16_t foc_trq_v_max` for runtime poking.
 - **Diagnostics**: raw ADC latches and `vq_cmd` (for RTT log), `volatile uint8_t pos_force` (bench override, forces block commutation to a chosen pos 1..6).
 - **Hall calibration**: `volatile uint16_t sector_width_q8[6]` (boot-init = 15360 each), `uint32_t learn_sum[6]`, `uint16_t learn_revs`, steady-state detector scratch, `volatile uint8_t foc_hall_learn_en = 1`. See "Online-adaptive Hall boundary learning".
 - **DTC gate**: `volatile uint8_t foc_dtc_en = 0`. See "Dead-time compensation".
-- **Tune state**: `int16_t angle_trim_q8 = 0` (Q8 degrees, always added to θ). Tune engagement itself is stateless — level-triggered from `wState` bit 2. See "Tune mode".
+- **Steer trim**: `int32_t steer_ema = 0` — the LPF accumulator for the live steer-to-θ trim. Ticked every ISR in `foc_sample` step 2; its smoothed output feeds θ composition in step 6 unconditionally. No button, no latch, no mode. See "Steer trim".
 - **Deferred log**: `log_snapshot_t log_snapshot` (plain, non-volatile — the flag handshake below orders access), `volatile uint8_t log_pending`, `log_counter` (ISR-side tick counter for `FOC_RTT_LOG_DIV`). See "Deferred RTT log".
 
 Per-ISR transients — `i_phase`, `i_stator`, `i_rotor`, `theta` — live in the
@@ -456,9 +725,9 @@ not Park sign.
 
 `FOC_ANGLE_OFFSET_BASE = 125°` is the empirical value for this motor under
 the conventions we settled on (α = yellow, `electrical_angle` increases with
-forward rotation, 15 pole pairs, standard Clarke). Pick compatible
-conventions and expect a similar-order offset; pick opposite ones and you'll
-get a different offset but still land on a usable one after VLT bring-up.
+forward rotation, 15 pole pairs, standard Clarke). Pick the wrong Park
+family under these conventions and Id/Iq oscillate sinusoidally at 2×
+electrical frequency; transpose the matrix and retest.
 
 ---
 
@@ -496,6 +765,12 @@ and the body diode clamps the phase — to 0 V if `i_phase > 0`, to V_bus if
 `−V_bus × (DEAD_TIME / T_pwm) × sign(i_phase)`, where `T_pwm = 2 × ARR = 4500`
 counter ticks. At V_bus = 27 V that's `27 × 60/4500 ≈ 0.36` V per phase —
 low-order harmonics on Id/Iq, worst near zero-crossings.
+
+Sanity note on the factor: center-aligned complementary PWM has **two** DT
+windows per period (one at each commanded edge), but only **one** of them
+produces a voltage error for a given `sign(i)` — during the other, the
+body-diode-clamped phase voltage coincides with the level the FET would have
+produced, so it's a no-op. Count DT once per period, not twice.
 
 In PWM-delta units the correction is
 `(DEAD_TIME / T_pwm) × V_bus / (V_bus / ARR)` = `DEAD_TIME × ARR / T_pwm`
@@ -643,27 +918,42 @@ noise — leave velocity alone for that edge.
 
 `pll_advance` every call:
 
-- `sector_dwell += 1`
+- `if (sector_dwell < UINT16_MAX) sector_dwell++;` — saturate at the
+  `uint16_t` cap (65535 ISRs ≈ 4.1 s). A rotor sitting stationary with
+  power on indefinitely must not wrap the counter to 0; at the next real
+  edge, `velocity_q8 = sector_width / sector_dwell` with a small post-
+  wrap `sector_dwell` would produce a spurious velocity spike (clamped by
+  `FOC_PLL_VEL_CLAMP` but still a one-tick glitch and an RPM-log
+  artefact). Saturated, the next edge sees `dwell = 65535`, yielding
+  `velocity_q8 = width_q8 / 65535 ≈ 0` — physically correct for a rotor
+  that just left standstill.
 - `angle_accum_q8 += velocity_q8`, wrap into `[0, 360 << 8)`
 
 So `electrical_angle = state.angle_accum_q8 >> 8` at the callsite keeps
 advancing on transient hall glitches (`pos == 0`) with last-known velocity.
 
 `pll_edge` — caller invokes only when `pos != 0 && pos != state.prev_pos`.
-Returns `pll_edge_t { consumed_dwell, consumed_sector }` — the pre-reset
-dwell and its 0..5 sector index — so the Hall-width learner doesn't need
-to peek at internal state. Inside:
+Returns `pll_edge_t { consumed_dwell, consumed_sector, kind }` — the
+pre-reset dwell, its 0..5 sector index, and a discriminator between the
+three distinct outcomes (`VALID`, `SEED`, `GLITCH`). The Hall-width
+learner switches on `kind`; it never has to peek at internal state or
+reason about `pos` deltas itself. Inside:
 
 1. **First-call seeding** (`state.prev_pos == 0`): set `angle_accum_q8` to
    the sector centre (`<< 8`), `velocity_q8 = 0`, `prev_pos = pos`,
-   `sector_dwell = 0`. Return `{0, -1}` — no real edge was consumed, the
-   learner should skip.
+   `sector_dwell = 0`. Return `{0, -1, PLL_EDGE_SEED}` — no real edge was
+   consumed, the learner skips this tick.
 2. Otherwise: compute direction from `(prev_pos → pos)`. Delta ±1 (or ∓5 via
-   wrap) → ±1; anything else → 0 (glitch — bail out of the rest without
-   updating `prev_pos` or `sector_dwell`, so the next valid edge still sees
-   an accurate dwell count, and return `{0, -1}`).
+   wrap) → ±1. Anything else is a hall glitch — **bail out of the rest
+   without updating `prev_pos` or `sector_dwell`** (so the next valid
+   edge still sees an accurate dwell count for the sector the rotor is
+   actually in), and return `{0, -1, PLL_EDGE_GLITCH}`. The
+   `GLITCH` kind — distinct from `SEED` — is the caller's signal to
+   invalidate any in-flight learner window: dwell that was accruing got
+   partly attributed to the wrong sector, so the whole window is no
+   longer trustworthy.
 3. Snapshot `uint16_t consumed = sector_dwell; int8_t sector_idx = prev_pos - 1;`
-   — these are the return payload.
+   — these are the return payload (with `kind = PLL_EDGE_VALID`).
 4. If `sector_dwell > 0`:
    `velocity_q8 = (dir × sector_width_q8[prev_pos − 1]) / sector_dwell` — clamp
    to `±FOC_PLL_VEL_CLAMP = 3000` (Q8 deg/ISR). At boot every entry is
@@ -699,7 +989,7 @@ to peek at internal state. Inside:
    reference implementation. *Without* the direction-aware snap, forward and
    reverse ideal-offset values differed by ~60° (one sector width) — a subtle
    bug that cost bring-up time.
-6. `prev_pos = pos`, `sector_dwell = 0`. Return `{consumed, sector_idx}`.
+6. `prev_pos = pos`, `sector_dwell = 0`. Return `{consumed, sector_idx, PLL_EDGE_VALID}`.
 
 ---
 
@@ -735,13 +1025,20 @@ static int16_t  learn_pwm_ref, learn_vel_ref;  // steady-state references
 
 Per ISR: always call `pll_advance(&pll)`. If `pos != 0 && pos != pll.prev_pos`,
 snapshot `int8_t prev = pll.prev_pos;` then call
-`pll_edge_t edge = pll_edge(&pll, pos, widths);`. When
-`edge.consumed_sector >= 0`, do `learn_sum[edge.consumed_sector] += edge.consumed_dwell`.
-First-call seeding and glitches both return `{0, -1}` and the caller skips
-accumulation. Count a rev whenever the just-consumed edge is the wrap
-(`prev == 6 && pos == 1` forward, or `prev == 1 && pos == 6` reverse) — the
-snapshotted `prev` is how the learner detects wrap without peeking at PLL
-internals.
+`pll_edge_t edge = pll_edge(&pll, pos, widths);`. Dispatch on `edge.kind`:
+
+- `PLL_EDGE_VALID` — real edge; do
+  `learn_sum[edge.consumed_sector] += edge.consumed_dwell;`
+  and count a rev if the just-consumed edge is the wrap (`prev == 6 &&
+  pos == 1` forward, `prev == 1 && pos == 6` reverse). The snapshotted
+  `prev` is how the learner detects wrap without peeking at PLL internals.
+- `PLL_EDGE_SEED` — first call ever; skip. No partial dwell to attribute.
+- `PLL_EDGE_GLITCH` — hall noise was seen inside the window. The dwell
+  count spans a stretch where `pos` was briefly wrong, so anything we've
+  accumulated this window is suspect. Run the same reset path the
+  steady-state gate uses (zero `learn_sum[]`, `learn_revs = 0`) and let
+  the next `SEED`-or-`VALID` edge capture fresh refs. Same shape as the
+  existing gate-violation reset.
 
 **Gate — three conditions, all required:**
 
@@ -758,12 +1055,15 @@ internals.
    accumulator update. Subsequent ticks in the same window check against
    that snapshot; a gate violation resets the accumulators (see below) and
    the next first-edge tick captures fresh refs that match the new cruise.
-3. **PLL healthy**: `calib_done == 1`, no `pos == 0` glitch in the window,
-   direction constant (no reversal).
-4. **Not in tune**: `tune_req == 0`. Tune mode is a clean steady-state
-   cruise once engaged, but the accelerate-to-`FOC_TUNE_VQ` and
-   coast-down transients at engage/disengage pollute a learning window.
-   Cheaper to sit out during tune and restart when the button releases.
+3. **PLL healthy**: `calib_done == 1`, no hall glitch in the window —
+   neither `pos == 0` nor any non-adjacent `pos` jump (the latter
+   surfaces as `edge.kind == PLL_EDGE_GLITCH` and triggers the same
+   accumulator reset as any gate violation) — and direction constant
+   (no reversal).
+
+(The steer trim changes θ live but doesn't touch the hall sensors, the
+PLL's velocity estimate, or `pos` — the learner is immune to rider stick
+motion and doesn't need a tune-specific gate.)
 
 Any gate violation mid-window resets all accumulators and restarts at the
 next valid edge. No partial updates.
@@ -843,18 +1143,33 @@ violations leave the table untouched.
 
 Responsibilities, in order:
 
-1. Latch `wState` into a local `uint8_t ws = wState;` (single atomic LDRB), then derive `mode_req = ws & 0x03;` and `tune_req = (ws & STATE_FocTune) != 0;` from that snapshot. Store both on the returned `foc_state_t` (`state.mode_req`, `state.tune_req`) — downstream dispatch reads them from there; do not re-read `wState` or cache them in file-local statics. See "Latching discipline".
-2. Read raw ADCs; mirror into `adc_raw_a/b` for RTT.
+1. Latch `wState` into a local `uint8_t ws = wState;` (single atomic LDRB), derive `mode_req = ws & 0x03;`, store on the returned `foc_state_t`. Downstream dispatch reads `state.mode_req`; don't re-read `wState`. See "Latching discipline".
+2. Read raw ADCs; mirror into `adc_raw_a/b` for RTT. Update the steer LPF: `steer_ema = ema_step(steer_ema, (int16_t)steer, FOC_STEER_LPF_SHIFT);`. A file-local `int16_t steer_smoothed = (int16_t)(steer_ema >> FOC_STEER_LPF_SHIFT);` derives the current smoothed value for step 6.
 3. **Calibration** (boot-time, one-shot). Discard the first `FOC_CALIB_DISCARD = 32` ADCs to let the analog front-end settle, then accumulate the next `FOC_CALIB_SAMPLES = 1024` ADCs into running sums. Count `sample_count` from 0 through `FOC_CALIB_DISCARD + FOC_CALIB_SAMPLES = 1056`, accumulating only when `sample_count >= FOC_CALIB_DISCARD`; when `sample_count` reaches 1056, compute means as offsets and flip `calib_done`. While `!calib_done`: skip steps 4, 7, **and 8** (currents/Clarke/Park/EMA) — offsets aren't known yet, and running the EMA on zeroed `i_rotor` just feeds it meaningless zeros — and return a snapshot with `i_phase`, `i_stator`, `i_rotor` zeroed. **Still run steps 5, 6, 9** — the PLL updates from ISR #1 so θ is warm when FOC engages (handles the case where someone pushes the wheel during boot); step 9 emits an RTT log with zero current fields (visible "calibrating" tell).
 
-   **Sensorless builds** (`!defined(PHASE_CURRENT_A) || !defined(PHASE_CURRENT_B)`): `InitBldc` sets `calib_done = 1` unconditionally (nothing to calibrate), and `foc_sample` `#if`-gates steps 2, 3, 4, 7, 8 out — the current-carrying fields of `foc_state_t` stay at zero and EMAs never tick. Steps 1, 5, 6, 9, 10 run unchanged, so VLT still drives PWM and the RTT log still emits (with sensor fields zeroed). TRQ/tune short-circuit to zero output as specified in their sections.
+   **Sensorless builds** (`!defined(PHASE_CURRENT_A) || !defined(PHASE_CURRENT_B)`): `InitBldc` sets `calib_done = 1` unconditionally (nothing to calibrate), and `foc_sample` `#if`-gates the current-reading halves of steps 2, 3, 4, 7, 8 out — the steer-LPF half of step 2 still runs (steer has nothing to do with current sensors) — and the current-carrying fields of `foc_state_t` stay at zero, EMAs never tick. Steps 1, 5, 6, 9, 10 run unchanged, so VLT still drives PWM and the RTT log still emits (with sensor fields zeroed). TRQ short-circuits to zero output as specified in its section.
 
    **Calibration constants and state are also `#if`-gated** behind `defined(PHASE_CURRENT_A) && defined(PHASE_CURRENT_B)`. That includes `FOC_CALIB_DISCARD`, `FOC_CALIB_SAMPLES`, and the file-local statics (`offset_A`, `offset_B`, running sums, `sample_count`). They have no callers in a sensorless build, so leaving them in would just sit as dead constants and ~12 B of unused RAM — gating them out makes "this build doesn't have current sensors" structural in the source. `calib_done` itself stays unconditional because the dispatch gate at the top of `bldc_get_pwm` reads it in every build (sensorless: set to 1 once at `InitBldc`, then the dispatch check passes forever).
 4. Subtract offsets into `i_phase`: `i_phase.iy = channel_B − offset_B` (yellow), `i_phase.ib = channel_A − offset_A` (blue). The green phase is unshunted — it's reconstructed as `ig = −(iy + ib)` wherever it's needed (inside `dtc_apply`, and in the log snapshot populated at step 9). `ig` lives in no struct.
-5. Advance the PLL accumulator: `pll_advance(&pll)` every ISR. Then, if `pos != 0 && pos != pll.prev_pos`, snapshot `int8_t prev = pll.prev_pos` and call `pll_edge_t edge = pll_edge(&pll, pos, widths)` — the returned `{consumed_dwell, consumed_sector}` feeds the Hall-width learner one block down. Otherwise `edge = {0, -1}`.
-6. Compute `theta = wrap_angle(electrical_angle + FOC_ANGLE_OFFSET_BASE + ((angle_trim_q8 + 128) >> 8))`. Use this same `theta` for Park *and* for the mode handler's inverse Park.
+5. Advance the PLL accumulator: `pll_advance(&pll)` every ISR. Then, if `pos != 0 && pos != pll.prev_pos`, snapshot `int8_t prev = pll.prev_pos` and call `pll_edge_t edge = pll_edge(&pll, pos, widths)` — the Hall-width learner one block down dispatches on `edge.kind` (`VALID` / `SEED` / `GLITCH`). Otherwise `edge = { .kind = PLL_EDGE_SEED }` — no edge was called for, learner does nothing this tick.
+6. Compute θ:
+   ```c
+   int16_t lead_q8 = pll.velocity_q8 >> 1;   // ½ ISR of rotor advance, still Q8 deg
+   theta = wrap_angle(electrical_angle
+                      + FOC_ANGLE_OFFSET_BASE
+                      + ((steer_to_trim_q8(steer_smoothed) + 128) >> 8)
+                      + ((lead_q8 + 128) >> 8));
+   ```
+   Use this same `theta` for Park *and* for the mode handler's inverse Park.
 
-   **`angle_trim_q8` is the tune-mode integrator output.** See "Tune mode" — the `(x + 128) >> 8` pattern rounds the Q8 value half-up rather than floor (avoiding a ~½° negative bias). `FOC_ANGLE_OFFSET_BASE` is a compile-time baseline you set after bring-up; `angle_trim_q8` is the runtime fine-tune from the tune button. No other sources are added to θ — in particular **not `steer`**; see the warning in the globals section above.
+   The `(x + 128) >> 8` pattern rounds half-up rather than floor, avoiding a
+   ~½° negative bias from ARM ASR on signed values.
+
+   Each Q8 term is rounded *independently* before being added. Summing the
+   Q8 values first and rounding once would give a slightly different θ
+   (up to ±1° cumulative rounding drift). Keep them separate — matching
+   this literal form makes the per-term contributions easy to reason
+   about in isolation.
 7. `clarke(i_phase) → i_stator`. `park(i_stator, theta) → i_rotor`.
 8. Update Id/Iq EMAs for display via the `_core` helper. Two file-local statics in `bldcFOC.c`:
    ```c
@@ -886,12 +1201,37 @@ in a clean implementation.
 
 **Sampling-to-actuation latency.** The ADC samples at the PWM valley, Park
 uses θ at that ISR, and the compare-register writes take effect at the next
-PWM update — so sense-θ and apply-θ differ by ~½ PWM period of electrical
-angle (the exact figure scales with speed). This lag is *absorbed into
-`FOC_ANGLE_OFFSET_BASE`* during the one VLT-alignment pass, not corrected
-separately. Don't try to "fix" it by splitting sense-θ and apply-θ: any
-offset that's constant per ISR is indistinguishable from the rotor-alignment
-term, so one knob serves both.
+PWM update — so sense-θ and apply-θ differ by ~½ PWM period of rotor
+advance. That lag is `velocity × ½·T_pwm` radians: **sign-flipping with
+direction**, magnitude scaling with speed. A single constant offset cannot
+absorb it — forward and reverse would need equal-magnitude, opposite-sign
+trims, and the prior implementation's need for different VLT tuning in each
+direction traces straight back to this.
+
+Two terms in the θ composition do the two jobs:
+- `FOC_ANGLE_OFFSET_BASE` — the *constant* part (rotor-alignment offset).
+  Dial once during bring-up.
+- `lead_q8 = velocity_q8 >> 1` — the *velocity-proportional* part (the
+  ½-PWM lead). Automatically signed through `velocity_q8`; zero at rest;
+  at `velocity_q8 = 576` (~400 RPM mech) it contributes ~1.1° forward,
+  −1.1° reverse — exactly the asymmetry that previously had to be tuned
+  out per direction.
+
+Park and inverse Park share this composed θ (= apply-θ) for simplicity.
+Strictly, Park should use sense-θ — using apply-θ rotates the (Id, Iq)
+measurement by +lead relative to the true rotor-sense frame. The resulting
+Id_meas=0 dial-in point carries a small speed-dependent Id_true offset
+(~Iq·tan(lead), a few ADC counts at 400 RPM), direction-symmetric, absorbed
+by the tune tolerance. Only the rotor-alignment constant needs bench-dialling;
+the speed-dependent piece is analytical.
+
+**Why "direction-symmetric":** both `ω` and `Iq` flip sign with direction
+under throttle (reverse throttle → negative Vq → negative ω → negative Iq),
+so `Iq · tan(lead)` has the **same** sign fwd and rev — the `Id_meas = 0`
+tune point lands at the same θ offset in both directions. Same reasoning
+applies to the `ω·Lq·Iq/R` VLT cross-coupling term. Both analytical
+residuals preserve direction symmetry; the ≤~3° fwd/rev gap in the bench
+gate absorbs them plus dead-time and hall-learner jitter.
 
 ---
 
@@ -913,10 +1253,6 @@ software. It's a *user-convention* knob, not a motor-physics one.
 **For FOC bring-up, set `SPEED_COEFFICIENT = +1`** (at least temporarily).
 Reasons:
 
-- Brief's tune procedure assumes `+FOC_TUNE_VQ` drives the rotor in the
-  direction the user pre-spins it. With `SPEED_COEFFICIENT = -1`, `+Vq`
-  drives the motor in the rider's reverse direction, so the user has to
-  mentally invert throttle direction for tune to work at all.
 - Log `Vq` sign, throttle sign, and rotation-direction sign all agree
   under `SPEED_COEFFICIENT = +1`. One convention everywhere. Under `-1`,
   `Vq:-5031` in the log means "rider pushed forward" — which is almost
@@ -936,21 +1272,26 @@ doesn't care either way — the only place the constant lives is `main.c`.
 ## Mode dispatch & calibration gating
 
 **Priority, highest first**: `!calib_done` (zero-out + return) → `pos_force != 0`
-(route to BC at forced pos) → `tune_req` (fixed-Vq open loop, see Tune mode) →
-`switch (mode_req)` (BC / VLT / SPD-stub / TRQ). Each earlier check, when it
-fires, returns before any later check runs — so `pos_force` beats `tune_req`
-beats the normal mode switch.
+(route to BC at forced pos) → `switch (mode_req)` (BC / VLT / SPD / TRQ).
+The steer trim reshapes θ in every mode but doesn't interact with
+dispatch.
 
-**`prev_mode` update policy**: `prev_mode = state.mode_req` is assigned **only
-inside the `switch (mode_req)` dispatch path**, at the end of dispatch.
-Early returns from `!calib_done`, `pos_force != 0`, and `tune_req` all
-leave `prev_mode` untouched. Consequence: exiting tune back to the same
-mode the user was in before tune sees `mode_req == prev_mode` and does not
-reset TRQ integrators (warm state carries through); exiting `pos_force`
-back into TRQ works the same way. This is a deliberate choice — the tune
-override is transient and shouldn't wipe the PI state the user built up.
-If the user changes mode_req *while* in tune or pos_force, the reset fires
-on the first post-override tick because prev_mode is stale.
+**`prev_mode` update policy**: `prev_mode = state.mode_req` is assigned
+**inside the `switch (mode_req)` dispatch path**, at the end of dispatch.
+Two out-of-band paths touch `prev_mode` differently:
+- `!calib_done` leaves `prev_mode` untouched. Dispatch was short-circuited
+  before mode handlers ran, so the first post-calib tick still needs the
+  `mode_req != prev_mode` reset to fire (the `0xFF` init sentinel
+  guarantees this).
+- `pos_force != 0` **sets `prev_mode = 0xFF`** before returning. During
+  pos_force, BC is forced regardless of requested mode; TRQ/SPD integrators
+  are idle but the motor's physical state (position, velocity, current) is
+  being driven by BC. Returning to TRQ or SPD with stale integrator state
+  from before the pos_force detour would let pre-detour wind-up kick into
+  a motor in a different operating point. Poisoning `prev_mode` with the
+  init sentinel forces an integrator reset on the first post-pos_force
+  dispatch, matching the "reset on mode transition to prevent wind-up
+  bias" rule. Cost: one byte-store on a path only used from OpenOCD.
 
 Inside `bldc_get_pwm`, **short-circuit the mode dispatch while `!calib_done`**:
 write `*y = *b = *g = 0` and return, regardless of `mode_req`. No PI updates,
@@ -1045,10 +1386,13 @@ Invariants:
 - The measured Id/Iq from the snapshot are **not fed back**; current sensing
   is diagnostic only.
 - Motor behaviour depends entirely on `theta` tracking the rotor correctly —
-  find the correct angle offset via tune mode (below), which drives `Id avg → 0`
-  automatically. If you need to sweep manually (e.g. tune diverges), flash a
-  new `FOC_ANGLE_OFFSET_BASE` and observe. **Don't hook `steer` into θ** —
-  see warning in the "Globals that already exist" section.
+  find the correct angle offset via the always-on steer trim (see
+  "Steer trim"). The rider rotates the joystick stick while watching `Id
+  avg` in the RTT plot, parks the stick at the position that zeros Id
+  with the wheel accelerating under positive throttle. Bake the winning
+  stick-position-in-degrees into `FOC_ANGLE_OFFSET_BASE` in source for
+  future builds; runtime stick at rest means zero trim, so baking it in
+  is what lets the rider recentre the stick for normal use.
 
 Output path: `ipark(Vd=0, Vq, theta)` → inverse Clarke → SVPWM centre → PWM compares.
 
@@ -1093,138 +1437,115 @@ the user can diagnose.
 
 ---
 
-## Tune mode — on-bench angle-offset self-calibration
+## Steer trim — always-on θ adjustment
 
-Purpose: drive the wheel at a fixed open-loop Vq with no load, and use the
-Id signal to actively trim `FOC_ANGLE_OFFSET_BASE`. Because the wheel is
-unloaded, Iq is just whatever overcomes bearing friction and cogging — small
-and roughly constant — so the inductive `ω·L·Iq` confound is negligible and
-the Id integrator converges to honest rotor alignment within ~10–30 s.
+Purpose: give the rider a live analog knob on θ so `FOC_ANGLE_OFFSET_BASE`
+can be dialled in empirically on the bench. Every ISR, the joystick's
+`steer` axis is low-pass-filtered, scaled to a Q8 angle, and added into
+θ unconditionally. No button, no mode — the stick position **is** the
+trim. At rest (stick centered), the trim contributes 0 to θ.
 
-**Two-equilibria caveat.** `Id → 0` is satisfied at **two** angles per
-electrical revolution, 180° apart: the torque *peak* (accelerate) and the
-torque *trough* (brake). Tune's `-= Id` integrator converges to whichever
-is closest in trim space, with no built-in preference for the accelerate
-peak. You can distinguish them at runtime: at the accelerate peak,
-`sign(Iq_avg × velocity_q8) > 0` (motor accelerating); at the brake trough,
-`< 0` (motor decelerating — the wheel visibly slows down during tune). If
-you observe the latter, nudge `FOC_ANGLE_OFFSET_BASE` by 180° in source
-and re-flash; tune will now converge on the other (correct) equilibrium.
-Add a sanity check in your own bring-up notes — don't rely on `Id` alone
-to tell you tune succeeded.
+This section specifies *what the trim is* and *how it is scaled*. The
+full θ composition (including the velocity-proportional lead) lives in
+`foc_sample` step 6 — that is the single source of truth for how θ is
+assembled each ISR.
 
-**Activation** — joystick button, wired in `hoverboard_control` via the
-`-T <button>` CLI arg, which sets bit 2 (`STATE_FocTune`) of the outgoing
-state byte while held. Hold-to-engage: release the button to exit tune and
-coast. Physical hold-type button preferred — fail-safe is "let go."
+**LPF** (in `foc_sample` step 2):
 
-**Current sensing is required** for tune mode (the integrator reads
-`i_rotor.d`). The dispatch override is therefore wrapped in
-`#if defined(PHASE_CURRENT_A) && defined(PHASE_CURRENT_B)` — see the
-override block below. On a sensorless build the override compiles out
-entirely and `tune_req` falls through to the normal `mode_req` switch:
-holding the joystick's tune button has no effect, the user keeps riding
-their throttle in BC/VLT/SPD/TRQ as if the button weren't pressed.
+```c
+steer_ema = ema_step(steer_ema, (int16_t)steer, FOC_STEER_LPF_SHIFT);
+int16_t steer_smoothed = (int16_t)(steer_ema >> FOC_STEER_LPF_SHIFT);
+```
 
-This matches the established sensorless pattern: TRQ noped (zero output to
-avoid PI runaway), tune noped (no integrator → no point in driving
-`FOC_TUNE_VQ`), VLT runs with sensing diagnostic-only. Tune doesn't have
-TRQ's runaway hazard — without sensors the `FOC_TUNE_VQ` drive would just
-be a constant Vq with no control loop — so silent fall-through is fine
-rather than zero-and-return.
+`FOC_STEER_LPF_SHIFT = 10` → ≈ 64 ms time constant at 16 kHz. Attenuates
+the ±10–30 count UART-packet jitter by ~1000×, keeping the integer-degree
+θ output from flickering under packet noise while passing hand-motion
+(< 5 Hz) cleanly. (θ is truncated to integer degrees in step 6, so the
+LPF's job is stopping the low bit from chattering — not preserving
+sub-degree precision.)
+
+**Scaling** — full stick deflection (±1000 counts) → `±FOC_STEER_TRIM_RANGE_DEG
+= ±30°` *nominal*; actual full-deflection output is ±31.25° due to
+integer rounding of the per-count factor (see note below).
+
+```c
+#define FOC_STEER_TRIM_Q8_PER_COUNT  \
+    ((FOC_STEER_TRIM_RANGE_DEG * 256 + 500) / 1000)   // rounded, = 8 at 30°
+static inline int16_t steer_to_trim_q8(int16_t s) {
+    return (int16_t)((int32_t)s * FOC_STEER_TRIM_Q8_PER_COUNT);
+}
+```
+
+The *exact* per-count gain for 30° is `30 * 256 / 1000 = 7.68` Q8
+degrees. Restricting the multiplier to an integer rounds that to `8`,
+so `steer = ±1000` yields `±8000` Q8 = ±31.25°. That 1.25° overshoot
+is below the 1° resolution of the final integer-degree θ output
+(`((trim_q8 + 128) >> 8)` in step 6) and doesn't affect usability —
+the RTT `trim:<…>` readback is self-consistent with whatever scaling
+is in place, so the baked-in offset is correct regardless. Kept as an
+integer multiply to avoid a per-ISR divide.
 
 **State, file-local in `bldcFOC.c`:**
 
 ```c
-static int16_t angle_trim_q8 = 0;    // Q8 degrees — applied to θ always
+static int32_t steer_ema;     // Q(FOC_STEER_LPF_SHIFT) LPF accumulator
 ```
 
-That's it. `tune_active` is not stored — it's just `(wState & STATE_FocTune) != 0`,
-latched as `tune_req` once per ISR. Button down → tuning; button up → not
-tuning. No edge detection, no timeout, no velocity gate — trust the physical
-hold button and the user's judgement not to press it while riding.
+That's it. No latch, no button state, no edge detection. The stick
+position over time *is* the trim history.
 
-θ composition in `foc_sample` (step 6) uses the trim unconditionally,
-with round-to-nearest at the Q8 → integer-degree boundary:
+**Why no button / no latch:** an earlier attempt had an Id-driven integrator
+on θ gated by a tune button. It hit a two-equilibria trap — when Iq_true
+went negative (bad initial offset, transient, or `SPEED_COEFFICIENT = -1`
+confusion), the integrator's stable point flipped to the brake trough and
+it actively drove the wheel to a halt. A hand on the stick can't do that
+(rider's feedback is "wheel brakes = go the other way"). Also: no button
+means no mode toggling, no falling-edge latch bug surface, no need to
+explain when tune is "on."
 
-```c
-// +128 biases the arithmetic right-shift to round-half-up rather than floor.
-// Plain `>> 8` is floor division on signed values (ARM ASR), which biases
-// negative trims by ~½° relative to positive — measurable as a small Id
-// offset after convergence. The +128 add costs nothing and is symmetric.
-theta = wrap_angle(electrical_angle + FOC_ANGLE_OFFSET_BASE
-                                    + ((angle_trim_q8 + 128) >> 8));
-```
+**Two-equilibria caveat (as diagnostic, not a hazard).** `Id = 0` is
+satisfied at two angles per electrical revolution, 180° apart: the torque
+peak (accelerates under forward throttle) and the torque trough (brakes).
+The rider recognises the braking basin immediately and doesn't pick that
+stick position. If however `FOC_ANGLE_OFFSET_BASE` in source sits in the
+brake-trough basin and the ±31° of stick range can't reach the accel
+peak, add 180° to `FOC_ANGLE_OFFSET_BASE` in source and re-flash.
 
-So a converged trim continues to correct alignment in subsequent VLT/TRQ
-riding within the same power cycle. Power-cycle resets `angle_trim_q8 = 0`;
-user either re-tunes or bakes the converged value into `FOC_ANGLE_OFFSET_BASE`
-in source. Flash persistence is deferred (see Non-goals).
-
-**Dispatch override** — inside `bldc_get_pwm`, after the calib gate but
-before the `mode_req` switch. Wrapped in `#if defined(PHASE_CURRENT_A) &&
-defined(PHASE_CURRENT_B)` so sensorless builds skip the whole block and
-`tune_req` falls through to the mode switch:
-
-```c
-#if defined(PHASE_CURRENT_A) && defined(PHASE_CURRENT_B)
-if (tune_req) {
-    // fixed-Vq open-loop drive, throttle ignored
-    int32_t vq_cmd = FOC_TUNE_VQ;
-    int32_t vd_cmd = 0;
-
-    // trim integrator — drives measured Id toward zero.
-    // Sign (`-=`) is paired with the Park family chosen in the Park section:
-    // for the family where `FOC_ANGLE_OFFSET_BASE = 125°` is correct, `-=`
-    // converges. If you pick the opposite Park family (transposed sin signs),
-    // this also flips to `+=`. Diagnosis on the bench: trim runs to
-    // ±FOC_ANGLE_TRIM_MAX without `Id avg` settling → flip the operator.
-    // Same one-time bring-up question as the 2× oscillation test for Park.
-    angle_trim_q8 -= (state.i_rotor.d >> FOC_ANGLE_TRIM_SHIFT);
-    if (angle_trim_q8 >  FOC_ANGLE_TRIM_MAX) angle_trim_q8 =  FOC_ANGLE_TRIM_MAX;
-    if (angle_trim_q8 < -FOC_ANGLE_TRIM_MAX) angle_trim_q8 = -FOC_ANGLE_TRIM_MAX;
-
-    // standard VLT output chain — int16 locals, copy to int* outputs at end
-    int16_t y16, b16, g16;
-    ab_v_t   v_ab     = ipark((dq_v_t){ .d = vd_cmd, .q = vq_cmd }, state.theta);
-    ab_pwm_t v_ab_pwm = ab_scale_for_pwm(v_ab);
-    iclarke_svpwm(v_ab_pwm, &y16, &b16, &g16);
-    if (foc_dtc_en) dtc_apply(state.i_phase, &y16, &b16, &g16);
-    *y = y16; *b = b16; *g = g16;
-    return;
-}
-#endif
-```
-
-**Bench procedure:**
+**Bench procedure — dial in `FOC_ANGLE_OFFSET_BASE`:**
 
 1. Boot, wait for calib (~64 ms).
-2. Lift the wheel / place on stand so it can spin freely.
-3. Arm the joystick (so packets flow). Spin the wheel by hand to ~50 RPM mech.
-4. Hold tune button — motor accelerates to the `FOC_TUNE_VQ`-limited speed.
-5. Watch `Id avg` and `trim:<…>` in the RTT plot. Trim integrates; Id → 0.
-6. After ~10–30 s of stable convergence, release the button. Motor coasts.
-7. Optional: `mdh angle_trim_q8` via OpenOCD → paste into `FOC_ANGLE_OFFSET_BASE`
-   in source for future builds.
+2. Enter VLT (mode 1). Apply a small positive throttle; wheel spins up.
+3. Rotate the steer stick slowly while watching the RTT `Id avg` (red) line.
+4. Find the stick position where `Id avg` sits closest to zero and the
+   wheel feels like it's accelerating cleanly (not braking).
+5. Read `trim:<…>` from the RTT log at that stick position (value is in
+   Q8 degrees — divide by 256 to get degrees).
+6. Add that many degrees to `FOC_ANGLE_OFFSET_BASE` in source. Re-flash.
+7. Verify: boot, VLT, stick centered (trim = 0), `Id avg` should now sit
+   near zero. Any residual is either DTC off / Hall learner not yet
+   converged, or speed-dependent cross-coupling (ω·Lq·Iq); dial the stick
+   a further few degrees to see the curve.
+
+Stick is free for actual joystick steering only *after* bake-in; until
+then the rider lives with "steer is the trim knob, don't expect normal
+steering behaviour." On a single-wheel solo build this is fine; on a
+dual-wheel build, dial in first and then rely on the baked constant.
 
 **Interactions:**
 
-- **Hall learner** is explicitly gated off during `tune_req` (see Hall-learner
-  section condition 4) — transients at tune engage/disengage would pollute
-  window averages. Learning resumes automatically once the button releases.
-- **DTC** should be **off** during the first tune pass, so residual Id is
-  purely angle error. After trim converges with DTC off, turn DTC on and
-  re-run tune; expect a small additional nudge.
-- **TRQ PI** integrators are untouched during tune (not dispatched). Exiting
-  tune back to TRQ triggers the `mode_req != prev_mode` integrator reset
-  because `prev_mode` was not updated while tune_req was routing around
-  the mode switch — so no stale PI state bleeds through.
-- **BC / `pos_force`** — `pos_force != 0` still routes to BC regardless of
-  `tune_req`; bench overrides are sticky. To tune, clear `pos_force` first.
-
-**Gated by `tune_req` (from wState bit 2) only.** No separate OpenOCD flag —
-single source of truth via the joystick packet. OpenOCD users wanting
-laptop-triggered tuning can poke `wState` directly with `mwb`.
+- **Hall learner**: immune. The learner measures hall-sector dwells from
+  physical rotor position via `pos`; the steer trim changes θ used for
+  Park/iPark but doesn't touch `pos` or `velocity_q8`. The gate has no
+  tune-specific condition.
+- **DTC**: independent. Dial in with DTC off first, then enable DTC and
+  dial in again — expect a few degrees of shift.
+- **TRQ / SPD**: the PI integrators see `i_rotor.d/q` through the trim'd
+  θ, same as the output chain. Moving the stick in TRQ is usually
+  unhelpful (the Id PI already forces Id = 0 via Vd, so the stick mostly
+  shifts Vd's steady-state value). Dial in in VLT; the result carries
+  into TRQ and SPD as a θ bias automatically.
+- **BC**: doesn't use θ. Steer trim has no visible effect.
+- **`pos_force`**: routes to BC, so same — no effect.
 
 ---
 
@@ -1261,9 +1582,9 @@ FOC_HALL_LEARN_PWM_TOL     50      # |pwm − ref| bound for steady-state gate
 FOC_HALL_LEARN_VEL_TOL     64      # Q8 deg/ISR bound for steady-state gate
 foc_hall_learn_en          1       (volatile)  # learner default-on
 
-FOC_TUNE_VQ                8000    # fixed internal Vq during tune (~40% FOC_VQ_MAX)
-FOC_ANGLE_TRIM_SHIFT       6       # integrator rate: trim += −(id >> shift)/ISR
-FOC_ANGLE_TRIM_MAX         (20<<8) # ±20° Q8 clamp on accumulated trim
+FOC_STEER_LPF_SHIFT         10      # ~64 ms EMA on steer (attenuates ±10-30 count jitter to well below 1° of θ)
+FOC_STEER_TRIM_RANGE_DEG    30      # nominal θ trim across full stick deflection (±1000 counts); actual ≈ ±31.25° after integer rounding (see "Steer trim")
+FOC_STEER_TRIM_Q8_PER_COUNT ((FOC_STEER_TRIM_RANGE_DEG * 256 + 500) / 1000)  # = 8 at 30°
 ```
 
 ---
@@ -1301,7 +1622,7 @@ restart of anything except the flash itself.
 One line at `FOC_RTT_LOG_DIV` rate:
 
 ```
-m:<MODE> adc_a=<raw_a> adc_b=<raw_b> Ia:<iy> Ib:<ib> Ig:<ig> Ialpha:<α> Ibeta:<β> Id:<d> Iq:<q> Idavg:<d̄> Iqavg:<q̄> ang:<θ> rpm:<rpm> Vq:<vq_cmd> p:<pos> f:<pos_force> t:<tune_req> trim:<angle_trim_q8>
+m:<MODE> adc_a=<raw_a> adc_b=<raw_b> Ia:<iy> Ib:<ib> Ig:<ig> Ialpha:<α> Ibeta:<β> Id:<d> Iq:<q> Idavg:<d̄> Iqavg:<q̄> ang:<θ> rpm:<rpm> Vq:<vq_cmd> p:<pos> f:<pos_force> trim:<steer_trim_q8>
 ```
 
 `<MODE>` is "BC" / "VLT" / "SPD" / "TRQ". RPM from PLL velocity
@@ -1339,8 +1660,7 @@ typedef struct {
     int16_t vq_cmd;
     int8_t  pos;
     uint8_t pos_force;
-    uint8_t tune_req;
-    int16_t angle_trim_q8;
+    int16_t steer_trim_q8;   // current steer_to_trim_q8(steer_smoothed), for the RTT `trim:` field
 } log_snapshot_t;
 
 static log_snapshot_t   log_snapshot;              // plain — flag orders access
@@ -1525,20 +1845,32 @@ target would silently regress.
   (forward → lower, reverse → upper) — this was explicitly the subtle bug
   that cost bring-up time last round; velocity saturates at
   `±FOC_PLL_VEL_CLAMP`; first-call seeding (`prev_pos == 0`) sets angle to
-  sector centre and velocity to zero; glitches (pos delta of ±2, ±3) leave
-  velocity and `prev_pos` unchanged; `pos == 0` still advances the
-  accumulator and increments `sector_dwell` but doesn't update `prev_pos`.
+  sector centre, velocity to zero, and returns `kind == PLL_EDGE_SEED`;
+  glitches (pos delta of ±2, ±3) leave velocity and `prev_pos` unchanged
+  and return `kind == PLL_EDGE_GLITCH` (distinct from the seed case);
+  valid edges return `kind == PLL_EDGE_VALID` with the dwell/sector pair
+  populated; `pos == 0` still advances the accumulator and increments
+  `sector_dwell` but doesn't update `prev_pos`; `sector_dwell` saturates
+  at `UINT16_MAX` after >65535 calls with no edge (no wrap to 0 — the
+  next edge then produces near-zero velocity, not a spike).
 
-- **`test_pi.c`** — integrator accumulates `err >> Ki_shift` per step for
-  constant error; clamp saturates output at the bound; anti-windup
-  back-calc subtracts `excess >> AW_shift` from integrator when saturated
-  so it doesn't grow without bound; zero-error holds output constant;
-  mode-change integrator reset (caller responsibility, but test the
-  reset-to-zero behaviour); `signed_shift` round-trips for both signs of
-  shift (positive → right-shift, negative → left-shift, zero → identity);
-  `ema_step` settles to `sample << shift` for constant input within the
-  expected time constant (`~2^shift` samples), holds DC, and attenuates a
-  unit step by ~`1/2^shift` per sample.
+- **`test_pi.c`** — integrator output grows by `err >> Ki_shift` per step
+  for constant error (raw accumulator grows by `err` every tick, shift
+  applied on read); no dead zone for `|err| < 2^ki_shift` (the
+  full-precision-accumulator property — after `2^ki_shift/err` ticks the
+  output increments by 1); alternating `+err, -err` for equal counts
+  returns the integrator exactly to its start (locks in `signed_shift`'s
+  half-away-from-zero rounding — naive ASR drifts); clamp saturates
+  output at the bound; anti-windup back-calc subtracts `excess >>
+  AW_shift` from the integrator's output contribution (raw-accumulator
+  decrement = `(excess >> aw_shift) << ki_shift`); zero-error holds
+  output constant; mode-change integrator reset (caller responsibility,
+  but test the `integrator_raw = 0` reset-to-zero behaviour);
+  `signed_shift` symmetry across sign of shift (positive → right-shift
+  with half-away-from-zero rounding, negative → left-shift, zero →
+  identity); `ema_step` settles to `sample << shift` for constant input
+  within the expected time constant (`~2^shift` samples), holds DC, and
+  attenuates a unit step by ~`1/2^shift` per sample.
 
 - **`test_dtc.c`** — `dtc_term(0) == 0`; monotonic through zero
   (non-decreasing on a ramp across `±FOC_DTC_MAX × 2^FOC_DTC_SHIFT`);
@@ -1601,7 +1933,7 @@ What "working" means:
 | VLT, low throttle | RPM within a few % of BC at the same throttle |
 | VLT, high throttle | ~15% more RPM than BC at same throttle |
 | VLT Id/Iq plot at steady RPM | Flat `Id avg` / `Iq avg` lines, **not** sinusoidal |
-| VLT forward ↔ reverse | With DTC enabled, converged `angle_trim_q8` similar magnitude both ways (to within a few degrees of residual dead-time bias) |
+| VLT forward ↔ reverse | With DTC on and the velocity-proportional θ lead in place (step 6), best-Id stick positions agree to within ~2–3° across directions. Residual is dead-time bias + ω·Lq·Iq cross-coupling. Larger gap (≥10°) → direction-aware hall snap or `lead_q8` sign/scale is wrong. |
 | TRQ at throttle=0 | Quiet, near-zero current draw |
 | TRQ mode-change | No kick when entering/leaving (integrators reset) |
 | TRQ with bad angle offset | Current capped at ~`foc_trq_v_max`-driven stall; won't brown out the supply |
@@ -1610,26 +1942,26 @@ What "working" means:
 | Hall learner converges | After ~10 s of steady cruise >100 RPM mech, `sector_width_q8[]` deviates from 15360 per sector but `Σ = 360°<<8` within rounding |
 | Learner frozen (`foc_hall_learn_en=0`) | Table stays at boot values indefinitely |
 | Hall learner + DTC both on | Compound: cleaner Id/Iq than either alone; re-tune `FOC_ANGLE_OFFSET_BASE` once both are enabled |
-| Tune engage on unloaded bench | Motor drives at `FOC_TUNE_VQ`; `angle_trim_q8` converges, `Id avg` → 0 in <30 s; release button → coast |
-| Trim persists post-tune | Release tune, switch to VLT/TRQ — trim remains applied via θ composition; survives until power cycle |
+| Steer trim live in VLT | Rotate the steer stick in VLT; `trim:<…>` in RTT tracks stick position with ~64 ms lag, `Id avg` moves with it. Park the stick where `Id avg` sits near zero with wheel accelerating. |
+| Stick centered → zero trim | Centre the steer stick; `trim:<…>` in RTT settles to ~0 within ~200 ms (several LPF time constants). θ returns to pure `electrical_angle + FOC_ANGLE_OFFSET_BASE`. |
+| Bake-in round trip | Note the value of `trim:` at the best stick position; add `trim/256` degrees to `FOC_ANGLE_OFFSET_BASE` in source and re-flash. Verify stick-centered `Id avg` is now near zero. |
 
 Failure fingerprints:
 
 - Id/Iq oscillating sinusoidally → Park matrix is the wrong sign variant (transpose it).
 - VLT slower than BC at same throttle → scaling shift is too large; check math around 0.866·|Vq| / 2^FOC_OUT_SHIFT reaching ~±1125.
-- Forward/reverse asymmetry on ideal trim → direction-aware hall snap missing.
+- Forward/reverse asymmetry on ideal trim, ≥10° → direction-aware hall snap missing, *or* `lead_q8` has the wrong sign or is missing entirely (a mis-scaled lead looks like an asymmetry that grows linearly with speed).
 - Motor brown-outs on TRQ engage → `foc_trq_v_max` too high, or angle offset so wrong the Id PI can't compensate. Lower `foc_trq_v_max` first, then fix alignment.
 - Id/Iq worse with DTC enabled → `FOC_DTC_MAX` too high (overcompensation, sign-flipped zero-crossing harmonics). Halve it, retest. If still worse, confirm DTC was off during the angle-offset tuning pass.
-- Hall-learner widths drift to bizarre values (one sector ≫ others, or sum deviates far from `360°<<8`) → steady-state gate too loose. Tighten `FOC_HALL_LEARN_PWM_TOL` / `FOC_HALL_LEARN_VEL_TOL` first, then look for direction reversals or `pos == 0` glitches inside the window.
+- Hall-learner widths drift to bizarre values (one sector ≫ others, or sum deviates far from `360°<<8`) → steady-state gate too loose. Tighten `FOC_HALL_LEARN_PWM_TOL` / `FOC_HALL_LEARN_VEL_TOL` first, then look for direction reversals or hall glitches inside the window — both `pos == 0` and non-adjacent `pos` jumps (the latter should surface as `edge.kind == PLL_EDGE_GLITCH` and reset the window; if widths still drift, verify the glitch-triggered reset path is actually wired).
 - Learner converges cleanly on the bench but degrades riding performance → the bench test speed was below 100 RPM mech quantization threshold despite passing the gate; raise `FOC_HALL_LEARN_MIN_VEL`.
-- Tune mode won't engage on the bench → `pos_force != 0` (routes to BC, clear it first); or `calib_done == 0` (wait 64 ms after boot); or joystick not armed (no packets, bit 2 never reaches firmware).
-- Tune engages but `angle_trim_q8` oscillates instead of converging → `FOC_ANGLE_TRIM_SHIFT` too small (loop too fast); double it and retest.
-- Tune engages and `angle_trim_q8` runs straight to ±FOC_ANGLE_TRIM_MAX (sticks at the clamp, never settles, `Id avg` doesn't approach 0) → trim sign is wrong for your Park family. Flip `-=` to `+=` in the dispatch override (same family ambiguity as the Park 2× oscillation test).
-- Tune converges to one value, but next power cycle it converges to a different value → likely DTC was off for one session and on for the other, or Hall-learner widths were at different convergence points. Run tune only with widths settled and DTC in its final state.
+- Steer stick moved but `trim:<…>` in the RTT log doesn't change → `steer` global isn't being updated. Check the joystick is armed and the UART packet is flowing (`remoteUart.c` writes `steer` in the same ISR that writes `wState`). Watch raw `steer` via OpenOCD `mdw` directly to distinguish joystick-side vs firmware-side.
+- Trim moves but `Id avg` doesn't track → θ read in the Park transform doesn't match the θ read in the inverse-Park. Both must come from the same `state.theta` computed in step 6. Grep `bldc_get_pwm` for any second `electrical_angle` composition.
+- Wheel only ever decelerates when the stick is moved, in both directions → `FOC_ANGLE_OFFSET_BASE` sits in the brake-trough basin (the accelerate peak is 180° away). Add 180° to `FOC_ANGLE_OFFSET_BASE` in source and re-flash.
+- Optimal steer-stick position drifts slightly between different speeds in the same direction → expected. Residual is `ω·Lq·Iq` cross-coupling (Vd=0 in VLT → steady-state `Id_true = (ω·Lq·Iq)/R`) plus a small Park-side rotation from using apply-θ for both transforms (step 6). Both direction-symmetric, both scale with speed. Pick a mid-speed cruise as your canonical dial-in point.
+- Optimal steer-stick position differs between forward and reverse by **≤~3°** at the same speed → acceptable implementation slop. All clean analytical sources (ω·Lq·Iq, Park rotation, DTC-corrected dead-time) are direction-symmetric, so the ≤~3° is really "dead-time residual, hall-learner convergence, `lead_q8` timing precision, current-sensor channel mismatch" combined. Phase 2 TRQ Id PI absorbs it at ride time. If the gap is ≥10°, see the direction-aware-hall-snap / `lead_q8` bullet above.
 - θ tracks fine at low/medium RPM but drifts and Id/Iq go ragged at high RPM → hall edge slew limited; PLL is hitting `±2` deltas and bailing on the glitch path, dead-reckoning θ from the last believable edge until the next adjacent transition. Confirm by watching `pos` in RTT — gaps where pos jumps non-adjacently around the high-RPM symptom. Mitigation: hall filtering in `bldc.c` (outside this brief's scope), or accept it as a high-RPM edge.
-- TRQ barely moves the motor, PI outputs pinned at `±foc_trq_v_max`, `Iq` far from `iq_target`, throttle has little effect, direction doesn't flip cleanly across zero → VLT alignment is worse than VLT alone reveals. TRQ is a closed-loop **amplifier** of angle error: a 3–5° alignment residual that's benign in VLT saturates the Iq PI and collapses torque production. Don't try to tune TRQ gains against this — go back and re-tune `FOC_ANGLE_OFFSET_BASE` (with DTC in its final state) until VLT runs clean, then TRQ will come along.
-- Tune decelerates the wheel instead of sustaining / accelerating it → one of: (a) `SPEED_COEFFICIENT = -1` and the user is pre-spinning in rider-forward direction (which is motor's reverse for +Vq — tune's fixed `+FOC_TUNE_VQ` applies braking torque). Fix: set `SPEED_COEFFICIENT = +1` during bring-up. (b) Tune has converged to the brake-trough equilibrium (see Tune mode § "Two-equilibria caveat"). Fix: add 180° to `FOC_ANGLE_OFFSET_BASE`.
-- Trim differs significantly between forward and reverse runs, or between different speeds in the same direction → most likely `steer` is hooked into θ somewhere (an earlier revision of this brief advised exactly this — don't). Grep the implementation for `steer`; if it's feeding into `theta` composition, remove it. Live joystick noise at steer's analog axis alone adds 1–3° of silent angular drift to every reading, which looks exactly like speed- or direction-dependent DTC bias.
+- TRQ barely moves the motor, PI outputs pinned at `±foc_trq_v_max`, `Iq` far from `iq_target`, throttle has little effect, direction doesn't flip cleanly across zero → VLT alignment is worse than VLT alone reveals. TRQ is a closed-loop **amplifier** of angle error: a 3–5° alignment residual that's benign in VLT saturates the Iq PI and collapses torque production. Don't try to tune TRQ gains against this — go back and re-dial `FOC_ANGLE_OFFSET_BASE` (with DTC in its final state) until VLT runs clean, then TRQ will come along.
 
 ---
 
@@ -1639,10 +1971,7 @@ Defer (don't implement now, but leave the structure amenable):
 
 - Mode hysteresis (OPEN↔FOC thresholds at 240/480 RPM in the reference)
 - Iq protection limiter with speed-dependent `Vq_max_M1[]` LUT
-- SPD mode (outer speed PI on top of TRQ)
 - Fast-capture RAM buffer
 - Adaptive angle-offset learning
 - Saving calibrated offsets to flash
 - Field weakening
-
-SPD mode: stub — fall through to BC if requested.
