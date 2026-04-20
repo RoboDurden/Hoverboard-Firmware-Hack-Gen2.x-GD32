@@ -51,6 +51,7 @@ static uint8_t prev_mode;
  * the declared state boundary). */
 static pi_state_t iq_pi, id_pi;
 static volatile int16_t foc_trq_v_max = 3000;
+static int16_t iq_target;   /* Phase 2: diagnostic — last throttle-to-Iq target */
 
 /* Diagnostics + bench overrides. */
 static int16_t           adc_raw_a, adc_raw_b;
@@ -94,11 +95,6 @@ static volatile uint8_t log_pending;
 static uint16_t         log_counter;
 #endif
 
-/* Silence "defined but not used" in slave builds where iq_pi/id_pi/foc_trq_v_max
- * haven't been wired into any dispatch path yet — Phase 2 lands TRQ. */
-static inline void foc_phase1_silence_unused(void) {
-    (void)iq_pi; (void)id_pi; (void)foc_trq_v_max;
-}
 
 /* ============ InitBldc ============ */
 void InitBldc(void) {
@@ -112,8 +108,6 @@ void InitBldc(void) {
     /* Pre-warm steer LPF so its 64 ms time constant applies from ISR #1,
      * regardless of stick-at-boot position. */
     steer_ema = (int32_t)steer << FOC_STEER_LPF_SHIFT;
-
-    foc_phase1_silence_unused();
 }
 
 /* ============ Sense half — foc_sample ============ */
@@ -328,11 +322,40 @@ void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) {
         break;
     }
 
-    case 2: /* SPD — Phase 3 */
-    case 3: /* TRQ — Phase 2 */
+    case 3: { /* TRQ — closed-loop Iq/Id */
+#if defined(PHASE_CURRENT_A) && defined(PHASE_CURRENT_B)
+        /* Throttle → iq_target in ADC counts, clamped to ±FOC_IQ_MAX. */
+        int32_t iqt = ((int32_t)pwm * FOC_IQ_MAX) / BLDC_TIMER_MID_VALUE;
+        if (iqt >  FOC_IQ_MAX) iqt =  FOC_IQ_MAX;
+        if (iqt < -FOC_IQ_MAX) iqt = -FOC_IQ_MAX;
+        iq_target = (int16_t)iqt;
+
+        pi_gains_t iq_g = { FOC_IQ_KP_SHIFT, FOC_IQ_KI_SHIFT, FOC_AW_SHIFT };
+        pi_gains_t id_g = { FOC_ID_KP_SHIFT, FOC_ID_KI_SHIFT, FOC_AW_SHIFT };
+
+        int16_t vq = pi_step(&iq_pi,
+                             (int16_t)(iq_target - state.i_rotor.q),
+                             foc_trq_v_max, iq_g);
+        int16_t vd = pi_step(&id_pi,
+                             (int16_t)(0 - state.i_rotor.d),
+                             foc_trq_v_max, id_g);
+        vq_cmd = vq;
+
+        dq_v_t   v_dq  = { .d = vd, .q = vq };
+        ab_v_t   v_ab  = ipark(v_dq, state.theta);
+        ab_pwm_t v_pwm = ab_scale_for_pwm(v_ab);
+        iclarke_svpwm(v_pwm, &y16, &b16, &g16);
+        if (foc_dtc_en) dtc_apply(state.i_phase, &y16, &b16, &g16);
+#else
+        /* Sensorless: no measurement → Id PI would wind out silently. Zero out. */
+        y16 = 0; b16 = 0; g16 = 0;
+        vq_cmd = 0;
+#endif
+        break;
+    }
+
+    case 2: /* SPD — Phase 3; falls through to BC for now */
     default:
-        /* Phase 1 falls through to BC so the modes are reachable from the UI
-         * without behaving as silent no-ops. */
         get_pwm_bc(pwm, pos, &y16, &b16, &g16);
         vq_cmd = 0;
         break;

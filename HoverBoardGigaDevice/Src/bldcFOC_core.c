@@ -169,6 +169,42 @@ pll_edge_t pll_edge(pll_state_t *state, int8_t pos, const uint16_t *sector_width
     return ret;
 }
 
+/* ============ PI step ============
+ * Full-precision integrator: raw err accumulates at every tick; Ki shift
+ * is applied on readout, not on write, so sub-shift errors don't vanish
+ * via rounding. Back-calc anti-windup: on saturation, subtract the excess
+ * in output units (shifted by aw_shift) from the integrator — lifted back
+ * to raw-accumulator units via << ki_shift so the decrement decays the
+ * output by (excess >> aw_shift) per tick regardless of ki_shift. */
+int16_t pi_step(pi_state_t *state, int16_t err, int16_t clamp, pi_gains_t gains) {
+    state->integrator_raw += err;
+
+    int32_t kp_term = signed_shift((int32_t)err, gains.kp_shift);
+    int32_t ki_term = signed_shift(state->integrator_raw, gains.ki_shift);
+    int32_t out_unclamped = kp_term + ki_term;
+
+    int32_t out;
+    int32_t excess;
+    if (out_unclamped > (int32_t)clamp) {
+        out    = (int32_t)clamp;
+        excess = out_unclamped - out;
+    } else if (out_unclamped < -(int32_t)clamp) {
+        out    = -(int32_t)clamp;
+        excess = out_unclamped - out;
+    } else {
+        out    = out_unclamped;
+        excess = 0;
+    }
+
+    if (excess != 0) {
+        int32_t aw_out = signed_shift(excess, gains.aw_shift);
+        int32_t aw_raw = signed_shift(aw_out, (int8_t)(-gains.ki_shift));
+        state->integrator_raw -= aw_raw;
+    }
+
+    return (int16_t)out;
+}
+
 /* ============ Hall width learner ============
  * Normalise per-sector ISR counts to a width table summing to ~(360<<8),
  * then fold the result into the live table via an EMA. */
