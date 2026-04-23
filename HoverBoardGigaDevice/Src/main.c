@@ -172,10 +172,17 @@ int main (void)
 	// Init ADC
 	ADC_init();
 
+	#if defined(PHASE_CURRENT_A) && defined(PHASE_CURRENT_B)
+		// TIMER2 hardware-triggers the ADC from TIMER0's valley. Must be
+		// set up before PWM_init enables TIMER0, so TIMER2 is ready to
+		// respond to the first TRGO.
+		ADC_Trigger_Timer_init();
+	#endif
+
 	// Init PWM
 	PWM_init();
 
-	InitBldc();		// virtual function implemented by bldcBC.c and bldcSINE.c
+	InitBldc();		// virtual function implemented by bldcBC.c, bldcSINE.c, or bldcFOC.c
 	DriverInit(iDrivingMode);
 
 
