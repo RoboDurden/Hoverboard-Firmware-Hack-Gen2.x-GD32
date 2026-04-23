@@ -133,23 +133,23 @@ void TARGET_TIMER0_BRK_UP_TRG_COM_IRQHandler(void)
 {
 	if (timer_interrupt_flag_get(TIMER_BLDC, TIMER_INT_UP))
 	{
-		static uint8_t interrupt_toggle = 0;	// Static variable to keep track of calls; by Gemini2.5pro
-		interrupt_toggle = 1 - interrupt_toggle;	// Invert the toggle on each entry
-		if (interrupt_toggle)		// Only execute every second call as libray/hardware will trigger on up AND down, ignoring timerBldc_paramter_struct.alignedmode = TIMER_COUNTER_CENTER_DOWN
-		{
-			// Fire the ADC trigger first so the sample instant is earlier and
-			// more deterministic relative to the PWM valley.
+		// ADC trigger is now hardware-driven via TIMER2 TRGO → T2_TRGO
+		// on the regular group (see setup.c::ADC_Trigger_Timer_init and
+		// ADC_init). When phase-current sensing isn't compiled in, the
+		// regular group falls back to software trigger and we fire it
+		// here.
+		#if !(defined(PHASE_CURRENT_A) && defined(PHASE_CURRENT_B))
 			TARGET_adc_software_trigger_enable(ADC_REGULAR_CHANNEL);
-			//adc_software_trigger_enable(ADC0, ADC_REGULAR_CHANNEL); //jma: ADC0 added for GD32F103
+		#endif
 
-			if (msTicks > iPwmTime)
-			{
-				iPwmTime = msTicks + 1000;
-				iPwmRate = iPwmCounter;
-				iPwmCounter = 0;
-			}
-			else iPwmCounter++;
+		if (msTicks > iPwmTime)
+		{
+			iPwmTime = msTicks + 1000;
+			iPwmRate = iPwmCounter;
+			iPwmCounter = 0;
 		}
+		else iPwmCounter++;
+
 		// Clear timer update interrupt flag
 		timer_interrupt_flag_clear(TIMER_BLDC, TIMER_INT_UP);
 	}
@@ -184,11 +184,10 @@ void TARGET_DMA_Channel0_IRQHandler(void)
 			iAdcCounter = 0;
 		}
 		else iAdcCounter++;
-		
-		
+
 		CalculateBLDC(); //moved behind flag_clear by Deepseek, Safe: NVIC blocks re-entrancy
 		TARGET_dma_interrupt_flag_clear(DMA_CH0, DMA_INT_FLAG_FTF);
-	}	
+	}
 }
 
 
