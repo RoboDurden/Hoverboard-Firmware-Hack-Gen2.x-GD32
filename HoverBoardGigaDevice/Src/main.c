@@ -172,10 +172,17 @@ int main (void)
 	// Init ADC
 	ADC_init();
 
+	#if defined(PHASE_CURRENT_A) && defined(PHASE_CURRENT_B)
+		// TIMER2 hardware-triggers the ADC from TIMER0's valley. Must be
+		// set up before PWM_init enables TIMER0, so TIMER2 is ready to
+		// respond to the first TRGO.
+		ADC_Trigger_Timer_init();
+	#endif
+
 	// Init PWM
 	PWM_init();
 
-	InitBldc();		// virtual function implemented by bldcBC.c and bldcSINE.c
+	InitBldc();		// virtual function implemented by bldcBC.c, bldcSINE.c, or bldcFOC.c
 	DriverInit(iDrivingMode);
 
 
@@ -209,6 +216,10 @@ int main (void)
 			RemoteUpdate();
 		}
 		SetEnable(1);
+
+		#ifdef BLDC_FOC
+			RttMainPoll();
+		#endif
 
 		// Reload watchdog (watchdog fires after 1,6 seconds)
 		fwdgt_counter_reload();
@@ -292,27 +303,29 @@ iBug = 10;
 				{
 					// Calculate expo rate for less steering with higher speeds
 					expo = MAP((float)ABS(speed), 0, 1000, 1, 0.5);
-					
+
 					// Each speedvalue or steervalue between 50 and -50 (STAND_STILL_THRESHOLD) means absolutely no pwm
 					// -> to get the device calm 'around zero speed'
 					scaledSpeed = speed < STAND_STILL_THRESHOLD && speed > -STAND_STILL_THRESHOLD ? 0 : CLAMP(speed, -speedLimit, speedLimit) * SPEED_COEFFICIENT;
+
+					// Tank-drive steering mix disabled so `steer` is free to serve
+					// as the FOC angle-offset trim in bldcFOC.c. Motor speed now
+					// follows throttle only; steer has no effect on pwmMaster.
+					pwmMaster = CLAMP(scaledSpeed, -1000, 1000);
+					pwmSlave  = pwmMaster;
+					(void)expo; (void)scaledSteer; (void)steerAngle; (void)xScale;
+					/* original tank-mix kept for reference:
 					scaledSteer = steer < STAND_STILL_THRESHOLD && steer > -STAND_STILL_THRESHOLD ? 0 : CLAMP(steer, -speedLimit, speedLimit) * STEER_COEFFICIENT * expo;
-					
-					// Map to an angle of 180 degress to 0 degrees for array access (means angle -90 to 90 degrees)
 					steerAngle = MAP((float)scaledSteer, -1000, 1000, 180, 0);
 					xScale = lookUpTableAngle[(uint16_t)steerAngle];
-
-					// Mix steering and speed value for right and left speed
-					if(steerAngle >= 90)
-					{
+					if(steerAngle >= 90) {
 						pwmSlave = CLAMP(scaledSpeed, -1000, 1000);
 						pwmMaster = CLAMP(pwmSlave / xScale, -1000, 1000);
-					}
-					else
-					{
+					} else {
 						pwmMaster = CLAMP(scaledSpeed, -1000, 1000);
 						pwmSlave = CLAMP(xScale * pwmMaster, -1000, 1000);
 					}
+					*/
 				}
 				else
 				{
@@ -455,9 +468,12 @@ iBug = 10;
 
 		if (wState & STATE_Shutoff)	ShutOff();
 
+		#ifdef BLDC_FOC
+			RttMainPoll();
+		#endif
 
 		//Delay(DELAY_IN_MAIN_LOOP);
-		
+
 		fwdgt_counter_reload(); // Reload watchdog until device is off
   }
 }

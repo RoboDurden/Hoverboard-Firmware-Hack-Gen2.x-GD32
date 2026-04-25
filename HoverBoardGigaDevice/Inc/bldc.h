@@ -62,6 +62,8 @@ void InitBldc();
 	#include "../Inc/bldcBC.h"
 #elif defined(BLDC_SINE)
 	#include "../Inc/bldcSINE.h"
+#elif defined(BLDC_FOC)
+	#include "../Inc/bldcFOC.h"
 #endif
 
 

@@ -266,16 +266,24 @@
 
 // ################################################################################
 
-// ADC buffer struct
+// ADC buffer struct. Field order must match conversion rank order in
+// ADC_init(); DMA fills this struct sequentially. Phase currents sit at
+// the front so they sample at the PWM valley (low-side FETs ON) before
+// any slower channel has pushed the sample point out of the conduction
+// window.
 typedef struct
 {
-  uint16_t v_batt;
+	#if defined(PHASE_CURRENT_A) && defined(PHASE_CURRENT_B)
+		uint16_t phase_current_a;
+		uint16_t phase_current_b;
+	#endif
+	uint16_t v_batt;
 	uint16_t current_dc;
 	#ifdef REMOTE_ADC
 		uint16_t speed;
 		uint16_t steer;
 	#endif
-	
+
 } adc_buf_t;
 
 //#pragma pack(1)

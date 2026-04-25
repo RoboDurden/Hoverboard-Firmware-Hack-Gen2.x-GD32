@@ -47,6 +47,9 @@ void TimeoutTimer_init(void);	// Initializes the timeout timer
 void GPIO_init(void);	// Initializes the GPIOs
 void PWM_init(void);	// Initializes the PWM
 void ADC_init(void);	// Initializes the ADC
+#if defined(PHASE_CURRENT_A) && defined(PHASE_CURRENT_B)
+void ADC_Trigger_Timer_init(void);	// TIMER2 as slave of TIMER0, drives ADC trigger at a fixed offset past the PWM valley
+#endif
 
 void USART0_Init(uint32_t iBaud);
 void USART1_Init(uint32_t iBaud);
