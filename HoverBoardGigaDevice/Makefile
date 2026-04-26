@@ -1,10 +1,21 @@
 ##########################################################################################################################
 # Makefile for Hoverboard-Firmware-Hack-Gen2.x-GD32
-# Liegt im Root-Verzeichnis. Nutzt einheitlich 8K RAM Linker-Skript.
 ##########################################################################################################################
 
-TARGET ?= GD32F103
+# 1. Target-Nummer aus Inc/defines.h auslesen (ohne Raute im Befehl, um Make-Kommentare zu vermeiden)
+TARGET_NUM := $(shell grep -E 'define[ \t]+TARGET[ \t]+[0-9]+' Inc/defines.h | awk '{print $$3}' | tr -d '\r')
 
+# 2. Nummer in den passenden Chip-Namen übersetzen
+ifeq ($(TARGET_NUM), 1)
+  TARGET = GD32F130
+else ifeq ($(TARGET_NUM), 3)
+  TARGET = GD32E230
+else
+  # Default (Fallback für 2 oder falls nichts gefunden wird)
+  TARGET = GD32F103
+endif
+
+# Temporärer Ordner für die Objektdateien (.o)
 BUILD_DIR = build/$(TARGET)
 
 ifeq ($(TARGET), GD32E230)
@@ -16,20 +27,7 @@ endif
 MCU = $(CPU) -mthumb
 
 ######################################
-# C-Quellen und Includes
-######################################
-C_SOURCES = \
-$(wildcard Src/*.c) \
-$(wildcard lib/CMSIS/*.c) \
-$(wildcard lib/GD32F10x_standard_peripheral/Source/*.c)
-
-C_INCLUDES = \
--IInc \
--Ilib/CMSIS \
--Ilib/GD32F10x_standard_peripheral/Include
-
-######################################
-# Compiler-Flags (C_DEFS)
+# Compiler-Flags (C_DEFS) & Framework-Paths
 ######################################
 C_DEFS = \
 -D$(TARGET) \
@@ -37,18 +35,35 @@ C_DEFS = \
 -D__PIO_DONT_SET_CLOCK_SOURCE__
 
 ifeq ($(TARGET), GD32F103)
+  SPL_DIR = gd32f10x
   C_DEFS += -DTARGET=2 -D__SYSTEM_CLOCK_72M_PLL_IRC8M
   CFLAGS_EXTRA = -Wno-unused-function
   LDFLAGS_EXTRA = -Wl,--undefined=SystemCoreClock
 else ifeq ($(TARGET), GD32F130)
-  C_DEFS += -DTARGET=1 -D__SYSTEM_CLOCK_72M_PLL_IRC8M_DIV2=72000000UL
+  SPL_DIR = gd32f1x0
+  C_DEFS += -DTARGET=1 -D__SYSTEM_CLOCK_72M_PLL_IRC8M_DIV2=72000000UL -DGD32F130_150
   CFLAGS_EXTRA = 
   LDFLAGS_EXTRA = 
 else ifeq ($(TARGET), GD32E230)
+  SPL_DIR = gd32e23x
   C_DEFS += -DTARGET=3 -D__SYSTEM_CLOCK_72M_PLL_IRC8M_DIV2=72000000UL
   CFLAGS_EXTRA = 
   LDFLAGS_EXTRA = 
 endif
+
+######################################
+# C-Sources and Includes
+######################################
+C_SOURCES = \
+$(wildcard Src/*.c) \
+$(wildcard lib/framework/gd32/spl/variants/$(SPL_DIR)/src/*.c) \
+$(wildcard lib/framework/gd32/cmsis/variants/$(SPL_DIR)/*.c)
+
+C_INCLUDES = \
+-IInc \
+-Ilib/framework/gd32/cmsis/cores/gd32 \
+-Ilib/framework/gd32/cmsis/variants/$(SPL_DIR) \
+-Ilib/framework/gd32/spl/variants/$(SPL_DIR)/inc
 
 OPT = -Os
 
@@ -59,12 +74,9 @@ CFLAGS += -g -gdwarf-2
 endif
 
 ######################################
-# Linker & Startup-Dateien
+# Linker & Startup
 ######################################
-# Nutzt einheitlich das 8K RAM Skript für alle Targets
 LDSCRIPT = lib/spl/gd32f1x0/gd32f1x0.ld
-
-# Sucht die Startup-Dateien nun im lib/ Ordner
 ASM_SOURCES = lib/startup_$(TARGET).s
 
 AS_DEFS = 
@@ -75,7 +87,7 @@ LIBS = -lc -lm -lnosys
 LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections -Wl,-u,_printf_float $(LDFLAGS_EXTRA)
 
 ######################################
-# Toolchain (GCC)
+# Toolchain
 ######################################
 PREFIX = arm-none-eabi-
 CC = $(PREFIX)gcc
@@ -94,35 +106,38 @@ OBJECTS = $(addprefix $(BUILD_DIR)/,$(notdir $(C_SOURCES:.c=.o)))
 vpath %.c $(sort $(dir $(C_SOURCES)))
 
 $(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR) 
-	@echo "Kompiliere $< ..."
+	@echo "Compiling $< ..."
 	@$(CC) -c $(CFLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/$(notdir $(<:.c=.lst)) $< -o $@
 
 OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(ASM_SOURCES:.s=.o)))
 vpath %.s $(sort $(dir $(ASM_SOURCES)))
 
 $(BUILD_DIR)/%.o: %.s Makefile | $(BUILD_DIR)
-	@echo "Assembliere $< ..."
+	@echo "Assembling $< ..."
 	@$(AS) -c $(ASFLAGS) $< -o $@
 
-$(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) Makefile
-	@echo "Linke $@ ..."
+$(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) Makefile | $(BUILD_DIR)
+	@echo "Linking $@ ..."
 	@$(CC) $(OBJECTS) $(LDFLAGS) -o $@
 	@$(SZ) $@
+	@cp $@ build/$(TARGET).elf
 
 $(BUILD_DIR)/%.hex: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 	@$(HEX) $< $@
+	@cp $@ build/$(TARGET).hex
 	
 $(BUILD_DIR)/%.bin: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 	@$(BIN) $< $@	
-	@echo "Fertig! Binaries liegen in $(BUILD_DIR)"
+	@cp $@ build/$(TARGET).bin
+	@echo "Success! Binaries copied to build/ directory"
 
 $(BUILD_DIR):
-	mkdir $@		
+	mkdir -p $@		
 
 clean:
 	-rm -fR build
 
 ######################################
-# Abhängigkeiten
+# Dependencies
 ######################################
 -include $(wildcard $(BUILD_DIR)/*.d)

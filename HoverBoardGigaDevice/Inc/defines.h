@@ -1,6 +1,17 @@
 #ifndef DEFINES_H
 #define DEFINES_H
 
+#ifndef TARGET
+	#define TARGET 1	// Makefile will detect target mcu in this line !
+	#if TARGET == 1
+		#define GD32F130
+	#elif TARGET == 2
+		#define GD32F103
+	#elif TARGET == 3
+		#define GD32E230
+	#endif		
+#endif
+
 // ----------- #include framework begin ------------------------------
 
 #include "../Inc/target.h"

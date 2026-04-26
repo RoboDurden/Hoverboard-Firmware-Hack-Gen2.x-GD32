@@ -75,7 +75,8 @@ int8_t iOldRemotePeriod = REMOTE_PERIOD;
 		if (strcmp(message, "help") == 0)
 		{
 			sprintf(sMessage, "available 'cmd'=42.17 :");
-			for (; iKey>=0; iKey--)	sprintf(sMessage, "%s\t'%s'",sMessage,asKey[iKey]);
+	   		for (; iKey>=0; iKey--) sprintf(sMessage + strlen(sMessage), "\t'%s'", asKey[iKey]);
+
 			iTimeNextLog = msTicks + 2000;
 			return;
 		}
@@ -182,17 +183,23 @@ void RemoteUpdate(void)
 			iTimeNextLog = msTicks + 200;
 			iCounterLog++;
 
-			sprintf(sMessage, "%s%5.02f V\t%5.02f A\todom: %6d\ttarget: %5d\trevs: %5d\ttorque: %5d",sMessage,batteryVoltage,currentDC,iOdom,speed,revs32>>(REVS32_SHIFT-10),torque32);
-
+				sprintf(sMessage + strlen(sMessage), "%5.02f V\t%5.02f A\todom: %6ld\ttarget: %5ld\trevs: %5ld\ttorque: %5ld", 
+            batteryVoltage, 
+            currentDC, 
+            (long)iOdom, 
+            (long)speed, 
+            (long)(revs32 >> (REVS32_SHIFT - 10)), 
+            (long)torque32);
+			
 			if (iCounterLog%10==0)
 			{
 				PIDInit* pPID = &aoPIDInit[iDrivingMode-1];
-				sprintf(sMessage, "%s\tdriveMde: %i , pid: %.2f %.3f %.4f",sMessage,iDrivingMode,pPID->kp,pPID->ki,pPID->kd);
+    			sprintf(sMessage + strlen(sMessage), "\tdriveMde: %i , pid: %.2f %.3f %.4f", iDrivingMode, pPID->kp, pPID->ki, pPID->kd);				
 			}
 		}
 		if (strlen(sMessage))
 		{
-			sprintf(sMessage, "%s\n",sMessage);
+    		strcat(sMessage, "\n");			
 			#ifdef WINDOWS_RN
 				add_cr_before_lf_inplace(sMessage,sizeof(sMessage));
 			#endif

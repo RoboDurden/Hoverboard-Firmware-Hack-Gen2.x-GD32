@@ -222,7 +222,7 @@ int main (void)
 	#ifdef BUTTON
 		// Wait until button is released
 		
-		uint32_t iTimePushed = millis();
+		//uint32_t iTimePushed = millis();
 		while (BUTTON_PUSHED == digitalRead(BUTTON))
 		{
 			fwdgt_counter_reload();	// Reload watchdog while button is pressed
