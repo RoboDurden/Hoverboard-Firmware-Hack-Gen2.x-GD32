@@ -36,7 +36,7 @@ C_DEFS = \
 
 ifeq ($(TARGET), GD32F103)
   SPL_DIR = gd32f10x
-  C_DEFS += -DTARGET=2 -D__SYSTEM_CLOCK_72M_PLL_IRC8M
+  C_DEFS += -DTARGET=2 -D__SYSTEM_CLOCK_72M_PLL_IRC8M=72000000 -DGD32F10X_MD
   CFLAGS_EXTRA = -Wno-unused-function
   LDFLAGS_EXTRA = -Wl,--undefined=SystemCoreClock
 else ifeq ($(TARGET), GD32F130)
@@ -100,7 +100,17 @@ BIN = $(CP) -O binary -S
 ######################################
 # Build Rules
 ######################################
-all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).bin
+
+# .PHONY sagt Make, dass das keine Dateien, sondern echte Befehle sind
+.PHONY: all clean patch_framework
+
+all: patch_framework $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).bin
+
+# Dieser Patch läuft immer, setzt das // aber nur, wenn es noch fehlt
+patch_framework:
+	@if [ -f lib/framework/gd32/cmsis/variants/gd32f10x/system_gd32f10x.c ]; then \
+		sed -i 's/^[ \t]*#define __SYSTEM_CLOCK_108M_PLL_HXTAL/\/\/#define __SYSTEM_CLOCK_108M_PLL_HXTAL/g' lib/framework/gd32/cmsis/variants/gd32f10x/system_gd32f10x.c; \
+	fi
 
 OBJECTS = $(addprefix $(BUILD_DIR)/,$(notdir $(C_SOURCES:.c=.o)))
 vpath %.c $(sort $(dir $(C_SOURCES)))
@@ -133,6 +143,10 @@ $(BUILD_DIR)/%.bin: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 
 $(BUILD_DIR):
 	mkdir -p $@		
+	@# Framework-Bug für F103 fixen (108MHz Quarz auskommentieren, damit unser 72MHz RC läuft)
+	@if [ -f lib/framework/gd32/cmsis/variants/gd32f10x/system_gd32f10x.c ]; then \
+		sed -i 's/.*#define __SYSTEM_CLOCK_108M_PLL_HXTAL.*/\/\/#define __SYSTEM_CLOCK_108M_PLL_HXTAL/g' lib/framework/gd32/cmsis/variants/gd32f10x/system_gd32f10x.c; \
+	fi
 
 clean:
 	-rm -fR build
