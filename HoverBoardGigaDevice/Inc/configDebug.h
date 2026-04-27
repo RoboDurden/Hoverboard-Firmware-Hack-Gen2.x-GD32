@@ -35,11 +35,11 @@
 	#define BLDC_SINE			// silent sine-pwm motor control, added 2025 by Robo Durden. 
 	//#define BLDC_SINE_BOOSTER		// can boost speed by 15% starting from 87% throttle.
 	
-	#define DRIVING_MODE 3	//  0=pwm, 1=speed in revs/s*1024, 2=torque in NewtonMeter*1024, 3=iOdometer
+	#define DRIVING_MODE 0	//  0=pwm, 1=speed in revs/s*1024, 2=torque in NewtonMeter*1024, 3=iOdometer
 
 	#define SPEED_AsRevsPerSec		// Will overflow at 327 revs/s = 19620 rpm. Hoverboard motor: 14 rpm/V * 50V = 700 rpm
 
-	#define BAT_CELLS         	7        // battery number of cells. Normal Hoverboard battery: 10s
+	#define BAT_CELLS         	10        // battery number of cells. Normal Hoverboard battery: 10s
 	//#define BATTERY_LOW_SHUTOFF		// will shut off the board below BAT_LOW_DEAD = BAT_CELLS * CELL_LOW_DEAD, 
 	//#define BATTERY_LOW_BEEP		// will start beeping for different battery low lwevels
 
@@ -55,12 +55,12 @@
 	#if defined(MASTER) || defined(SINGLE)
 		
 		// choose only one 'remote' to control the motor
-		//#define REMOTE_DUMMY
+		#define REMOTE_DUMMY
 		#ifdef REMOTE_DUMMY
-			#define REMOTE_PERIOD 5 // 3 = 3 seconds period of the zigzag curve
+			#define REMOTE_PERIOD 10 // 3 = 3 seconds period of the zigzag curve
 			#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
-			#define RTT_REMOTE	// log and set via ST-Link dongle
-				#define WINDOWS_RN		// adds a \r before every \n to RTT log
+			//#define RTT_REMOTE	// log and set via ST-Link dongle
+				//#define WINDOWS_RN		// adds a \r before every \n to RTT log
 		#endif
 		//#define REMOTE_UART
 		//#define REMOTE_UARTBUS	// ESP32 as master and multiple boards as multiple slaves ESP.tx-Hovers.rx and ESP.rx-Hovers.tx
@@ -76,7 +76,7 @@
 												// Then release the button and leave the joystick (the two potentiometers) in neutral position.
 												// When the melody returns for 2 seconds, push speed to max.
 												// After another 5 seconds + 2 seconds melody: push speed to min. Then steer to max. Finally steer to min
-		#define REMOTE_OPTIMIZEPID		// will zigzag motor and optimize pid parameters for 1=speed or 3=iOdometer.
+		//#define REMOTE_OPTIMIZEPID		// will zigzag motor and optimize pid parameters for 1=speed or 3=iOdometer.
 		// monitor with StmStudio/McuViewer or via ST-Link usb dongle RTT and openocd_rtt_32f1x.bat or PlatformIO RTT_Task
 		#ifdef REMOTE_OPTIMIZEPID
 			#define WINDOWS_RN		// adds a \r before every \n	to RTT log
@@ -93,11 +93,11 @@
 		#define SPEED_COEFFICIENT   -1	// only used if no PILOT_XY is defined
 		#define STEER_COEFFICIENT   1		// only used if no PILOT_XY is defined
 		
-		#define DISABLE_BUTTON	// this is the opposite of former CHECK_BUTTON define.
+		//#define DISABLE_BUTTON	// this is the opposite of former CHECK_BUTTON define.
 															// remove '//' if you use a slave board as master 
 															// or if you turn the boards on/off by injecting a postive voltage into the input pin of the 2pin BUTTON header
 
-		//#define DISABLE_CHARGESTATE	//active this if you test with the charger plugged in as the power supply with max 1.5A
+		#define DISABLE_CHARGESTATE	//active this if you test with the charger plugged in as the power supply with max 1.5A
 
 		#define MASTER_OR_SINGLE
 	#endif

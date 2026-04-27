@@ -10,7 +10,7 @@ ENTRY(Reset_Handler)
 /* Highest address of the user mode stack */
 _estack = ORIGIN(RAM) + LENGTH(RAM);    /* Correct stack end */
 _Min_Heap_Size = 0x200;                 /* 512 bytes heap */
-_Min_Stack_Size = 0x400;                /* 1024 bytes stack */
+_Min_Stack_Size = 0x800;                /* 1024 bytes stack */
 
 SECTIONS
 {

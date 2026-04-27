@@ -32,7 +32,7 @@ MCU = $(CPU) -mthumb
 C_DEFS = \
 -D$(TARGET) \
 -DUSE_STDPERIPH_DRIVER \
--D__PIO_DONT_SET_CLOCK_SOURCE__
+#-D__PIO_DONT_SET_CLOCK_SOURCE__
 
 ifeq ($(TARGET), GD32F103)
   SPL_DIR = gd32f10x
@@ -106,12 +106,6 @@ BIN = $(CP) -O binary -S
 
 all: patch_framework $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).bin
 
-# Dieser Patch läuft immer, setzt das // aber nur, wenn es noch fehlt
-patch_framework:
-	@if [ -f lib/framework/gd32/cmsis/variants/gd32f10x/system_gd32f10x.c ]; then \
-		sed -i 's/^[ \t]*#define __SYSTEM_CLOCK_108M_PLL_HXTAL/\/\/#define __SYSTEM_CLOCK_108M_PLL_HXTAL/g' lib/framework/gd32/cmsis/variants/gd32f10x/system_gd32f10x.c; \
-	fi
-
 OBJECTS = $(addprefix $(BUILD_DIR)/,$(notdir $(C_SOURCES:.c=.o)))
 vpath %.c $(sort $(dir $(C_SOURCES)))
 
@@ -143,9 +137,23 @@ $(BUILD_DIR)/%.bin: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 
 $(BUILD_DIR):
 	mkdir -p $@		
-	@# Framework-Bug für F103 fixen (108MHz Quarz auskommentieren, damit unser 72MHz RC läuft)
+
+
+# This patch runs always, but only applies '//' if missing
+patch_framework:
+	@echo "Patching framework clocks to use internal oscillator (IRC8M)..."
+	@# GD32F103 Patch
 	@if [ -f lib/framework/gd32/cmsis/variants/gd32f10x/system_gd32f10x.c ]; then \
-		sed -i 's/.*#define __SYSTEM_CLOCK_108M_PLL_HXTAL.*/\/\/#define __SYSTEM_CLOCK_108M_PLL_HXTAL/g' lib/framework/gd32/cmsis/variants/gd32f10x/system_gd32f10x.c; \
+		sed -i 's/^[ \t]*#define __SYSTEM_CLOCK_108M_PLL_HXTAL/\/\/#define __SYSTEM_CLOCK_108M_PLL_HXTAL/g' lib/framework/gd32/cmsis/variants/gd32f10x/system_gd32f10x.c; \
+		sed -i 's/^[ \t]*#define __SYSTEM_CLOCK_72M_PLL_HXTAL/\/\/#define __SYSTEM_CLOCK_72M_PLL_HXTAL/g' lib/framework/gd32/cmsis/variants/gd32f10x/system_gd32f10x.c; \
+	fi
+	@# GD32F130 Patch
+	@if [ -f lib/framework/gd32/cmsis/variants/gd32f1x0/system_gd32f1x0.c ]; then \
+		sed -i 's/^[ \t]*#define __SYSTEM_CLOCK_72M_PLL_HXTAL/\/\/#define __SYSTEM_CLOCK_72M_PLL_HXTAL/g' lib/framework/gd32/cmsis/variants/gd32f1x0/system_gd32f1x0.c; \
+	fi
+	@# GD32E230 Patch
+	@if [ -f lib/framework/gd32/cmsis/variants/gd32e23x/system_gd32e23x.c ]; then \
+		sed -i 's/^[ \t]*#define __SYSTEM_CLOCK_72M_PLL_HXTAL/\/\/#define __SYSTEM_CLOCK_72M_PLL_HXTAL/g' lib/framework/gd32/cmsis/variants/gd32e23x/system_gd32e23x.c; \
 	fi
 
 clean:
