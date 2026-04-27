@@ -29,10 +29,12 @@ MCU = $(CPU) -mthumb
 ######################################
 # Compiler-Flags (C_DEFS) & Framework-Paths
 ######################################
+
 C_DEFS = \
 -D$(TARGET) \
 -DUSE_STDPERIPH_DRIVER \
-#-D__PIO_DONT_SET_CLOCK_SOURCE__
+-D__PIO_DONT_SET_CLOCK_SOURCE__ \
+-DSEGGER_RTT_MODE_DEFAULT=SEGGER_RTT_MODE_NO_BLOCK_SKIP
 
 ifeq ($(TARGET), GD32F103)
   SPL_DIR = gd32f10x
@@ -65,7 +67,8 @@ C_INCLUDES = \
 -Ilib/framework/gd32/cmsis/variants/$(SPL_DIR) \
 -Ilib/framework/gd32/spl/variants/$(SPL_DIR)/inc
 
-OPT = -Os
+OPT = -O2
+#OPT = -Os
 
 CFLAGS = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections $(CFLAGS_EXTRA)
 
@@ -84,7 +87,8 @@ AS_INCLUDES =
 ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
 
 LIBS = -lc -lm -lnosys 
-LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections -Wl,-u,_printf_float $(LDFLAGS_EXTRA)
+#LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections -Wl,-u,_printf_float $(LDFLAGS_EXTRA)
+LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections $(LDFLAGS_EXTRA)
 
 ######################################
 # Toolchain

@@ -57,9 +57,9 @@
 		// choose only one 'remote' to control the motor
 		#define REMOTE_DUMMY
 		#ifdef REMOTE_DUMMY
-			#define REMOTE_PERIOD 10 // 3 = 3 seconds period of the zigzag curve
+			#define REMOTE_PERIOD 5 // 3 = 3 seconds period of the zigzag curve
 			#define TEST_HALL2LED	// led the 3-led panel blink according to the hall sensors
-			//#define RTT_REMOTE	// log and set via ST-Link dongle
+			#define RTT_REMOTE	// log and set via ST-Link dongle
 				//#define WINDOWS_RN		// adds a \r before every \n to RTT log
 		#endif
 		//#define REMOTE_UART
