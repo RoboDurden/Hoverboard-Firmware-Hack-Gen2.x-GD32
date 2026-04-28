@@ -114,7 +114,6 @@ uint32_t InitEXTI(uint32_t iPinArduino)
 			//			#define APB2_BUS_BASE         ((uint32_t)0x40010000U)        /*!< apb2 base address                */
     
     gpio_exti_source_select(iPortEXTI_SOURCE, iPin); // Changed function
-		gpio_exti_source_select(GPIO_PORT_SOURCE_GPIOA, GPIO_PIN_SOURCE_0);
 
 		exti_init(iPinEXTI, EXTI_INTERRUPT, EXTI_TRIG_BOTH);
     exti_flag_clear(iPinEXTI);
