@@ -10,7 +10,7 @@ ENTRY(Reset_Handler)
 /* Highest address of the user mode stack */
 _estack = ORIGIN(RAM) + LENGTH(RAM);    /* Correct stack end */
 _Min_Heap_Size = 0x200;                 /* 512 bytes heap */
-_Min_Stack_Size = 0x800;                /* 1024 bytes stack */
+_Min_Stack_Size = 0x400;                /* 1024 bytes stack */
 
 SECTIONS
 {
@@ -69,6 +69,20 @@ SECTIONS
         . = ALIGN(4);
         _ebss = .;
         __bss_end__ = _ebss;
+    } >RAM
+
+    /* SEGGER RTT control block and ring buffers.
+       The data is initialized by SEGGER_RTT_Init(), so it does not need to be
+       part of the firmware image. Keeping it in a named section makes the RTT
+       RAM use explicit in the map file and easier to inspect. */
+    .rtt (NOLOAD) :
+    {
+        . = ALIGN(8);
+        _srtt = .;
+        KEEP(*(.rtt))
+        KEEP(*(.rtt*))
+        . = ALIGN(8);
+        _ertt = .;
     } >RAM
 
     /* Heap and stack */

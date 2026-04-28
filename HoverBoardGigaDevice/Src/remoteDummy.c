@@ -42,6 +42,54 @@ int8_t iOldRemotePeriod = REMOTE_PERIOD;
 	static char message_buffer[BUFFER_SIZE];	// Static buffer to store the incoming RTT message
 	static unsigned int buffer_index = 0;	// Index to keep track of the current position in the buffer
 
+volatile int32_t rtt_diag_last_c = -2;
+volatile uint32_t rtt_diag_rx_count = 0;
+volatile uint32_t rtt_diag_rd = 0;
+volatile uint32_t rtt_diag_wr = 0;
+volatile uint32_t rtt_diag_size = 0;
+volatile uint32_t rtt_diag_flags = 0;
+volatile char rtt_diag_chars[16];
+
+
+	uint8_t _ParseFloatLite(const char* s, float* pf)
+	{
+		int8_t sign = 1;
+		uint32_t whole = 0;
+		uint32_t frac = 0;
+		uint32_t scale = 1;
+		uint8_t has_digit = 0;
+
+		if (*s == '-') {
+			sign = -1;
+			s++;
+		} else if (*s == '+') {
+			s++;
+		}
+
+		while ((*s >= '0') && (*s <= '9')) {
+			has_digit = 1;
+			whole = whole * 10u + (uint32_t)(*s - '0');
+			s++;
+		}
+
+		if ((*s == '.') || (*s == ',')) {
+			s++;
+			while ((*s >= '0') && (*s <= '9')) {
+				has_digit = 1;
+				if (scale < 1000000u) {
+					frac = frac * 10u + (uint32_t)(*s - '0');
+					scale *= 10u;
+				}
+				s++;
+			}
+		}
+
+		if (!has_digit || (*s != '\0')) return 0;
+
+		*pf = (float)sign * ((float)whole + ((float)frac / (float)scale));
+		return 1;
+	}
+
 	uint8_t _TestKey(const char* s, char* sKey, float* pf)
 	{
 		uint8_t i = 0;
@@ -51,19 +99,7 @@ int8_t iOldRemotePeriod = REMOTE_PERIOD;
 		}
 		if (s[i] != '=') return 0;
 
-		char sValue[10];
-		uint8_t j = 0;
-		do {
-			if (j >= sizeof(sValue) - 1) return 0; // prevent overflow
-			sValue[j++] = s[++i];	// no need to add '\0', it was copied from s already
-		} while (s[i]);
-
-		char *endptr;
-		float val = strtof(sValue, &endptr);
-		if (endptr == sValue) return 0; // conversion failed
-
-		*pf = val;
-		return 1;
+		return _ParseFloatLite(&s[i + 1], pf);
 	}
 
 	void parse_message(const char *message) 
@@ -101,6 +137,17 @@ int8_t iOldRemotePeriod = REMOTE_PERIOD;
 	{
 		int c = SEGGER_RTT_GetKey(); // Read a single character from the RTT buffer
 
+		rtt_diag_last_c = c;
+		rtt_diag_rd = _SEGGER_RTT.aDown[0].RdOff;
+		rtt_diag_wr = _SEGGER_RTT.aDown[0].WrOff;
+		rtt_diag_size = _SEGGER_RTT.aDown[0].SizeOfBuffer;
+		rtt_diag_flags = _SEGGER_RTT.aDown[0].Flags;
+
+		if (c >= 0) {
+			rtt_diag_chars[rtt_diag_rx_count & 15] = (char)c;
+			rtt_diag_rx_count++;
+		}
+
 		if (c>=0) 	// Check if a character was actually read
 		{ 
 			if (c == '\n' || c == '\r') 	// Check for end of line characters
@@ -112,7 +159,7 @@ int8_t iOldRemotePeriod = REMOTE_PERIOD;
 					buffer_index = 0;	// Reset the buffer index for the next message
 				}
 			}
-			else if (buffer_index < (BUFFER_SIZE - 1)) 
+			else if ((c >= ' ') && (c <= '~') && (buffer_index < (BUFFER_SIZE - 1))) 
 			{
 				message_buffer[buffer_index++] = c;	// Add the character to the buffer and increment the index
 			}
@@ -156,7 +203,7 @@ void RemoteUpdate(void)
 			msTicksInit = msTicks;	// to start zigzag from 0 no matter how long the startup in main.c takes
 			switch(iDrivingMode)	//  0=pwm, 1=speed in revs*1024, (not yet: 3=torque, 4=iOdometer)
 			{
-				case 0: iRemoteMax = 500; break;	// pwm value
+				case 0: iRemoteMax = 200; break;	// pwm value
 				case 1: iRemoteMax = 1.0 *1024; break;	// 1.5*1024 = max speed 1.5 revs/s
 				case 2: iRemoteMax = 5.0 *1024; break;	// 1.5*1024 = max speed 1.5 Nm (Newton meter)
 				case 3: iRemoteMax = 90; break;	// 90 = 360�

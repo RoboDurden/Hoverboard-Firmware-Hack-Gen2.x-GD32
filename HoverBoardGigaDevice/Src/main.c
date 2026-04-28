@@ -102,6 +102,10 @@ uint32_t iTimeNextLoop = 0;
 
 int main (void)
 {
+	#ifdef RTT_REMOTE
+		SEGGER_RTT_Init();
+	#endif
+	
 	iBug = 1;
 	ConfigRead();		// reads oConfig defined in defines.h from flash
 	
@@ -110,6 +114,8 @@ int main (void)
 	//Clock_test();		// 72Mhz: iTestClock=12000, 64Mhz=13500, 48Mhz=18000 = 18 seconds fron power on to startup melody. 124Mhz = 7000
 						// PlatformIO binary: 72 Mhz=11000=11seconds, 64MHz=12380, 124Mhz=6388=6.4s . Better assembler code ?
 		
+	iBug = 2;
+	
 	#ifdef MASTER_OR_SINGLE
 		FlagStatus chargeStateLowActive = SET;
 		int16_t pwmMaster = 0;
@@ -124,9 +130,13 @@ int main (void)
 	if (	Watchdog_init() == ERROR)	// Init watchdog
 		while(1);	// If an error accours with watchdog initialization do not start device
 	
+	iBug = 3;
+	
 	// Init Interrupts
 	Interrupt_init();
 
+	iBug = 4;
+	
 	#if TARGET != 3	// did not work for gd32e230 :-/
 		// Init timeout timer
 		TimeoutTimer_init();
@@ -148,6 +158,8 @@ int main (void)
 			digitalWrite(SELF_HOLD,SET);
 		#endif
 	#endif
+
+	iBug = 5;
 
 	#ifdef USART0_BAUD
 			USART0_Init(USART0_BAUD);
@@ -172,11 +184,17 @@ int main (void)
 	// Init ADC
 	ADC_init();
 
+	iBug = 6;
+
 	// Init PWM
 	PWM_init();
 
+	iBug = 7;
 	InitBldc();		// virtual function implemented by bldcBC.c and bldcSINE.c
+	iBug = 8;
+
 	DriverInit(iDrivingMode);
+
 
 
 
@@ -219,6 +237,8 @@ int main (void)
 
 	// Startup-Sound
 	BUZZER_MelodyDown()
+	iBug = 9;
+	
 	#ifdef BUTTON
 		// Wait until button is released
 		
@@ -244,7 +264,7 @@ int main (void)
 	#ifdef UPPER_LED
 		digitalWrite(UPPER_LED,RESET);
 	#endif
-iBug = 10;
+	iBug = 10;
 
 	while(1)
 	{

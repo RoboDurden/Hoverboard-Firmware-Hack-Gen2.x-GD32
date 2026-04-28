@@ -118,18 +118,21 @@ uint32_t InitEXTI(uint32_t iPinArduino)
 
 		exti_init(iPinEXTI, EXTI_INTERRUPT, EXTI_TRIG_BOTH);
     exti_flag_clear(iPinEXTI);
-    
-    // Configure NVIC with highest priority (0)
-    if (iPin == 0)       nvic_irq_enable(EXTI0_IRQn, 0, 1);
-    else if (iPin == 1)  nvic_irq_enable(EXTI1_IRQn, 0, 1);
-    else if (iPin == 2)  nvic_irq_enable(EXTI2_IRQn, 0, 1);
-    else if (iPin == 3)  nvic_irq_enable(EXTI3_IRQn, 0, 1);
-    else if (iPin == 4)  nvic_irq_enable(EXTI4_IRQn, 0, 1);
-    else if (iPin < 10)  nvic_irq_enable(EXTI5_9_IRQn, 0, 1);
-    else                 nvic_irq_enable(EXTI10_15_IRQn, 0, 1);    
    return iPinEXTI;
 }
 
+void EnableEXTIIrq(uint32_t iPinArduino)
+{
+	uint8_t iPin = iPinArduino & 0xFF;
+
+	if (iPin == 0)       nvic_irq_enable(EXTI0_IRQn, 0, 1);
+	else if (iPin == 1)  nvic_irq_enable(EXTI1_IRQn, 0, 1);
+	else if (iPin == 2)  nvic_irq_enable(EXTI2_IRQn, 0, 1);
+	else if (iPin == 3)  nvic_irq_enable(EXTI3_IRQn, 0, 1);
+	else if (iPin == 4)  nvic_irq_enable(EXTI4_IRQn, 0, 1);
+	else if (iPin < 10)  nvic_irq_enable(EXTI5_9_IRQn, 0, 1);
+	else                 nvic_irq_enable(EXTI10_15_IRQn, 0, 1);
+}
 uint32_t aHallEXTI[3];
 //uint32_t aHallCountEXTI[3] = {0,0,0};
 
@@ -140,6 +143,12 @@ void InitBldc()
 	aHallEXTI[0] = InitEXTI(HALL_A);
 	aHallEXTI[1] = InitEXTI(HALL_B);
 	aHallEXTI[2] = InitEXTI(HALL_C);
+	exti_flag_clear(aHallEXTI[0]);
+	exti_flag_clear(aHallEXTI[1]);
+	exti_flag_clear(aHallEXTI[2]);
+	EnableEXTIIrq(HALL_A);
+	EnableEXTIIrq(HALL_B);
+	EnableEXTIIrq(HALL_C);
 	#ifdef BLDC_SINE_BOOSTER
 		uPwmBoost = (134*BLDC_TIMER_MID_VALUE)>>10;	// 13% = 196 for 12 kHz
 		uDiv24 = (uint32_t)((0.15/uPwmBoost)*16777215);	// 16.777.215 = <<24
@@ -291,15 +300,19 @@ uint32_t InitEXTI(uint32_t iPinArduino)		// init EXTernal Interrupt
 	syscfg_exti_line_config(iPortEXTI_SOURCE , iPin);
 	exti_init( iPinEXTI, EXTI_INTERRUPT, EXTI_TRIG_BOTH);
 	exti_flag_clear(iPinEXTI);
-	
+
+	return iPinEXTI;
+}
+
+void EnableEXTIIrq(uint32_t iPinArduino)
+{
+	uint8_t iPin = iPinArduino & 0xFF;
+
 	// Configure NVIC with highest priority (0)
 	if 			(iPin<2)	TARGET_nvic_irq_enable(EXTI0_1_IRQn, 0, 1)      // PF1 for example
 	else if	(iPin<4)	TARGET_nvic_irq_enable(EXTI2_3_IRQn, 0, 1)      // PB2 for example
 	else 	TARGET_nvic_irq_enable(EXTI4_15_IRQn, 0, 1)      // PC14 for example
-	
-	return iPinEXTI;
 }
-
 uint32_t aHallEXTI[3];
 void InitBldc()
 {
@@ -307,6 +320,12 @@ void InitBldc()
 	aHallEXTI[0] = InitEXTI(HALL_A);
 	aHallEXTI[1] = InitEXTI(HALL_B);
 	aHallEXTI[2] = InitEXTI(HALL_C);		// PA2 on 2.1.4 !
+	exti_flag_clear(aHallEXTI[0]);
+	exti_flag_clear(aHallEXTI[1]);
+	exti_flag_clear(aHallEXTI[2]);
+	EnableEXTIIrq(HALL_A);
+	EnableEXTIIrq(HALL_B);
+	EnableEXTIIrq(HALL_C);
 	#ifdef BLDC_SINE_BOOSTER
 		uPwmBoost = (134*BLDC_TIMER_MID_VALUE)>>10;	// 13% = 196 for 12 kHz
 		uDiv24 = (uint32_t)((0.15/uPwmBoost)*16777215);	// 16.777.215 = <<24

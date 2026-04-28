@@ -18,6 +18,12 @@ endif
 # Temporärer Ordner für die Objektdateien (.o)
 BUILD_DIR = build/$(TARGET)
 
+# Keep debug information in the ELF by default so online-compiler builds can be
+# inspected with tools such as STMStudio. The generated .bin/.hex files are still
+# stripped by objcopy and remain suitable for flashing. Use `make DEBUG=0` for a
+# smaller ELF without debug sections.
+DEBUG ?= 1
+
 ifeq ($(TARGET), GD32E230)
   CPU = -mcpu=cortex-m23
 else
@@ -34,7 +40,9 @@ C_DEFS = \
 -D$(TARGET) \
 -DUSE_STDPERIPH_DRIVER \
 -D__PIO_DONT_SET_CLOCK_SOURCE__ \
--DSEGGER_RTT_MODE_DEFAULT=SEGGER_RTT_MODE_NO_BLOCK_SKIP
+-DSEGGER_RTT_MODE_DEFAULT=SEGGER_RTT_MODE_NO_BLOCK_SKIP \
+-DSEGGER_RTT_SECTION=\".rtt\" \
+-DSEGGER_RTT_BUFFER_SECTION=\".rtt\"
 
 ifeq ($(TARGET), GD32F103)
   SPL_DIR = gd32f10x
@@ -67,14 +75,21 @@ C_INCLUDES = \
 -Ilib/framework/gd32/cmsis/variants/$(SPL_DIR) \
 -Ilib/framework/gd32/spl/variants/$(SPL_DIR)/inc
 
+CONFIG_HEADERS = \
+$(wildcard Inc/*.h) \
+$(wildcard Inc/defines/*.h) \
+$(wildcard Src/*.h)
+
 OPT = -O2
 #OPT = -Os
 
-CFLAGS = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections $(CFLAGS_EXTRA)
+DEBUG_FLAGS =
 
 ifeq ($(DEBUG), 1)
-CFLAGS += -g -gdwarf-2
+DEBUG_FLAGS = -g3 -gdwarf-2
 endif
+
+CFLAGS = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) $(DEBUG_FLAGS) -Wall -fdata-sections -ffunction-sections $(CFLAGS_EXTRA)
 
 ######################################
 # Linker & Startup
@@ -84,7 +99,7 @@ ASM_SOURCES = lib/startup_$(TARGET).s
 
 AS_DEFS = 
 AS_INCLUDES = 
-ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
+ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) $(DEBUG_FLAGS) -Wall -fdata-sections -ffunction-sections
 
 LIBS = -lc -lm -lnosys 
 #LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections -Wl,-u,_printf_float $(LDFLAGS_EXTRA)
@@ -97,6 +112,7 @@ PREFIX = arm-none-eabi-
 CC = $(PREFIX)gcc
 AS = $(PREFIX)gcc -x assembler-with-cpp
 CP = $(PREFIX)objcopy
+NM = $(PREFIX)nm
 SZ = $(PREFIX)size
 HEX = $(CP) -O ihex
 BIN = $(CP) -O binary -S
@@ -113,9 +129,9 @@ all: patch_framework $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUI
 OBJECTS = $(addprefix $(BUILD_DIR)/,$(notdir $(C_SOURCES:.c=.o)))
 vpath %.c $(sort $(dir $(C_SOURCES)))
 
-$(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR) 
+$(BUILD_DIR)/%.o: %.c Makefile $(CONFIG_HEADERS) | $(BUILD_DIR) 
 	@echo "Compiling $< ..."
-	@$(CC) -c $(CFLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/$(notdir $(<:.c=.lst)) $< -o $@
+	@$(CC) -c $(CFLAGS) -MMD -MP -MF $(BUILD_DIR)/$(notdir $(<:.c=.d)) -Wa,-a,-ad,-alms=$(BUILD_DIR)/$(notdir $(<:.c=.lst)) $< -o $@
 
 OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(ASM_SOURCES:.s=.o)))
 vpath %.s $(sort $(dir $(ASM_SOURCES)))
@@ -129,6 +145,8 @@ $(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) Makefile | $(BUILD_DIR)
 	@$(CC) $(OBJECTS) $(LDFLAGS) -o $@
 	@$(SZ) $@
 	@cp $@ build/$(TARGET).elf
+	@cp $(BUILD_DIR)/$(TARGET).map build/$(TARGET).map
+	@$(NM) -n $@ > build/$(TARGET).sym
 
 $(BUILD_DIR)/%.hex: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 	@$(HEX) $< $@
