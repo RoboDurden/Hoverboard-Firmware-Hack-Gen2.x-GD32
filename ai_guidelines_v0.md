@@ -1,4 +1,4 @@
-# This file is a close English translation of the original German:
+# This file is a close English translation of the original German prompt:
 
 
 Hello Codex. I am the developer of the split hoverboard firmware https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x
