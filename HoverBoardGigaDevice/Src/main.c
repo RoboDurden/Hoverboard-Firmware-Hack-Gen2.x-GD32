@@ -116,15 +116,6 @@ int main (void)
 		
 	iBug = 2;
 	
-	#ifdef MASTER_OR_SINGLE
-		FlagStatus chargeStateLowActive = SET;
-		int16_t pwmMaster = 0;
-		int16_t scaledSpeed = 0;
-		int16_t scaledSteer  = 0;
-		float expo = 0;
-		float steerAngle = 0;
-		float xScale = 0;
-	#endif
 	
 		
 	if (	Watchdog_init() == ERROR)	// Init watchdog
@@ -145,6 +136,12 @@ int main (void)
 	// Init GPIOs
 	GPIO_init();
 	#ifndef REMOTE_AUTODETECT
+	
+		#ifdef MASTER_OR_SINGLE
+			FlagStatus chargeStateLowActive = SET;
+			int16_t pwmMaster = 0;
+		#endif
+	
 		DEBUG_LedSet(SET,0)
 		//pinMode(LED_GREEN,	GPIO_MODE_IPU);		// input_pullup turns led on with target 2
 		//digitalWrite(LED_GREEN,0);	// not working for taget 2
@@ -311,16 +308,16 @@ int main (void)
 				if (iDrivingMode == 0)
 				{
 					// Calculate expo rate for less steering with higher speeds
-					expo = MAP((float)ABS(speed), 0, 1000, 1, 0.5);
+					float expo = MAP((float)ABS(speed), 0, 1000, 1, 0.5);
 					
 					// Each speedvalue or steervalue between 50 and -50 (STAND_STILL_THRESHOLD) means absolutely no pwm
 					// -> to get the device calm 'around zero speed'
-					scaledSpeed = speed < STAND_STILL_THRESHOLD && speed > -STAND_STILL_THRESHOLD ? 0 : CLAMP(speed, -speedLimit, speedLimit) * SPEED_COEFFICIENT;
-					scaledSteer = steer < STAND_STILL_THRESHOLD && steer > -STAND_STILL_THRESHOLD ? 0 : CLAMP(steer, -speedLimit, speedLimit) * STEER_COEFFICIENT * expo;
+					int16_t scaledSpeed = speed < STAND_STILL_THRESHOLD && speed > -STAND_STILL_THRESHOLD ? 0 : CLAMP(speed, -speedLimit, speedLimit) * SPEED_COEFFICIENT;
+					int16_t scaledSteer = steer < STAND_STILL_THRESHOLD && steer > -STAND_STILL_THRESHOLD ? 0 : CLAMP(steer, -speedLimit, speedLimit) * STEER_COEFFICIENT * expo;
 					
 					// Map to an angle of 180 degress to 0 degrees for array access (means angle -90 to 90 degrees)
-					steerAngle = MAP((float)scaledSteer, -1000, 1000, 180, 0);
-					xScale = lookUpTableAngle[(uint16_t)steerAngle];
+					float steerAngle = MAP((float)scaledSteer, -1000, 1000, 180, 0);
+					float xScale = lookUpTableAngle[(uint16_t)steerAngle];
 
 					// Mix steering and speed value for right and left speed
 					if(steerAngle >= 90)
