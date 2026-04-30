@@ -230,10 +230,9 @@ void RemoteUpdate(void)
 			iTimeNextLog = msTicks + 200;
 			iCounterLog++;
 
-			// Nutze %d.%02d statt %5.02f
-			sprintf(sMessage + strlen(sMessage), "%3d.%02d V\t%3d.%02d A\todom: %6ld\ttarget: %5ld\trevs: %5ld\ttorque: %5ld", 
-					(int)batteryVoltage, (int)(batteryVoltage * 100) % 100, 
-					(int)currentDC, (int)(currentDC * 100) % 100, 
+			sprintf(sMessage + strlen(sMessage), F2IF " V\t" F2IF " A\todom: %6ld\ttarget: %5ld\trevs: %5ld\ttorque: %5ld",
+					F2I(batteryVoltage),
+					F2I(currentDC),
 					(long)iOdom, 
 					(long)speed, 
 					(long)(revs32 >> (REVS32_SHIFT - 10)), 
@@ -241,7 +240,7 @@ void RemoteUpdate(void)
 			if (iCounterLog%10==0)
 			{
 				PIDInit* pPID = &aoPIDInit[iDrivingMode-1];
-    			sprintf(sMessage + strlen(sMessage), "\tdriveMde: %i , pid: %.2f %.3f %.4f", iDrivingMode, pPID->kp, pPID->ki, pPID->kd);				
+    			sprintf(sMessage + strlen(sMessage), "\tdriveMde: %i , pid: " F2IF " " F3IF " " F4IF, iDrivingMode, F2I(pPID->kp), F3I(pPID->ki), F4I(pPID->kd));
 			}
 		}
 		if (strlen(sMessage))

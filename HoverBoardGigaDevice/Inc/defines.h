@@ -266,6 +266,19 @@
 		
 #endif	// PIDINIT_a3o
 
+// Logging defines for fixed-point float output without pulling printf float support.
+#define FPI_SCALED(v, scale) ((int32_t)(((v) < 0.0f) ? ((v) * (float)(scale) - 0.5f) : ((v) * (float)(scale) + 0.5f)))
+#define FPI_ABS(v) (((v) < 0) ? -(v) : (v))
+#define FPI(v, scale) ((FPI_SCALED((v), (scale)) < 0) ? "-" : ""), (long)(FPI_ABS(FPI_SCALED((v), (scale))) / (scale)), (unsigned long)(FPI_ABS(FPI_SCALED((v), (scale))) % (scale))
+#define F2IF "%s%ld.%02lu"
+#define F2I(v) FPI((v), 100L)
+#define F3IF "%s%ld.%03lu"
+#define F3I(v) FPI((v), 1000L)
+#define F4IF "%s%ld.%04lu"
+#define F4I(v) FPI((v), 10000L)
+#define F5IF "%s%ld.%05lu"
+#define F5I(v) FPI((v), 100000L)
+
 // Useful math function defines
 #define ABS(a) (((a) < 0.0) ? -(a) : (a))
 #define CLAMP(x, low, high) (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))

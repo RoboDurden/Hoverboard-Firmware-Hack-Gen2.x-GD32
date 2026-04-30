@@ -142,7 +142,7 @@ uint8_t iCountMax=0;
 char sMessage[512];
 
 /* to calculate the .xf nunber of x decimals based on 1/(afOptimizeBase[i]/10) 
-for sprintf(sMessage, "%stesting pid: %.3f, %.4f, %.5f\t, pos %i %i\n",sMessage,pPID->kp,pPID->ki,pPID->kd,iFailureMaxPos,iFailureMaxPosCount);
+for PID logging, use F3IF/F4IF/F5IF with F3I/F4I/F5I instead of printf float support.
 
 uint16_t _NumPlaces (uint32_t n) 
 {
@@ -279,7 +279,7 @@ void RemoteUpdate(void)
 							}
 							if (iCount > iCountMax)	iCountMax = iCount;
 						}
-						sprintf(sMessage, "%sworse: max repitions: %i\n",sMessage,iCountMax);
+						sprintf(sMessage + strlen(sMessage), "worse: max repitions: %i\n",iCountMax);
 
 						if (iCountMax >= 3)	
 						{
@@ -302,7 +302,7 @@ void RemoteUpdate(void)
 						_OptimizeSet(pPID,1);		// continue in this direction
 					}
 					
-					sprintf(sMessage, "%stesting pid: %.3f, %.4f, %.5f\t, pos %i %i\n",sMessage,pPID->kp,pPID->ki,pPID->kd,iFailureMaxPos,iFailureMaxPosCount);
+					sprintf(sMessage + strlen(sMessage), "testing pid: " F3IF ", " F4IF ", " F5IF "\t, pos %i %i\n",F3I(pPID->kp),F4I(pPID->ki),F5I(pPID->kd),iFailureMaxPos,iFailureMaxPosCount);
 					DriverInit(iDrivingMode);
 				}
 				iRemoteRetries = 0;
@@ -329,7 +329,7 @@ void RemoteUpdate(void)
 				break;
 		}
 		//sprintf(sMessage, "%smax target: %i\t, bug: %i %i '%s'\n",sMessage,iRemoteMax,iBug,iBug8,message_buffer);
-		sprintf(sMessage, "%smax target: %i\n",sMessage,iRemoteMax);
+		sprintf(sMessage + strlen(sMessage), "max target: %i\n",iRemoteMax);
 		//iRemoteRetries++;
 	}
 	#ifdef RTT_REMOTE
