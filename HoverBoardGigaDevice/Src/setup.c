@@ -151,6 +151,12 @@ void GPIO_init(void)
 	rcu_periph_clock_enable(RCU_GPIOC);
 	rcu_periph_clock_enable(RCU_GPIOF);
 
+	#ifdef GD32F103
+		// Disable JTAG while keeping SWD enabled, so PA15/PB3/PB4 can be used as GPIOs.
+		rcu_periph_clock_enable(RCU_AF);
+		gpio_pin_remap_config(GPIO_SWJ_SWDPENABLE_REMAP, ENABLE);
+	#endif
+	
 	
 	#ifdef TIMER_BLDC_EMERGENCY_SHUTDOWN
 		// Init emergency shutdown pin
