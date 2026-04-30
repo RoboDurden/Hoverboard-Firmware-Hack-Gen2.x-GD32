@@ -31,6 +31,7 @@
 
 #include "../Inc/defines.h"
 #include "../Inc/it.h"
+#include <stddef.h>
 
 #ifndef pinMode
 void pinMode(uint32_t pin, uint32_t mode)
