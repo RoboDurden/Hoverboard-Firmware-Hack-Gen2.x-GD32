@@ -1,8 +1,10 @@
 HoverBoardGigaDevice/Objects/*
 HoverBoardGigaDevice/BinariesToFlash/hoverboard*
+HoverBoardGigaDevice/BinariesToFlash/*.elf
+HoverBoardGigaDevice/codex_prompt.md
 HoverBoardGigaDevice/Inc/configSelect.h
 HoverBoardGigaDevice/Hoverboard.uvguix*
 HoverBoardGigaDevice/Hoverboard.uvoptx
 HoverBoardGigaDevice/.vscode*
 clearGitIgnore.bat
-
+.editorconfig
