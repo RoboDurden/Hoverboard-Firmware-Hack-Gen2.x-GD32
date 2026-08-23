@@ -96,6 +96,12 @@ typedef struct {
 uint32_t iTimeLastRx = 0;
 uint32_t iTimeNextTx = 0;
 
+// For speed feedback in RemoteUpdate(),
+// SPEED_AsRevsPerSec needs to be defined in config.h
+#ifndef SPEED_AsRevsPerSec
+  #error "RemoteROS2 assumes SPEED_AsRevsPerSec is defined"
+#endif
+
 // Send frame to steer device
 // Called from main() every 2*DELAY_IN_MAIN_LOOP = 10ms
 void RemoteUpdate(void)
@@ -146,12 +152,12 @@ void RemoteUpdate(void)
 	feedback.cmdLed = revs32;             // Not used by ROS2 hoverboard-driver
 	feedback.batVoltage = (int16_t) (batteryVoltage * 100); // Unit: 0.01 V
 	feedback.boardTemp = 250; // Dummy value (250 => 25 degrees)
-	feedback.speedL_meas = (int16_t) (realSpeed * 1000); // TODO: Base on revs32/revs32x instead! 1000 is just a random scale-factor. Only published by ROS2 hoverboard_driver for logging...
+	feedback.speedL_meas = (int16_t) (realSpeed * 60.0f); // realSpeed is revs/s (when SPEED_AsRevsPerSec is defined), so multiply by 60 for RPM
 	feedback.wheelL_cnt = modulo32(iOdom, ENCODER_MAX);
 	feedback.left_dc_curr = (int16_t) (currentDC * 100);
 
 #ifdef MASTER
-	feedback.speedR_meas = (int16_t) (oDataSlave.realSpeed * 1000); // TODO: Base on revs32/revs32x instead! 1000 is just a random scale-factor. Only published by ROS2 hoverboard_driver for logging...
+	feedback.speedR_meas = (int16_t) (-oDataSlave.realSpeed * 60.0f); // realSpeed is revs/s (when SPEED_AsRevsPerSec is defined), so multiply by 60 for RPM. Negate sign, see wheelR_cnt below.
 	feedback.wheelR_cnt = modulo32(-oDataSlave.iOdom, ENCODER_MAX); // Negate sign on slave iOdom. Since master and slave are identical, they count in opposite direction when moving straight.
 	feedback.right_dc_curr = (int16_t) (oDataSlave.currentDC * 100);
 #else // SINGLE (SLAVE not possible due to ifdef MASTER_OR_SINGLE at top of this file)

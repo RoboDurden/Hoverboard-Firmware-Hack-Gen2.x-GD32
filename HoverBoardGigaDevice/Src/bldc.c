@@ -349,7 +349,7 @@ void CalculateBLDC(void)
 		#define RANK_realSpeed32 10 	// Calculate low-pass filter for pwm value
 		realSpeed32_reg = realSpeed32_reg - (realSpeed32_reg >> RANK_realSpeed32) + revs32;
 	
-		realSpeed	= (realSpeed32_reg >> RANK_realSpeed32) / 1024.0;
+		realSpeed	= (realSpeed32_reg >> RANK_realSpeed32) / (float)(1 << REVS32_SHIFT);
 	#else
 		// Every time position reaches value 1, one (electrical 360 deg) round = 24 deg mechanical angle is performed (rising edge)
 		if (lastPos != 1 && pos == 1)
