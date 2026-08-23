@@ -42,13 +42,22 @@
 		#define PIN_PACKAGE 48
 	#endif
 
+	extern volatile uint8_t HALL_INVERT_ALL;
 #else
 	#define STRINGIZE_AUX(a) #a
 	#define STRINGIZE(a) STRINGIZE_AUX(a)
 	#define INCLUE_FILE(target,version) STRINGIZE(defines/defines_2-target-version.h)
 
 	#include INCLUE_FILE(TARGET , LAYOUT)	// "defines_2-target-version.h"
+
+	// Invert all three hall inputs to support motors whose hall/phase wiring has
+	// opposite commutation parity. Set to 1 in the board layout define file.
+	#ifndef HALL_INVERT_ALL
+		#define HALL_INVERT_ALL 0
+	#endif
+
 #endif
+
 
 #ifdef CONFIGDEBUG_H
 	#undef CHARGE_STATE	// motors will stop if charger is pluged in. disable if you use the charger to power the board

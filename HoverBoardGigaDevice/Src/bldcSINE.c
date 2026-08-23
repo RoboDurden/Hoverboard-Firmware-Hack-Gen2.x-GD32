@@ -6,7 +6,7 @@
 
 extern uint32_t iBug;
 
-// Precomputed sine table for 0-360° (1° steps) in Q15 format
+// Precomputed sine table for 0-360 deg (1 deg steps) in Q15 format
 #define SIN_TABLE_SIZE 360
 static const int16_t sine_table[SIN_TABLE_SIZE] = {
 0, 572, 1144, 1715, 2286, 2856, 3425, 3993, 4560, 5126, 5690, 6252, 
@@ -73,7 +73,7 @@ volatile uint16_t hall_time_last;  // Timestamp of last edge
 volatile uint8_t hall_last;        // previous hall state
 volatile uint8_t bInterrupt;
 
-// Phase shift constants (120° apart)
+// Phase shift constants (120 deg apart)
 #define PHASE_B_OFFSET 120
 #define PHASE_C_OFFSET 240
 
@@ -174,7 +174,7 @@ void _HandleEXTI(int8_t iIrq)
 			hall_time_step = hall_time_stepNew;
 			hall_time_last = buzzerTimer;  // PWM_FREQ (16 kHz)
 			hall_last = hall;
-			hall = digitalRead(HALL_A) + digitalRead(HALL_B)*2 + digitalRead(HALL_C)*4;		
+			hall = ReadHallState();
 			//aHallCountEXTI[i]++;
 		}
 		exti_interrupt_flag_clear(aHallEXTI[i]);
@@ -244,7 +244,7 @@ void _HandleEXTI()
 	hall_time_step = buzzerTimer>hall_time_last ? buzzerTimer-hall_time_last : buzzerTimer + (0x00010000-hall_time_last);
 	hall_time_last = buzzerTimer;  // PWM_FREQ (16 kHz)
 	hall_last = hall;
-	hall = digitalRead(HALL_A) + digitalRead(HALL_B)*2 + digitalRead(HALL_C)*4;		
+	hall = ReadHallState();
 }
 
 
@@ -343,7 +343,7 @@ void _HandleEXTI()
 			hall_time_step = hall_time_stepNew;
 			hall_time_last = buzzerTimer;  // PWM_FREQ (16 kHz)
 			hall_last = hall;
-			hall = digitalRead(HALL_A) + digitalRead(HALL_B)*2 + digitalRead(HALL_C)*4;		
+			hall = ReadHallState();
 		}
 		//else iBug++;
 		exti_flag_clear(aHallEXTI[i]);
@@ -507,7 +507,7 @@ void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) 	// pos is not used 
 
 	sector10x = 10* sector;		// for debugging with StmStudio
 	
-	angle_deg = sector * 60u;	// Calculate base angle for this sector (0-60° range), made global for StmStudio to debug at realtime
+	angle_deg = sector * 60u;	// Calculate base angle for this sector (0-60 deg range), made global for StmStudio to debug at realtime
 	angle_deg_add = 0;	// , made global for StmStudio to debug at realtime
 	int16_t iOffset = 0;
 	
@@ -527,11 +527,11 @@ void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) 	// pos is not used 
 		if (	(hall_time_step_LP > 0) && (hall_time_step_LP < (PWM_FREQ/20))	)	// >50ms for one hall change is to slow to interpolate
 		{
 			iDT = buzzerTimer>safe_hall_time_last ? buzzerTimer-safe_hall_time_last : buzzerTimer + (0x00010000-safe_hall_time_last);		// overflow did not work :-/
-			iAdd = ((60u * iDT) + (hall_time_step_LP/2)) / hall_time_step_LP;	// will be 60° for constant speed as iDT takes exactly hall_time_step. hall_time_step/2 implements rounding to integer
+			iAdd = ((60u * iDT) + (hall_time_step_LP/2)) / hall_time_step_LP;	// will be 60 deg for constant speed as iDT takes exactly hall_time_step. hall_time_step/2 implements rounding to integer
 			if (iAdd < 90)	// not for heavy breaking when the next hall step takes longer than expected
 			{
 				angle_deg_add = sectorChange * iAdd;
-				iOffset = sectorChange < 0 ? 390 : 330;		// +-30° +360° to prevent negative angle
+				iOffset = sectorChange < 0 ? 390 : 330;		// +-30 deg +360 deg to prevent negative angle
 			}
 		}
 	}
@@ -607,7 +607,7 @@ void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) 	// pos is not used 
 
 	sector10x = 10* sector;		// for debugging with StmStudio
 	
-	angle_deg = sector * 60u;	// Calculate base angle for this sector (0-60° range), made global for StmStudio to debug at realtime
+	angle_deg = sector * 60u;	// Calculate base angle for this sector (0-60 deg range), made global for StmStudio to debug at realtime
 	angle_deg_add = 0;	// , made global for StmStudio to debug at realtime
 	int16_t iOffset = 0;
 	
@@ -628,11 +628,11 @@ void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g) 	// pos is not used 
 		//if (	(safe_hall_time_step > 0) && (safe_hall_time_step < (PWM_FREQ/20))	)	// >50ms for one hall change is to slow to interpolate
 		{
 			iDT = buzzerTimer>safe_hall_time_last ? buzzerTimer-safe_hall_time_last : buzzerTimer + (0x00010000-safe_hall_time_last);		// overflow did not work :-/
-			iAdd = ((60u * iDT) + (hall_time_step_LP/2)) / hall_time_step_LP;	// will be 60° for constant speed as iDT takes exactly hall_time_step. hall_time_step/2 implements rounding to integer
+			iAdd = ((60u * iDT) + (hall_time_step_LP/2)) / hall_time_step_LP;	// will be 60 deg for constant speed as iDT takes exactly hall_time_step. hall_time_step/2 implements rounding to integer
 			if (iAdd < 90)	// not for heavy breaking when the next hall step takes longer than expected
 			{
 				angle_deg_add = sectorChange * iAdd;
-				iOffset = sectorChange < 0 ? 390 : 330;		// +-30° +360° to prevent negative angle
+				iOffset = sectorChange < 0 ? 390 : 330;		// +-30 deg +360 deg to prevent negative angle
 			}
 		}
 	}

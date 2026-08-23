@@ -460,7 +460,7 @@ int goertzel_process_sample(int16_t sample)
     // Start index is the current write pointer (oldest sample)
     int start = gBufIdx;
 
-    // Evaluate both band edges (or two probes inside your 1–1.5 Hz band).
+    // Evaluate both band edges (or two probes inside your 1-1.5 Hz band).
     p1 = goertzel_block(gBuf, start, gN, gCoeff1_q15);
     p2 = goertzel_block(gBuf, start, gN, gCoeff2_q15);
 
@@ -605,10 +605,10 @@ typedef struct {
     int8_t   clip_state;
 
     // Detection threshold as a fraction of M in Q15 (0..32767)
-    // e.g. 0.55 -> 0.55*32768 ˜ 18022
+    // e.g. 0.55 -> 0.55*32768 ~ 18022
     uint16_t thr_q15;
     // Guard margin: in-band correlation must exceed guards by this fraction
-    // e.g. 0.15 -> 0.15*32768 ˜ 4915
+    // e.g. 0.15 -> 0.15*32768 ~ 4915
     uint16_t guard_margin_q15;
 } PedalDet;
 
@@ -633,7 +633,7 @@ static int clampi(int v, int lo, int hi) {
 /*
   fs_hz: sampling rate (e.g., 25.0f)
   fmin_hz, fmax_hz: band of interest (e.g., 1.0f..1.5f)
-  window_periods: correlation window length ˜ window_periods * (1/fmin)
+  window_periods: correlation window length ~ window_periods * (1/fmin)
                   e.g. 2.0 -> ~2 cycles of the slowest cadence
   thr_frac: in-band corr threshold as fraction of M (e.g., 0.55)
   guard_margin_frac: required advantage over guards (e.g., 0.15)
@@ -665,7 +665,7 @@ void pedal_init(float fs_hz,
         numLags = MAX_LAGS;
     }
 
-    // Choose correlation window M ˜ window_periods * (Fs/fmin)
+    // Choose correlation window M ~ window_periods * (Fs/fmin)
     float M_f = window_periods * (fs_hz / fmin_hz);
     int   M   = (int)lroundf(M_f);
     M = clampi(M, Lmax + 4, MAX_BUF_POW2 - 4);  // at least one full slow period
@@ -746,7 +746,7 @@ static inline void corr_update_one(int lag, int8_t s_new, int8_t s_old_out)
     int8_t s_new_del  = PD.s_buf[idx_new_del];
     int8_t s_old_del  = PD.s_buf[idx_old_del];
 
-    // Product of ±1/0 fits in int8, accumulate into int32
+    // Product of +/-1/0 fits in int8, accumulate into int32
     int32_t add = (int32_t)s_new * (int32_t)s_new_del;
     int32_t sub = (int32_t)s_old_out * (int32_t)s_old_del;
 

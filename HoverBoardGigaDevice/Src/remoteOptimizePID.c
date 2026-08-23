@@ -235,9 +235,9 @@ void RemoteUpdate(void)
 				{
 				case 3:
 					if (iFailureMax > 80)	// more than 80% not below threshold
-						iOptimizeThreshold += 3;	// add 3° more failure 
+						iOptimizeThreshold += 3;	// add 3 deg more failure
 					if (iFailureMax < 70)	// more than 80% not below threshold
-						iOptimizeThreshold -= 2;	// reduce by 2° failure 
+						iOptimizeThreshold -= 2;	// reduce by 2 deg failure
 					iOptimizeThreshold = CLAMP(iOptimizeThreshold,1,45);
 					break;
 				default:	// constant speed or max torque. torque will not yet work as the pid will only limit the torque!
@@ -323,7 +323,7 @@ void RemoteUpdate(void)
 				iOptimizeSpeeds = 3;
 				break;
 			case 3:
-				iRemoteMax = 45 + iRemoteRetries * 45;		// 90 == 360°
+				iRemoteMax = 45 + iRemoteRetries * 45;		// 90 == 360 deg
 				iRemotePeriod = 4 + iRemoteRetries * 1;	// higher position targets need more seconds
 				iOptimizeSpeeds = 3;
 				break;

@@ -21,10 +21,10 @@
 #define ADC_BATTERY_VOLT      0.02507  	// V_Batt to V_BattMeasure = factor 30: ( (ADC-Data/4095) *3,3V *30 )
 
 //#define CURRENT_DC P??		// no DC bus shunt on this board
-// Per-phase current sensing: 2x R004 (4mΩ) shunt resistors on low-side FETs,
+// Per-phase current sensing: 2x R004 (4 mOhm) shunt resistors on low-side FETs,
 // amplified by dual op-amp (~20x gain). No shunt on the third phase.
-#define PHASE_A	PB0		// 4mΩ shunt + op-amp on phase A low-side
-#define PHASE_B	PA0		// 4mΩ shunt + op-amp on phase B low-side
+#define PHASE_A	PB0		// 4 mOhm shunt + op-amp on phase A low-side
+#define PHASE_B	PA0		// 4 mOhm shunt + op-amp on phase B low-side
 //#define PHASE_C	P??		// no shunt on phase C
 
 #define SELF_HOLD	PB12
@@ -48,7 +48,7 @@
 #define USART1_RX		PA3
 
 //#define MPU_6050		// Gemini tried for clones..
-//#define MPU_6050old	// disabled on F103 — i2c.c lacks a PB6/PB7 path for TARGET=2
+//#define MPU_6050old	// disabled on F103 - i2c.c lacks a PB6/PB7 path for TARGET=2
 //#define I2C_PB6PB7	// IMU
 
 

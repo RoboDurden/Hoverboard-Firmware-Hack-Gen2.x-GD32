@@ -46,7 +46,7 @@ extern DataSlave oDataSlave;
 extern uint8_t  wStateSlave;
 extern uint8_t  wState;
 
-typedef struct {			// ´#pragma pack(1)´ needed to get correct sizeof()
+typedef struct {			// '#pragma pack(1)' needed to get correct sizeof()
    uint8_t cStart;		//  = '/';
    //uint16_t cStart;		//  = #define START_FRAME         0xABCD
    int16_t  iSpeed;
@@ -59,7 +59,7 @@ typedef struct {			// ´#pragma pack(1)´ needed to get correct sizeof()
 static uint8_t aReceiveBuffer[sizeof(SerialServer2Hover)];
 
 #define START_FRAME         0xABCD       // [-] Start frme definition for reliable serial communication
-typedef struct{				// ´#pragma pack(1)´ needed to get correct sizeof()
+typedef struct{				// '#pragma pack(1)' needed to get correct sizeof()
 	uint16_t cStart;
 	int16_t iSpeedL;		// 100* km/h
 	int16_t iSpeedR;		// 100* km/h

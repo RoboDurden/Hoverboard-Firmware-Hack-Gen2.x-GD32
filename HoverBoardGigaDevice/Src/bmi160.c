@@ -168,7 +168,7 @@ int MPU_ReadAll() {
 
         // Unpack temperature data (little-endian)
         mpuData.temperature = (int16_t)((temp_buf[1] << 8) | temp_buf[0]);
-        // Note: To convert BMI160 temperature to °C: T_celsius = 23 + (raw_temp / 512.0)
+        // Note: To convert BMI160 temperature to degrees C: T_celsius = 23 + (raw_temp / 512.0)
         // Here we just store the raw value as the struct expects.
 
 	#if IMU_LP > 0

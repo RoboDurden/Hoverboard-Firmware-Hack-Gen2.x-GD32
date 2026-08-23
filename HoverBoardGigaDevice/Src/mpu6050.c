@@ -225,8 +225,8 @@ const struct gyro_reg_s reg = {
     .prod_id        = 0x0C,
     .user_ctrl      = 0x6A,
     .fifo_en        = 0x23,
-    .gyro_cfg       = 0x1B, // Set to 0x00  GYRO_CONFIG: FS_SEL = 0 → ±250 °/s
-    .accel_cfg      = 0x1C, // // ACCEL_CONFIG: AFS_SEL = 0 → ±2 g
+    .gyro_cfg       = 0x1B, // Set to 0x00  GYRO_CONFIG: FS_SEL = 0 -> +/-250 deg/s
+    .accel_cfg      = 0x1C, // // ACCEL_CONFIG: AFS_SEL = 0 -> +/-2 g
     .accel_cfg2     = 0x1D, // MPU6500 only
     .motion_thr     = 0x1F,
     .motion_dur     = 0x20,
@@ -269,7 +269,7 @@ int mpu_config(void)
     int8_t rc;
 
     // 1) Wake up & switch clock to PLL on X-gyro
-    //    INV_CLK_PLL == 1 → CLKSEL = 1
+    //    INV_CLK_PLL == 1 -> CLKSEL = 1
     rc = i2c_writeByte(MPU_I2C,
                        hw.addr,
                        reg.pwr_mgmt_1,
@@ -293,8 +293,8 @@ int mpu_config(void)
                        0 /* no gyro/accel to FIFO */);
     if (rc) return rc;
 
-    // 3) Sample rate divider: 1 kHz/(1 + DIV) → here DIV = 4 → 200 Hz
-    //    Use the raw value; there’s no enum for SMPLRT_DIV
+    // 3) Sample rate divider: 1 kHz/(1 + DIV) -> here DIV = 4 -> 200 Hz
+    //    Use the raw value; there's no enum for SMPLRT_DIV
     rc = i2c_writeByte(MPU_I2C,
                        hw.addr,
                        reg.rate_div,
@@ -302,7 +302,7 @@ int mpu_config(void)
     if (rc) return rc;
 
     // 4) Configure DLPF_CFG to 42 Hz
-    //    INV_FILTER_42HZ == 3 → bits[2:0] = 011
+    //    INV_FILTER_42HZ == 3 -> bits[2:0] = 011
     rc = i2c_writeByte(MPU_I2C,
                        hw.addr,
                        reg.lpf,
@@ -310,14 +310,14 @@ int mpu_config(void)
     if (rc) return rc;
 
     // 5) Full-scale ranges
-    //    Gyro FS_SEL bits[4:3] ← INV_FSR_250DPS << 3
+    //    Gyro FS_SEL bits[4:3] <- INV_FSR_250DPS << 3
     rc = i2c_writeByte(MPU_I2C,
                        hw.addr,
                        reg.gyro_cfg,
                        (INV_FSR_250DPS << 3));  // 0 << 3 = 0
     if (rc) return rc;
 
-    //    Accel AFS_SEL bits[4:3] ← INV_FSR_2G << 3
+    //    Accel AFS_SEL bits[4:3] <- INV_FSR_2G << 3
     rc = i2c_writeByte(MPU_I2C,
                        hw.addr,
                        reg.accel_cfg,
@@ -361,8 +361,8 @@ int MPU_ReadAll()
 	{
 		uint8_t buf[14];
 
-		// burst‐read accel(6) + temp(2) + gyro(6)
-		// auto‐increment register address in MPU-6050
+    // burst-read accel(6) + temp(2) + gyro(6)
+    // auto-increment register address in MPU-6050
 
 		if (i2c_readBytesTimeout(IMU_TIMEOUT_MS, MPU_I2C, st.hw->addr, st.reg->raw_accel, 14, buf) != I2C_OK)
 		{	// handle I2C error here if you need to

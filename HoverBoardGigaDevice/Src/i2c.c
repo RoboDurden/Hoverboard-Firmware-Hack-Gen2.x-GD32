@@ -105,7 +105,7 @@ int8_t i2c_writeBytes(
     }
 
     // 3) send slave address + write bit
-    //     — GD32 uses I2C_TRANSMITTER / I2C_RECEIVER
+    //     - GD32 uses I2C_TRANSMITTER / I2C_RECEIVER
     i2c_master_addressing(i2c_periph, devAddr << 1, I2C_TRANSMITTER);
     tmo = 0;
     while (!i2c_flag_get(i2c_periph, I2C_FLAG_ADDSEND)) {
@@ -114,7 +114,7 @@ int8_t i2c_writeBytes(
             return I2C_ERR;
         }
     }
-    // clear the address‐sent flag
+    // clear the address-sent flag
     i2c_flag_clear(i2c_periph, I2C_FLAG_ADDSEND);
 
     // 4) send register address

@@ -1,15 +1,15 @@
 #ifndef CONFIGDEBUG_H
 #define CONFIGDEBUG_H
 
-//#define REMOTE_AUTODETECT
+#define REMOTE_AUTODETECT
 				// ONLY test with 1-2A constant current power supply !!!! The charger with 1.5A might also do :-)
 				// will drive the motor without hall input to detect the hall pins..
 
 #ifdef REMOTE_AUTODETECT
-	//#define WINDOWS_RN		// adds a \r before every \n
+	#define WINDOWS_RN		// adds a \r before every \n
 	
 	//#define RTT_REMOTE
-	#define REMOTE_USART				1 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
+	#define REMOTE_USART				0 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
 																	//	0 is usually PB6/PB7 and the empty header close to the flash-header
 																	//	2 is usually PB10/PB11 on stm32f103 boards
 																	
@@ -23,7 +23,7 @@
 		#define LAYOUT_SUB 1	// Layout 2.1.7 exisits as 2.1.7.0 and 2.1.7.1
 	#elif GD32F103		// TARGET = 2
 		#define LAYOUT 20
-		#define STM32F103 	// uncomment if your board has stm32f103 instead of gd32f103. Will give the max 64 Mhz for STM32
+		//#define STM32F103 	// uncomment if your board has stm32f103 instead of gd32f103. Will give the max 64 Mhz for STM32
 			// Warning: will overclock gd32f103 mcu to 124 MHz and doubling current consumption. Keep GD32 to its 72 Mhz.
 	#elif GD32E230		// TARGET = 3
 		#define LAYOUT 2
@@ -109,7 +109,7 @@
 	#endif
 	
 	#if defined(REMOTE_UART) || defined(REMOTE_UARTBUS) || defined(REMOTE_CRSF) || defined(REMOTE_ROS2)
-		#define REMOTE_USART				0 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
+		#define REMOTE_USART				1 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
 																		//	0 is usually PB6/PB7 and the empty header close to the flash-header
 																		//	2 is usually PB10/PB11 on stm32f103 boards
 	#endif

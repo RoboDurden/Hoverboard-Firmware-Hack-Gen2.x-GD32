@@ -115,6 +115,11 @@ uint32_t aiPinScan[PINS_DETECT] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};		// the
 void ConfigWriteAD(int8_t iPinScan,uint32_t iPinPort)
 {
 	if (iPinPort)	aiPinScan[iPinScan] = iPinPort;
+	if (aiPinScan[SCAN_HALL_A] && aiPinScan[SCAN_HALL_B] && aiPinScan[SCAN_HALL_C] && HALL_INVERT_ALL)
+		oConfig.wState |= CONFIG_STATE_HALL_INVERT_ALL;
+	else
+		oConfig.wState &= (uint16_t)~CONFIG_STATE_HALL_INVERT_ALL;
+
 	int8_t i=0; for(;i<PINS_DETECT;i++)	
 	{
 		oConfig.aiPinScan[i] = -1;	// not set
@@ -146,6 +151,17 @@ void ConfigReadAD()
 			aiPinScan[i] = aoPin[iPinScan].i;
 			aoPin[iPinScan].wState |= STATE_HIDE;
 		}
+	}
+	HALL_INVERT_ALL = (oConfig.wState & CONFIG_STATE_HALL_INVERT_ALL) ? 1U : 0U;
+	if (aiPinScan[SCAN_HALL_A] && aiPinScan[SCAN_HALL_B] && aiPinScan[SCAN_HALL_C])
+	{
+		HALL_A = aiPinScan[SCAN_HALL_A];
+		HALL_B = aiPinScan[SCAN_HALL_B];
+		HALL_C = aiPinScan[SCAN_HALL_C];
+	}
+	else
+	{
+		HALL_INVERT_ALL = 0U;
 	}
 	AutodetectInit();	// hide rx and tx pins
 }
@@ -193,7 +209,7 @@ void ListFound(uint8_t iFrom, uint8_t iTo)
 }
 
 /*	
-typedef struct {			// �#pragma pack(1)� needed to get correct sizeof()
+typedef struct {			// '#pragma pack(1)' needed to get correct sizeof()
   uint8_t cStart;		//  = '/';
 	uint8_t wCmd;
 }	HeaderData;
@@ -341,8 +357,7 @@ void RemoteCallback(void)
 uint32_t HALL_A = TODO_PIN;
 uint32_t HALL_B = TODO_PIN;
 uint32_t HALL_C = TODO_PIN;
-
-
+volatile uint8_t HALL_INVERT_ALL = 0U;
 
 
 void AutodetectInit()
@@ -394,7 +409,9 @@ void AutoDetectNextStage()
 
 
 
-uint8_t aHallOrder[6][3] = {{0,1,2},{0,2,1},{1,0,2},{2,0,1},{1,2,0},{2,1,0}};	// possible permutations to test
+#define HALL_PERMUTATION_COUNT 6
+#define HALL_ORDER_TEST_COUNT  (HALL_PERMUTATION_COUNT * 2)
+uint8_t aHallOrder[HALL_PERMUTATION_COUNT][3] = {{0,1,2},{0,2,1},{1,0,2},{2,0,1},{1,2,0},{2,1,0}};	// possible permutations to test
 
 
 uint8_t SetNextTestPin()
@@ -578,7 +595,10 @@ void AutodetectScan(uint16_t buzzerTimer)
 		SetBldcInput(0);
 		switch(iRepeat)
 		{
-		case 0:	ListFound(0,6);	break;
+		case 0:
+			ListFound(0,6);
+			if (HALL_INVERT_ALL)	sprintf(sMessage + strlen(sMessage), "#define HALL_INVERT_ALL 1\n");
+			break;
 		case 1:	ListFound(6,13);	break;
 		case 2:	ListFound(13,PINS_DETECT);	break;
 		case 3:	wStageOld = -1; AutoDetectSetStage(AUTODETECT_Stage_Menu);	return;
@@ -728,7 +748,7 @@ void AutodetectScan(uint16_t buzzerTimer)
 				if (aiPinScan[SCAN_HALL_A] && aiPinScan[SCAN_HALL_B] && aiPinScan[SCAN_HALL_C])
 				{
 					wMenuStage |= AUTODETECT_Stage_HallOrder|AUTODETECT_Stage_CurrentDC;
-					AutoDetectHallOrderInit(0);				
+					//AutoDetectHallOrderInit(0); // ConfigReadAD() already restored the saved Hall order and inversion.
 				}
 			
 				//oDataHeader.wCmd = DATA_Request;
@@ -838,7 +858,7 @@ void AutodetectScan(uint16_t buzzerTimer)
 			sprintf(sMessage,"P%s: " F2IF " V +- " F2IF "\n", aoPin[iTest].s,F2I(fVBatt),F2I(fDelta));
 			fVBattOld = fVBatt;
 		}
-		
+
 		switch(cCmd)
 		{
 		case 'f': 
@@ -1141,22 +1161,21 @@ void AutoDetectHallInit()
 	msTicksTest = msTicksWait + 1000;
 }
 
-void AutoDetectHallOrderInit(uint8_t iTestSet)	// iTestSet = 0..5 = 6 possible permutations
+void AutoDetectHallOrderInit(uint8_t iTestSet)	// iTestSet = 0..11 = 6 permutations with normal and inverted hall inputs
 {
-	iTest = iTestSet;
-	
-	HALL_A = aiPinScan[ aHallOrder[iTest][0] ];
-	HALL_B = aiPinScan[ aHallOrder[iTest][1] ];
-	HALL_C = aiPinScan[ aHallOrder[iTest][2] ];
+	uint8_t iPermutation = iTestSet % HALL_PERMUTATION_COUNT;
 
-	msTicksTest = msTicks + 1000;
+	iTest = iTestSet;
+	HALL_INVERT_ALL = iTestSet >= HALL_PERMUTATION_COUNT;
+
+	HALL_A = aiPinScan[ aHallOrder[iPermutation][0] ];
+	HALL_B = aiPinScan[ aHallOrder[iPermutation][1] ];
+	HALL_C = aiPinScan[ aHallOrder[iPermutation][2] ];
+
+	msTicksTest = msTicks + 2000;
 	msTicksOld = 0;
 	iRepeat = 0;
 }
-
-
-
-
 uint8_t AutodetectBldc(uint8_t posNew,uint16_t buzzerTimer)
 {
 	/*
@@ -1179,14 +1198,13 @@ uint8_t AutodetectBldc(uint8_t posNew,uint16_t buzzerTimer)
 			return posNew;
 
 		// force motor rotation without hall inputs
+		uint8_t posAutoApplied = posAuto;
 		if (msTicks - msTicksAuto >= 15)
 		{
 			posAuto++;
 			if (posAuto == 7)	posAuto = 1;
-			//pos = posAuto;
 			msTicksAuto = msTicks;
 		}
-
 
 		if (wStage == AUTODETECT_Stage_VBatt)
 				return posAuto;
@@ -1334,13 +1352,24 @@ uint8_t AutodetectBldc(uint8_t posNew,uint16_t buzzerTimer)
 				AutoDetectHallOrderInit(0);
 				wStageOld = wStage;
 			}
-			
 			if (posNew != posOld)
 			{
 				uint16_t iTime = msTicks-msTicksOld;
 				if (buzzerTimer % 3000 == 0)	// 16 kHz
 					sprintf(sMessage, "%i: %i -> %i \t%i\n",posAuto,posNew,posOld,iTime);
-				if (	(posOld == posAuto) && 
+
+				uint8_t posReference = posAutoApplied;
+				if (HALL_INVERT_ALL)
+				{
+						// In inverted candidates, the correct closed-loop mapping appears two Hall sectors
+						// behind posAuto during this open-loop test. Compensate that fixed cyclic offset
+						// here; otherwise a phase-shifted permutation would be accepted.
+						posReference = posAutoApplied > 2
+											 ? posAutoApplied - 2
+											 : posAutoApplied + 4;
+				}
+
+				if ((posOld == posReference) &&
 							(	((posOld == 6) && (posNew == 1)) || (posNew == posOld+1) )
 						)	// valid hall input
 				{
@@ -1353,6 +1382,9 @@ uint8_t AutodetectBldc(uint8_t posNew,uint16_t buzzerTimer)
 						ConfigWriteAD(0,0);
 						
 						ListFound(0,6);
+						bMessageWait = 1;
+						sprintf(sMessage + strlen(sMessage), "#define HALL_INVERT_ALL\t%i\n", HALL_INVERT_ALL);
+						bMessageWait = 0;
 
 						uint8_t i;
 						for (i=0; i<3+iPhaseCurrent; i++)	HidePinDigital(aiPinScan[i]);
@@ -1362,21 +1394,25 @@ uint8_t AutodetectBldc(uint8_t posNew,uint16_t buzzerTimer)
 				}
 				else
 				{
-					iRepeat = 0;
+					if (posOld == posReference) iRepeat = 0;
 					if (msTicks > msTicksTest)
 					{
-						if (iTest < 5)
+						if (iTest + 1 < HALL_ORDER_TEST_COUNT)
 						{
-							sprintf(sMessage, "wrong oder %i\n",iTest);
-							AutoDetectHallOrderInit(iTest+1);	// test next permutation
+							iRepeat = 0;
+							sprintf(sMessage, "wrong hall order %i, inverted %i\n",
+									iTest % HALL_PERMUTATION_COUNT, HALL_INVERT_ALL);
+							AutoDetectHallOrderInit(iTest+1);	// test next permutation/polarity combination
 						}
 						else
 						{
-							sprintf(sMessage, "no hall oder found: %i\n",iTest);
-							AutoDetectSetStage(AUTODETECT_Stage_Menu);	// no more hall permutations to test :-/
+							HALL_INVERT_ALL = 0U;
+							sprintf(sMessage, "no hall order found\n");
+							AutoDetectSetStage(AUTODETECT_Stage_Menu);	// no more hall order combinations to test :-/
 						}
 					}
 				}
+
 				posOld = posNew;
 				msTicksOld = msTicks;
 			}

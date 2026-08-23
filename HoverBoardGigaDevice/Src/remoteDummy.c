@@ -206,7 +206,7 @@ void RemoteUpdate(void)
 				case 0: iRemoteMax = 200; break;	// pwm value
 				case 1: iRemoteMax = 1.0 *1024; break;	// 1.5*1024 = max speed 1.5 revs/s
 				case 2: iRemoteMax = 5.0 *1024; break;	// 1.5*1024 = max speed 1.5 Nm (Newton meter)
-				case 3: iRemoteMax = 90; break;	// 90 = 360�
+				case 3: iRemoteMax = 90; break;	// 90 = 360 deg
 			}
 			fRemoteScaleMax = 1.6*(CLAMP(iRemotePeriod,3,9)/9.0);  // to flatten the zigzag curve to send constant iRemoteMax for some time
 			//fRemoteScaleMax = 10;		// to get near rectangle +-iRemoteMax 

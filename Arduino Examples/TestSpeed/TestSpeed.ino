@@ -25,9 +25,9 @@
 #endif
 
 #ifdef ESP32
-  //const int pinRX = 39, pinTX = 37;   // Wemos S2 Mini
+  const int pinRX = 39, pinTX = 37;   // Wemos S2 Mini
   //const int pinRX = 16, pinTX = 17;    // Wemos Lolin32
-  const int pinRX = 16, pinTX = 17;    // ESP32-2432S028
+  //const int pinRX = 16, pinTX = 17;    // ESP32-2432S028
   
   #define oSerialHover Serial1    // ESP32
 #else

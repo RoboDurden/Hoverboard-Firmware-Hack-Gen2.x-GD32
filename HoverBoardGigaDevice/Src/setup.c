@@ -1076,7 +1076,7 @@ void Clock_init(void)
 		while((RCU_CTL & RCU_CTL_IRC8MSTB) == 0);
 
 		/* 2. Configure Flash wait states for 64 MHz 
-			 (2 wait states needed for 48�72 MHz range) */
+			 (2 wait states needed for 48-72 MHz range) */
 		FMC_WS &= ~0x7;   // clear WSCNT[2:0]
 		FMC_WS |= 0x2;    // 2 wait states
 

@@ -85,6 +85,16 @@ const uint8_t hall_to_pos[8] =
   0, // hall position [-] - No function (access from 1-6) 
 };
 
+uint8_t ReadHallState(void)
+{
+	uint8_t hallState = digitalRead(HALL_A) + digitalRead(HALL_B) * 2U + digitalRead(HALL_C) * 4U;
+
+	if (HALL_INVERT_ALL)
+		hallState ^= 0x07U;
+
+	return hallState;
+}
+
 
 
 
@@ -121,7 +131,7 @@ void SetBldcInput(int32_t input)
 	case 2:	// torque in Nm*1024 = torque<<10
 		iBldcInput = input;
 		return;
-	case 3:	// iOdom position in hall steps = 4�
+	case 3:	// iOdom position in hall steps = 4 deg
 		iBldcInput = input;
 		return;
 	}
@@ -231,11 +241,11 @@ void CalculateBLDC(void)
 
 	//if (timedOut == SET)	DEBUG_LedSet((steerCounter%2) < 1,0)		
 	
-	// Read hall sensors (needed at startup as no hall interrupt has fired yet
-	hall_a = digitalRead(HALL_A);
-	hall_b = digitalRead(HALL_B);
-	hall_c = digitalRead(HALL_C);
-	hall = hall_a * 1 + hall_b * 2 + hall_c * 4;
+	// Read hall sensors (needed at startup as no hall interrupt has fired yet)
+	hall = ReadHallState();
+	hall_a = hall & 1U;
+	hall_b = (hall >> 1) & 1U;
+	hall_c = (hall >> 2) & 1U;
 
 
 	#ifdef TEST_HALL2LED
@@ -302,9 +312,9 @@ void CalculateBLDC(void)
 	iOdom = iOdom - up_or_down(lastPos, pos); // int32 will overflow at +-2.147.483.648
 
 	if(speedCounterSlow < 4000) speedCounterSlow++;	// No speed after 250ms
-	if (iOdomLast != iOdom)	// one hall step is 4°
+	if (iOdomLast != iOdom)	// one hall step is 4 deg
 	{
-		//if (speedCounterSlow > 600)	// idea was to use the 24° step of realSpeed calculation for better revs32 at higher speeds. But doesn' work for some unkown reason
+		//if (speedCounterSlow > 600)	// idea was to use the 24 deg step of realSpeed calculation for better revs32 at higher speeds. But doesn' work for some unkown reason
 		if (speedCounterSlow > 10)	// 2.1.11 does not debounce hall inputs :-((((
 		{
 			revs32Latest = (iOdom-iOdomLast) * (revs32ScaleSlow / speedCounterSlow) ;		// warning, (iOdom-iOdomLast) might give wrong result when iOdom overflows
@@ -341,7 +351,7 @@ void CalculateBLDC(void)
 	
 		realSpeed	= (realSpeed32_reg >> RANK_realSpeed32) / 1024.0;
 	#else
-		// Every time position reaches value 1, one (electrical 360�) round = 24� mechanical angle is performed (rising edge)
+		// Every time position reaches value 1, one (electrical 360 deg) round = 24 deg mechanical angle is performed (rising edge)
 		if (lastPos != 1 && pos == 1)
 		{
 			realSpeed = 1991.81f / (float)speedCounter; //[km/h]		// robo 2025: should get changed to rpm ?

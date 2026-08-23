@@ -167,8 +167,8 @@ const struct gyro_reg_s reg = {
     .lpf            = 0x1A, // Set to 0x03
     .user_ctrl      = 0x6A,
     .fifo_en        = 0x23,
-    .gyro_cfg       = 0x1B, // Set to 0x00  GYRO_CONFIG: FS_SEL = 0 → ±250 °/s
-    .accel_cfg      = 0x1C, // // ACCEL_CONFIG: AFS_SEL = 0 → ±2 g
+    .gyro_cfg       = 0x1B, // Set to 0x00  GYRO_CONFIG: FS_SEL = 0 -> +/-250 deg/s
+    .accel_cfg      = 0x1C, // // ACCEL_CONFIG: AFS_SEL = 0 -> +/-2 g
     .raw_gyro       = 0x43,
     .raw_accel      = 0x3B,
     .temp           = 0x41,
@@ -226,7 +226,7 @@ int mpu_config(void)
     rc = i2c_writeByte(MPU_I2C, hw.addr, reg.fifo_en, 0);
     if (rc) return rc;
 
-    // 5) Sample rate divider: 1 kHz/(1 + DIV) → here DIV = 4 → 200 Hz
+    // 5) Sample rate divider: 1 kHz/(1 + DIV) -> here DIV = 4 -> 200 Hz
     rc = i2c_writeByte(MPU_I2C, hw.addr, reg.rate_div, 4);
     if (rc) return rc;
 
@@ -260,7 +260,7 @@ int MPU_ReadAll()
 	{
 		uint8_t buf[14];
 
-		// burst‐read accel(6) + temp(2) + gyro(6)
+    // burst-read accel(6) + temp(2) + gyro(6)
 		if (i2c_readBytesTimeout(IMU_TIMEOUT_MS, MPU_I2C, st.hw->addr, st.reg->raw_accel, 14, buf) != I2C_OK)
 		{	// handle I2C error here if you need to
 				return ERROR;

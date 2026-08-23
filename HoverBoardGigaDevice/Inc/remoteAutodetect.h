@@ -10,6 +10,8 @@
 
 #define LOST_CONNECTION_STOP_MILLIS 500		// set speed to 0 when 500 ms no command received
 
+#define CONFIG_STATE_HALL_INVERT_ALL (1U << 0)
+
 #define TODO_PIN PF4	// PF4 is only accessible on the largest GD32F130Rx LQFP64 pinouts mcu
 
 extern uint8_t bMessageWait;
