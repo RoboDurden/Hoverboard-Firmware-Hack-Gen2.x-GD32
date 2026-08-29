@@ -30,6 +30,8 @@
 #if defined(REMOTE_AUTODETECT)
 	#include "defines/defines_2-ad.h"		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/??
 	
+	//#define AUTODETECT_Stage_HallOrderOLD		// older method which try and error all possible hall permutation 
+	
 	#define SINGLE
 	#define MASTER_OR_SINGLE
 	#define DRIVING_MODE 0	//  0=pwm, 1=speed/10, 3=torque, 4=iOdometer
@@ -41,8 +43,6 @@
 	#ifndef PIN_PACKAGE
 		#define PIN_PACKAGE 48
 	#endif
-
-	extern volatile uint8_t HALL_INVERT_ALL;
 #else
 	#define STRINGIZE_AUX(a) #a
 	#define STRINGIZE(a) STRINGIZE_AUX(a)
@@ -52,10 +52,6 @@
 
 	// Invert all three hall inputs to support motors whose hall/phase wiring has
 	// opposite commutation parity. Set to 1 in the board layout define file.
-	#ifndef HALL_INVERT_ALL
-		#define HALL_INVERT_ALL 0
-	#endif
-
 #endif
 
 

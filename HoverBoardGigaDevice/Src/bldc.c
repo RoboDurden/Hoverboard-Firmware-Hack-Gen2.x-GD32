@@ -88,10 +88,6 @@ const uint8_t hall_to_pos[8] =
 uint8_t ReadHallState(void)
 {
 	uint8_t hallState = digitalRead(HALL_A) + digitalRead(HALL_B) * 2U + digitalRead(HALL_C) * 4U;
-
-	if (HALL_INVERT_ALL)
-		hallState ^= 0x07U;
-
 	return hallState;
 }
 

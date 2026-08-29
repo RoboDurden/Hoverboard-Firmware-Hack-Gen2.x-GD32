@@ -9,7 +9,6 @@ uint16_t i;
 
 #ifdef REMOTE_AUTODETECT
 
-
 extern ConfigData oConfig;
 
 extern uint32_t iBug;
@@ -115,10 +114,6 @@ uint32_t aiPinScan[PINS_DETECT] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};		// the
 void ConfigWriteAD(int8_t iPinScan,uint32_t iPinPort)
 {
 	if (iPinPort)	aiPinScan[iPinScan] = iPinPort;
-	if (aiPinScan[SCAN_HALL_A] && aiPinScan[SCAN_HALL_B] && aiPinScan[SCAN_HALL_C] && HALL_INVERT_ALL)
-		oConfig.wState |= CONFIG_STATE_HALL_INVERT_ALL;
-	else
-		oConfig.wState &= (uint16_t)~CONFIG_STATE_HALL_INVERT_ALL;
 
 	int8_t i=0; for(;i<PINS_DETECT;i++)	
 	{
@@ -152,16 +147,11 @@ void ConfigReadAD()
 			aoPin[iPinScan].wState |= STATE_HIDE;
 		}
 	}
-	HALL_INVERT_ALL = (oConfig.wState & CONFIG_STATE_HALL_INVERT_ALL) ? 1U : 0U;
 	if (aiPinScan[SCAN_HALL_A] && aiPinScan[SCAN_HALL_B] && aiPinScan[SCAN_HALL_C])
 	{
 		HALL_A = aiPinScan[SCAN_HALL_A];
 		HALL_B = aiPinScan[SCAN_HALL_B];
 		HALL_C = aiPinScan[SCAN_HALL_C];
-	}
-	else
-	{
-		HALL_INVERT_ALL = 0U;
 	}
 	AutodetectInit();	// hide rx and tx pins
 }
@@ -357,7 +347,6 @@ void RemoteCallback(void)
 uint32_t HALL_A = TODO_PIN;
 uint32_t HALL_B = TODO_PIN;
 uint32_t HALL_C = TODO_PIN;
-volatile uint8_t HALL_INVERT_ALL = 0U;
 
 
 void AutodetectInit()
@@ -410,7 +399,6 @@ void AutoDetectNextStage()
 
 
 #define HALL_PERMUTATION_COUNT 6
-#define HALL_ORDER_TEST_COUNT  (HALL_PERMUTATION_COUNT * 2)
 uint8_t aHallOrder[HALL_PERMUTATION_COUNT][3] = {{0,1,2},{0,2,1},{1,0,2},{2,0,1},{1,2,0},{2,1,0}};	// possible permutations to test
 
 
@@ -597,7 +585,6 @@ void AutodetectScan(uint16_t buzzerTimer)
 		{
 		case 0:
 			ListFound(0,6);
-			if (HALL_INVERT_ALL)	sprintf(sMessage + strlen(sMessage), "#define HALL_INVERT_ALL 1\n");
 			break;
 		case 1:	ListFound(6,13);	break;
 		case 2:	ListFound(13,PINS_DETECT);	break;
@@ -748,7 +735,7 @@ void AutodetectScan(uint16_t buzzerTimer)
 				if (aiPinScan[SCAN_HALL_A] && aiPinScan[SCAN_HALL_B] && aiPinScan[SCAN_HALL_C])
 				{
 					wMenuStage |= AUTODETECT_Stage_HallOrder|AUTODETECT_Stage_CurrentDC;
-					//AutoDetectHallOrderInit(0); // ConfigReadAD() already restored the saved Hall order and inversion.
+					//AutoDetectHallOrderInit(0); // ConfigReadAD() already restored the saved Hall order.
 				}
 			
 				//oDataHeader.wCmd = DATA_Request;
@@ -807,9 +794,9 @@ void AutodetectScan(uint16_t buzzerTimer)
 			if (0 == iRepeat--)
 			{
 				iRepeat = 20;
-				sprintf(sMessage,":-)\n");
+				sprintf(sMessage,"hello :-)\n");
 			}
-			else	sprintf(sMessage," :-)");
+			else	sprintf(sMessage,"ONLY 2A constant current power supply or the hoverboard charger !!!\n");
 		}
 		if (cCmd)
 			AutoDetectNextStage();
@@ -1147,6 +1134,13 @@ uint8_t posAuto = 1;
 uint8_t posOld = 0;
 uint32_t msTicksOld;
 
+// AUTODETECT_Stage_HallOrderNEW
+#ifndef AUTODETECT_Stage_HallOrderOLD
+uint8_t aiHall[6];			// one complete raw Hall cycle in transition order
+uint8_t aiPosApplied[18];	// driven position at each transition of three verified cycles
+static const uint8_t aOneHotToPinIndex[8] = {0,0,1,0,2,0,0,0};
+#endif
+
 
 void AutoDetectHallInit()
 {
@@ -1161,16 +1155,13 @@ void AutoDetectHallInit()
 	msTicksTest = msTicksWait + 1000;
 }
 
-void AutoDetectHallOrderInit(uint8_t iTestSet)	// iTestSet = 0..11 = 6 permutations with normal and inverted hall inputs
+void AutoDetectHallOrderInit(uint8_t iTestSet)	// iTestSet = 0..5 Hall input permutations
 {
-	uint8_t iPermutation = iTestSet % HALL_PERMUTATION_COUNT;
-
 	iTest = iTestSet;
-	HALL_INVERT_ALL = iTestSet >= HALL_PERMUTATION_COUNT;
 
-	HALL_A = aiPinScan[ aHallOrder[iPermutation][0] ];
-	HALL_B = aiPinScan[ aHallOrder[iPermutation][1] ];
-	HALL_C = aiPinScan[ aHallOrder[iPermutation][2] ];
+	HALL_A = aiPinScan[ aHallOrder[iTestSet][0] ];
+	HALL_B = aiPinScan[ aHallOrder[iTestSet][1] ];
+	HALL_C = aiPinScan[ aHallOrder[iTestSet][2] ];
 
 	msTicksTest = msTicks + 2000;
 	msTicksOld = 0;
@@ -1347,6 +1338,7 @@ uint8_t AutodetectBldc(uint8_t posNew,uint16_t buzzerTimer)
 		// AUTODETECT_Stage_HallOrder
 		if (wStage == AUTODETECT_Stage_HallOrder)
 		{
+#ifdef AUTODETECT_Stage_HallOrderOLD
 			if (wStageOld != wStage)
 			{
 				AutoDetectHallOrderInit(0);
@@ -1358,16 +1350,8 @@ uint8_t AutodetectBldc(uint8_t posNew,uint16_t buzzerTimer)
 				if (buzzerTimer % 3000 == 0)	// 16 kHz
 					sprintf(sMessage, "%i: %i -> %i \t%i\n",posAuto,posNew,posOld,iTime);
 
-				uint8_t posReference = posAutoApplied;
-				if (HALL_INVERT_ALL)
-				{
-						// In inverted candidates, the correct closed-loop mapping appears two Hall sectors
-						// behind posAuto during this open-loop test. Compensate that fixed cyclic offset
-						// here; otherwise a phase-shifted permutation would be accepted.
-						posReference = posAutoApplied > 2
-											 ? posAutoApplied - 2
-											 : posAutoApplied + 4;
-				}
+				// The previous Hall sector leads the position stored at the transition by one step.
+				uint8_t posReference = posAutoApplied == 6U ? 1U : posAutoApplied + 1U;
 
 				if ((posOld == posReference) &&
 							(	((posOld == 6) && (posNew == 1)) || (posNew == posOld+1) )
@@ -1382,9 +1366,6 @@ uint8_t AutodetectBldc(uint8_t posNew,uint16_t buzzerTimer)
 						ConfigWriteAD(0,0);
 						
 						ListFound(0,6);
-						bMessageWait = 1;
-						sprintf(sMessage + strlen(sMessage), "#define HALL_INVERT_ALL\t%i\n", HALL_INVERT_ALL);
-						bMessageWait = 0;
 
 						uint8_t i;
 						for (i=0; i<3+iPhaseCurrent; i++)	HidePinDigital(aiPinScan[i]);
@@ -1397,16 +1378,14 @@ uint8_t AutodetectBldc(uint8_t posNew,uint16_t buzzerTimer)
 					if (posOld == posReference) iRepeat = 0;
 					if (msTicks > msTicksTest)
 					{
-						if (iTest + 1 < HALL_ORDER_TEST_COUNT)
+						if (iTest + 1 < HALL_PERMUTATION_COUNT)
 						{
 							iRepeat = 0;
-							sprintf(sMessage, "wrong hall order %i, inverted %i\n",
-									iTest % HALL_PERMUTATION_COUNT, HALL_INVERT_ALL);
-							AutoDetectHallOrderInit(iTest+1);	// test next permutation/polarity combination
+							sprintf(sMessage, "wrong hall order %i\n", iTest);
+							AutoDetectHallOrderInit(iTest+1);	// test next Hall input permutation
 						}
 						else
 						{
-							HALL_INVERT_ALL = 0U;
 							sprintf(sMessage, "no hall order found\n");
 							AutoDetectSetStage(AUTODETECT_Stage_Menu);	// no more hall order combinations to test :-/
 						}
@@ -1416,6 +1395,119 @@ uint8_t AutodetectBldc(uint8_t posNew,uint16_t buzzerTimer)
 				posOld = posNew;
 				msTicksOld = msTicks;
 			}
+#else	// AUTODETECT_Stage_HallOrderNEW
+			if (wStageOld != wStage)
+			{
+				memset(aiHall, 0, sizeof(aiHall));
+				memset(aiPosApplied, 0, sizeof(aiPosApplied));
+				posOld = digitalRead(aiPinScan[0])
+							| (digitalRead(aiPinScan[1]) << 1)
+							| (digitalRead(aiPinScan[2]) << 2);
+				iRepeat = 0;
+				iTest = 0;		// next index in the six-state Hall cycle
+				iTestPin = 0;	// bit mask of observed raw Hall states
+				msTicksTest = msTicks + 3000;
+				wStageOld = wStage;
+			}
+
+			uint8_t hallRaw = digitalRead(aiPinScan[0])
+								| (digitalRead(aiPinScan[1]) << 1)
+								| (digitalRead(aiPinScan[2]) << 2);
+			if ((hallRaw != posOld) && (hallRaw > 0) && (hallRaw < 7))
+			{
+				uint8_t hallDelta = hallRaw ^ posOld;
+				uint8_t iHallIndex = iRepeat % 6U;
+				uint8_t bValidTransition = (posOld > 0) && (posOld < 7)
+													&& ((hallDelta & (hallDelta - 1U)) == 0U);
+
+				if (!bValidTransition ||
+						((iRepeat < 6) && (iTestPin & (1U << hallRaw))) ||
+						((iRepeat >= 6) && (aiHall[iHallIndex] != hallRaw)))
+				{
+					// Start a new cycle at the current valid state after a bounce or missed transition.
+					memset(aiHall, 0, sizeof(aiHall));
+					memset(aiPosApplied, 0, sizeof(aiPosApplied));
+					aiHall[0] = hallRaw;
+					aiPosApplied[0] = posAutoApplied;
+					iRepeat = 1;
+					iTest = 1;
+					iTestPin = 1U << hallRaw;
+				}
+				else
+				{
+					if (iRepeat < 6)
+					{
+						aiHall[iHallIndex] = hallRaw;
+						iTestPin |= 1U << hallRaw;
+					}
+					aiPosApplied[iRepeat] = posAutoApplied;
+					iRepeat++;
+					iTest = iRepeat % 6U;
+				}
+
+				posOld = hallRaw;
+				msTicksOld = msTicks;
+
+				if ((iRepeat >= 18) && (iTestPin == 0x7e))
+				{
+					uint8_t iSample;
+					uint8_t aHallPinOneHot[3] = {0,0,0};
+
+					// Positions 3, 5 and 1 identify the raw one-hot inputs for Hall A, B and C.
+					for (iSample=0; iSample<18; iSample++)
+					{
+						uint8_t hallRawOld = aiHall[(iSample + 5U) % 6U];
+						uint8_t posReference = aiPosApplied[iSample] == 6U
+														? 1U : aiPosApplied[iSample] + 1U;
+
+						if ((hallRawOld & (hallRawOld - 1U)) == 0U)
+						{
+							switch (posReference)
+							{
+								case 3: aHallPinOneHot[0] |= hallRawOld; break;
+								case 5: aHallPinOneHot[1] |= hallRawOld; break;
+								case 1: aHallPinOneHot[2] |= hallRawOld; break;
+							}
+						}
+					}
+
+					if (((aHallPinOneHot[0] | aHallPinOneHot[1] | aHallPinOneHot[2]) == 7U) &&
+							((aHallPinOneHot[0] & (aHallPinOneHot[0] - 1U)) == 0U) &&
+							((aHallPinOneHot[1] & (aHallPinOneHot[1] - 1U)) == 0U) &&
+							((aHallPinOneHot[2] & (aHallPinOneHot[2] - 1U)) == 0U))
+					{
+						HALL_A = aiPinScan[aOneHotToPinIndex[aHallPinOneHot[0]]];
+						HALL_B = aiPinScan[aOneHotToPinIndex[aHallPinOneHot[1]]];
+						HALL_C = aiPinScan[aOneHotToPinIndex[aHallPinOneHot[2]]];
+						aiPinScan[SCAN_HALL_A] = HALL_A;
+						aiPinScan[SCAN_HALL_B] = HALL_B;
+						aiPinScan[SCAN_HALL_C] = HALL_C;
+						ConfigWriteAD(0,0);
+
+						ListFound(0,6);
+
+						uint8_t i;
+						for (i=0; i<3+iPhaseCurrent; i++) HidePinDigital(aiPinScan[i]);
+						wMenuStage |= AUTODETECT_Stage_CurrentDC;
+						AutoDetectNextStage();
+					}
+					else
+					{
+						// Keep rotating and collect a fresh timing window when the phase reference was ambiguous.
+						iRepeat = 0;
+						iTest = 0;
+						iTestPin = 0;
+						memset(aiHall, 0, sizeof(aiHall));
+						memset(aiPosApplied, 0, sizeof(aiPosApplied));
+					}
+				}
+			}
+			if ((wStage == AUTODETECT_Stage_HallOrder) && (msTicks > msTicksTest))
+			{
+				sprintf(sMessage, "no unambiguous Hall order found\n");
+				AutoDetectSetStage(AUTODETECT_Stage_Menu);
+			}
+#endif
 		}
 		return posAuto;
 }

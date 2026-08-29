@@ -52,7 +52,7 @@ void DriverInit(uint8_t iDrivingMode);
 void SetEnable(FlagStatus setEnable);	// Set motor enable
 void SetBldcInput(int32_t input); // -1000 to +1000 for iDriveMode==0 = pwm
 //void SetPWM(int16_t setPwm);	// Set pwm -1000 to 1000
-uint8_t ReadHallState(void); // Read the three hall inputs and apply HALL_INVERT_ALL
+uint8_t ReadHallState(void); // Read the three hall inputs
 void CalculateBLDC(void); // Calculation-Routine for BLDC => calculates with PWM_FREQ
 void bldc_get_pwm(int pwm, int pos, int *y, int *b, int *g);	// virtual method to be implemented by bldcBC.c and bldcSINE.c
 

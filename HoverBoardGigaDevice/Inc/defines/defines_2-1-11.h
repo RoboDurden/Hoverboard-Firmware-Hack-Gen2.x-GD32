@@ -6,12 +6,20 @@
 #endif
 
 /// autodetect by robo durden 2025/06/06
-#define HALL_A		PB11
-#define HALL_B		PC14
-#define HALL_C		PF1
-#define PHASE_A		PB0
-#define PHASE_B		PB1
-//#define PHASE_C		P??
+#define PHASE_MATCH
+#ifdef PHASE_MATCH
+	#define HALL_A		PB11
+	#define HALL_B		PC14
+	#define HALL_C		PF1
+	#define PHASE_A		PB0
+	#define PHASE_B		PB1
+	//#define PHASE_C		P??
+#else
+	// robo testing swoped green yellow phase cables
+	#define HALL_A		PB11
+	#define HALL_B		PF1
+	#define HALL_C		PC14
+#endif
 
 #define LED_RED			PB3
 #define LED_ORANGE	PA12
