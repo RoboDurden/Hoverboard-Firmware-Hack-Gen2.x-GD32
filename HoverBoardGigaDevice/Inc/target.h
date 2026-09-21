@@ -167,7 +167,7 @@
 
 	#define pinModeAF(pin, AF, pullUpDown,speed) \
 	{\
-		 gpio_init(pin&0xffffff00U, pullUpDown, GPIO_OSPEED_50MHZ, BIT(pin&0xfU)); 	\
+		 gpio_init(pin&0xffffff00U, GPIO_MODE_AF_PP, speed, BIT(pin&0xfU)); 	\
 	}
 
 	
