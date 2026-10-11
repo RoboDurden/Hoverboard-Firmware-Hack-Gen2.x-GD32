@@ -2,14 +2,14 @@
 #define DEFINES_H
 
 #ifndef TARGET
-	#define TARGET 1	// Makefile will detect target mcu in this line !
-	#if TARGET == 1
-		#define GD32F130
-	#elif TARGET == 2
-		#define GD32F103
-	#elif TARGET == 3
-		#define GD32E230
-	#endif		
+#define TARGET 1 // Makefile will detect target mcu in this line !
+#if TARGET == 1
+#define GD32F130
+#elif TARGET == 2
+#define GD32F103
+#elif TARGET == 3
+#define GD32E230
+#endif
 #endif
 
 // ----------- #include framework begin ------------------------------
@@ -18,258 +18,283 @@
 #include "../Inc/configSelect.h"
 
 #ifdef PILOT_HOVERBIKE
-	#include "PilotHoverbike.h"		// https://youtu.be/ihCpCtgXIRA
-#elif defined (PILOT_USER)		
-	#include "PilotUser.h"		// for your new onboard user code :-)
+#include "PilotHoverbike.h" // https://youtu.be/ihCpCtgXIRA
+#elif defined(PILOT_USER)
+#include "PilotUser.h" // for your new onboard user code :-)
 #else
-	#define PILOT_DEFAULT
+#define PILOT_DEFAULT
 #endif
 
 #include "../Inc/remote.h"
 
 #if defined(REMOTE_AUTODETECT)
-	#include "defines/defines_2-ad.h"		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/??
-	
-	//#define AUTODETECT_Stage_HallOrderOLD		// older method which try and error all possible hall permutation 
-	
-	#define SINGLE
-	#define MASTER_OR_SINGLE
-	#define DRIVING_MODE 0	//  0=pwm, 1=speed/10, 3=torque, 4=iOdometer
-	#define BAT_CELLS         	6        // battery number of cells. Normal Hoverboard battery: 10s
-	#define SPEED_COEFFICIENT   -1
-	#define STEER_COEFFICIENT   1
-	#define BLDC_BC
+#include "defines/defines_2-ad.h" // https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/??
 
-	#ifndef PIN_PACKAGE
-		#define PIN_PACKAGE 48
-	#endif
+// #define AUTODETECT_Stage_HallOrderOLD		// older method which try and error all possible hall permutation
+
+#define SINGLE
+#define MASTER_OR_SINGLE
+#define DRIVING_MODE 0 //  0=pwm, 1=speed/10, 3=torque, 4=iOdometer
+#define BAT_CELLS 6	   // battery number of cells. Normal Hoverboard battery: 10s
+#define SPEED_COEFFICIENT -1
+#define STEER_COEFFICIENT 1
+#define BLDC_BC
+
+#ifndef PIN_PACKAGE
+#define PIN_PACKAGE 48
+#endif
 #else
-	#define STRINGIZE_AUX(a) #a
-	#define STRINGIZE(a) STRINGIZE_AUX(a)
-	#define INCLUE_FILE(target,version) STRINGIZE(defines/defines_2-target-version.h)
+#define STRINGIZE_AUX(a) #a
+#define STRINGIZE(a) STRINGIZE_AUX(a)
+#define INCLUE_FILE(target, version) STRINGIZE(defines/defines_2-target-version.h)
 
-	#include INCLUE_FILE(TARGET , LAYOUT)	// "defines_2-target-version.h"
+#include INCLUE_FILE(TARGET, LAYOUT) // "defines_2-target-version.h"
 
-	// Invert all three hall inputs to support motors whose hall/phase wiring has
-	// opposite commutation parity. Set to 1 in the board layout define file.
+// Invert all three hall inputs to support motors whose hall/phase wiring has
+// opposite commutation parity. Set to 1 in the board layout define file.
 #endif
 
-
 #ifdef CONFIGDEBUG_H
-	#undef CHARGE_STATE	// motors will stop if charger is pluged in. disable if you use the charger to power the board
+#undef CHARGE_STATE // motors will stop if charger is pluged in. disable if you use the charger to power the board
 #endif
 
 #include "../Inc/setup.h"
 
 #ifdef RTT_REMOTE
-	#include "stdio.h"
-	#include "../Src/SEGGER_RTT.h"
-	#define RTT_PRINTF(size,string,v1) {char s[size];sprintf(s,string,v1);SEGGER_RTT_WriteString(0, s);}
-	#define RTT_PRINTF2(size,string,v1,v2) {char s[size];sprintf(s,string,v1,v2);SEGGER_RTT_WriteString(0, s);}
+#include "stdio.h"
+#include "../Src/SEGGER_RTT.h"
+#define RTT_PRINTF(size, string, v1)  \
+	{                                 \
+		char s[size];                 \
+		sprintf(s, string, v1);       \
+		SEGGER_RTT_WriteString(0, s); \
+	}
+#define RTT_PRINTF2(size, string, v1, v2) \
+	{                                     \
+		char s[size];                     \
+		sprintf(s, string, v1, v2);       \
+		SEGGER_RTT_WriteString(0, s);     \
+	}
 #else
-	#define RTT_PRINTF(size,string,v1)
-	#define RTT_PRINTF2(size,string,v1,v2)
+#define RTT_PRINTF(size, string, v1)
+#define RTT_PRINTF2(size, string, v1, v2)
 #endif
 
 // ----------- #include framework end ------------------------------
 
-
 // ------- now checking setup and defining needed structs ----------
 
 #ifdef BUTTON
-	#define BUTTON_PUSHED 1
+#define BUTTON_PUSHED 1
 #else
-	#ifdef BUTTON_PU
-		#define BUTTON_PUSHED 1		// very strangely, even so the button needs a pullup, digitalRead gives 1 when button pushed
-		#define BUTTON BUTTON_PU
-	#endif
+#ifdef BUTTON_PU
+#define BUTTON_PUSHED 1 // very strangely, even so the button needs a pullup, digitalRead gives 1 when button pushed
+#define BUTTON BUTTON_PU
+#endif
 #endif
 
 #ifdef DISABLE_BUTTON
-	#undef BUTTON
-	#undef SELF_HOLD
+#undef BUTTON
+#undef SELF_HOLD
 #endif
 
 #ifdef DISABLE_CHARGESTATE
-	#undef CHARGE_STATE
+#undef CHARGE_STATE
 #endif
 
 #if defined(TEST_HALL2LED) && !defined(LED_RED)
-	#undef TEST_HALL2LED
+#undef TEST_HALL2LED
 #endif
 
 #ifdef BLDC_SINE
-	#if PWM_FREQ > 120000	// no longer needed 
-		#undef PWM_FREQ
-		#define PWM_FREQ	12000		// 16 kHz seems to be to fast for the longer CalculateBLDC code execution and the 3 hall interrupts
-	#endif
+#if PWM_FREQ > 120000 // no longer needed
+#undef PWM_FREQ
+#define PWM_FREQ 12000 // 16 kHz seems to be to fast for the longer CalculateBLDC code execution and the 3 hall interrupts
+#endif
 #endif
 
-#define BLDC_TIMER_PERIOD       (SystemCoreClock  / 2u / PWM_FREQ) // = 2250 for 16 kHz and 3000 for 12 kHz ; SystemCoreClock = 72000000u = 
-//#define BLDC_TIMER_PERIOD      (SystemCoreClock / PWM_FREQ - 1)		// Gemini testing alignedmode = TIMER_COUNTER_UP
+#define BLDC_TIMER_PERIOD (SystemCoreClock / 2u / PWM_FREQ) // = 2250 for 16 kHz and 3000 for 12 kHz ; SystemCoreClock = 72000000u =
+// #define BLDC_TIMER_PERIOD      (SystemCoreClock / PWM_FREQ - 1)		// Gemini testing alignedmode = TIMER_COUNTER_UP
 
-#ifndef TIMER_BLDC	// these defines should be equal for all Gen2 boards as they only have on bldc capable TIMER = TIMER0
-	#define TIMER_BLDC 		TIMER0
-	#define RCU_TIMER_BLDC 		RCU_TIMER0
-	#define TIMER_BLDC_CHANNEL_G 	TIMER_CH_2
-	#define TIMER_BLDC_CHANNEL_B 	TIMER_CH_1
-	#define TIMER_BLDC_CHANNEL_Y 	TIMER_CH_0
+#ifndef TIMER_BLDC // these defines should be equal for all Gen2 boards as they only have on bldc capable TIMER = TIMER0
+#define TIMER_BLDC TIMER0
+#define RCU_TIMER_BLDC RCU_TIMER0
+#define TIMER_BLDC_CHANNEL_G TIMER_CH_2
+#define TIMER_BLDC_CHANNEL_B TIMER_CH_1
+#define TIMER_BLDC_CHANNEL_Y TIMER_CH_0
 #endif
 
 #ifndef TIMER_TIMEOUT
-	#define TIMER_TIMEOUT TIMER13
-	#define TIMEOUT_IrqHandler TIMER13_IRQHandler
-	#define RCU_TIMER_TIMEOUT	RCU_TIMER13
-	#define TIMER_TIMEOUT_IRQn TIMER13_IRQn
+#define TIMER_TIMEOUT TIMER13
+#define TIMEOUT_IrqHandler TIMER13_IRQHandler
+#define RCU_TIMER_TIMEOUT RCU_TIMER13
+#define TIMER_TIMEOUT_IRQn TIMER13_IRQn
 #endif
 
-
 #ifdef DEBUG_LED
-#define DEBUG_LedSet(bSet,iCol){digitalWrite((iCol==0 ? LED_GREEN : (iCol==2 ? LED_ORANGE : LED_RED)), bSet);}
+#define DEBUG_LedSet(bSet, iCol)                                                          \
+	{                                                                                     \
+		digitalWrite((iCol == 0 ? LED_GREEN : (iCol == 2 ? LED_ORANGE : LED_RED)), bSet); \
+	}
 #else
-  #define DEBUG_LedSet(bSet,iCol)
+#define DEBUG_LedSet(bSet, iCol)
 #endif
 
 #ifdef REMOTE_ADC
-	#ifndef USART1_TX
-		#error "REMOTE_ADC only works with USART1 PA2/PA3"
-	#endif
-	#undef MASTERSLAVE_USART
-	#undef REMOTE_USART
-	#if defined(USART0_TX) && defined(MASTER)	// only uart left
-		#define MASTERSLAVE_USART 0
-	#endif
+#if !defined(USART1_TX) && !defined(REMOTE_ADC_SPEED_PIN)
+#error "REMOTE_ADC needs USART1 PA2/PA3 or REMOTE_ADC_SPEED_PIN"
+#endif
+#undef MASTERSLAVE_USART
+#undef REMOTE_USART
+#if defined(USART0_TX) && defined(MASTER) // only uart left
+#define MASTERSLAVE_USART 0
+#endif
 #endif
 
 #if defined(MASTER) || defined(SLAVE)
-	#define MASTER_OR_SLAVE
+#define MASTER_OR_SLAVE
 #endif
 
-
 #if defined(MASTER_OR_SLAVE) && (!defined(MASTERSLAVE_USART))
-	#error "MASTER or SLAVE set in config.h but no but no uart available. Please choose SINGLE (and REMOTE_UARTBUS)"
+#error "MASTER or SLAVE set in config.h but no but no uart available. Please choose SINGLE (and REMOTE_UARTBUS)"
 #endif
 
 #if (defined(REMOTE_UART) || defined(REMOTE_UARTBUS) || defined(REMOTE_CRSF) || defined(REMOTE_ROS2)) && !defined(REMOTE_USART)
-	#error "a usart remote selected in config.h but neither USART0_REMOTE nor USART1_REMOTE in your defines_2-?.h"
+#error "a usart remote selected in config.h but neither USART0_REMOTE nor USART1_REMOTE in your defines_2-?.h"
 #endif
 
-#if defined(MASTERSLAVE_USART) && defined(REMOTE_USART) 
-	#if MASTERSLAVE_USART == REMOTE_USART
-		#error "MASTERSLAVE_USART must be different from REMOTE_USART"
-	#endif
+#if defined(MASTERSLAVE_USART) && defined(REMOTE_USART)
+#if MASTERSLAVE_USART == REMOTE_USART
+#error "MASTERSLAVE_USART must be different from REMOTE_USART"
 #endif
-
-
+#endif
 
 #ifdef REMOTE_USART
-	#if REMOTE_USART == 0
-		#define HAS_USART0
-		#define USART0_BAUD REMOTE_BAUD		// defined in remoteUart.h or remoteCrsf.h or remoteUartBus.h
-		#define USART_REMOTE USART0
-		#define USART_REMOTE_BUFFER usart0_rx_buf		// defined in setup.c
-	#else 
-		#if REMOTE_USART == 1
-			#define HAS_USART1
-			#define USART1_BAUD REMOTE_BAUD		// defined in remoteUart.h or remoteCrsf.h or remoteUartBus.h
-			#define USART_REMOTE USART1
-			#define USART_REMOTE_BUFFER usart1_rx_buf		// defined in setup.c
-		#else 
-			#if REMOTE_USART == 2
-				#define HAS_USART2
-				#define USART2_BAUD REMOTE_BAUD		// defined in remoteUart.h or remoteCrsf.h or remoteUartBus.h
-				#define USART_REMOTE USART2
-				#define USART_REMOTE_BUFFER usart2_rx_buf		// defined in setup.c
-			#else
-				#error "no REMOTE_USART choosen (0, 1 or 2)"
-			#endif
-		#endif
-	#endif
+#if REMOTE_USART == 0
+#define HAS_USART0
+#define USART0_BAUD REMOTE_BAUD // defined in remoteUart.h or remoteCrsf.h or remoteUartBus.h
+#define USART_REMOTE USART0
+#define USART_REMOTE_BUFFER usart0_rx_buf // defined in setup.c
+#else
+#if REMOTE_USART == 1
+#define HAS_USART1
+#define USART1_BAUD REMOTE_BAUD // defined in remoteUart.h or remoteCrsf.h or remoteUartBus.h
+#define USART_REMOTE USART1
+#define USART_REMOTE_BUFFER usart1_rx_buf // defined in setup.c
+#else
+#if REMOTE_USART == 2
+#define HAS_USART2
+#define USART2_BAUD REMOTE_BAUD // defined in remoteUart.h or remoteCrsf.h or remoteUartBus.h
+#define USART_REMOTE USART2
+#define USART_REMOTE_BUFFER usart2_rx_buf // defined in setup.c
+#else
+#error "no REMOTE_USART choosen (0, 1 or 2)"
+#endif
+#endif
+#endif
 #endif
 
 #ifdef MASTERSLAVE_USART
-	#if MASTERSLAVE_USART == 0
-		#define HAS_USART0
-		#define USART0_BAUD 115200
-		#define USART_MASTERSLAVE USART0
-		#define USART_MASTERSLAVE_BUFFER usart0_rx_buf		// defined in setup.c
-	#else
-			#if MASTERSLAVE_USART == 1
-				#define HAS_USART1
-				#define USART1_BAUD 115200
-				#define USART_MASTERSLAVE USART1
-				#define USART_MASTERSLAVE_BUFFER usart1_rx_buf		// defined in setup.c
-			#else
-			 	#if MASTERSLAVE_USART == 2
-				#define HAS_USART2
-				#define USART2_BAUD 115200
-				#define USART_MASTERSLAVE USART2
-				#define USART_MASTERSLAVE_BUFFER usart2_rx_buf		// defined in setup.c
-			#else
-			#endif
-		#endif
-	#endif
+#if MASTERSLAVE_USART == 0
+#define HAS_USART0
+#define USART0_BAUD 115200
+#define USART_MASTERSLAVE USART0
+#define USART_MASTERSLAVE_BUFFER usart0_rx_buf // defined in setup.c
+#else
+#if MASTERSLAVE_USART == 1
+#define HAS_USART1
+#define USART1_BAUD 115200
+#define USART_MASTERSLAVE USART1
+#define USART_MASTERSLAVE_BUFFER usart1_rx_buf // defined in setup.c
+#else
+#if MASTERSLAVE_USART == 2
+#define HAS_USART2
+#define USART2_BAUD 115200
+#define USART_MASTERSLAVE USART2
+#define USART_MASTERSLAVE_BUFFER usart2_rx_buf // defined in setup.c
+#else
+#endif
+#endif
+#endif
 #endif
 
-	
 // ADC value conversion defines
 #ifndef MOTOR_AMP_CONV_DC_AMP
-	#define MOTOR_AMP_CONV_DC_AMP 0.201465201465  // 3,3V * 1/3 - 0,004Ohm * IL(ampere) = (ADC-Data/4095) *3,3V
+#define MOTOR_AMP_CONV_DC_AMP 0.201465201465 // 3,3V * 1/3 - 0,004Ohm * IL(ampere) = (ADC-Data/4095) *3,3V
 #endif
 #ifndef ADC_BATTERY_VOLT
-	#define ADC_BATTERY_VOLT      0.024169921875  	// V_Batt to V_BattMeasure = factor 30: ( (ADC-Data/4095) *3,3V *30 )
+#define ADC_BATTERY_VOLT 0.024169921875 // V_Batt to V_BattMeasure = factor 30: ( (ADC-Data/4095) *3,3V *30 )
 #endif
 
-#define BAT_LOW_LVL1     BAT_CELLS * CELL_LOW_LVL1	
-#define BAT_LOW_LVL2     BAT_CELLS * CELL_LOW_LVL2
-#define BAT_LOW_DEAD     BAT_CELLS * CELL_LOW_DEAD
-
+#define BAT_LOW_LVL1 BAT_CELLS *CELL_LOW_LVL1
+#define BAT_LOW_LVL2 BAT_CELLS *CELL_LOW_LVL2
+#define BAT_LOW_DEAD BAT_CELLS *CELL_LOW_DEAD
 
 #ifdef BUZZER
-	extern uint8_t buzzerFreq;    						// global variable for the buzzer pitch. can be 1, 2, 3, 4, 5, 6, 7...
-	extern uint8_t buzzerPattern; 						// global variable for the buzzer pattern. can be 1, 2, 3, 4, 5, 6, 7...
-  #define BuzzerSet(iFrequency, iPattern) {buzzerFreq = iFrequency;buzzerPattern = iPattern;}
-  #define BUZZER_MelodyDown(){int8_t iFreq=8;for (; iFreq>= 0; iFreq--){ buzzerFreq = iFreq; Delay(100); } buzzerFreq = 0;}
-  #define BUZZER_MelodyUp(){int8_t iFreq=0; for (; iFreq<= 8; iFreq++){ buzzerFreq = iFreq; Delay(100); } buzzerFreq = 0;}
+extern uint8_t buzzerFreq;	  // global variable for the buzzer pitch. can be 1, 2, 3, 4, 5, 6, 7...
+extern uint8_t buzzerPattern; // global variable for the buzzer pattern. can be 1, 2, 3, 4, 5, 6, 7...
+#define BuzzerSet(iFrequency, iPattern) \
+	{                                   \
+		buzzerFreq = iFrequency;        \
+		buzzerPattern = iPattern;       \
+	}
+#define BUZZER_MelodyDown()         \
+	{                               \
+		int8_t iFreq = 8;           \
+		for (; iFreq >= 0; iFreq--) \
+		{                           \
+			buzzerFreq = iFreq;     \
+			Delay(100);             \
+		}                           \
+		buzzerFreq = 0;             \
+	}
+#define BUZZER_MelodyUp()           \
+	{                               \
+		int8_t iFreq = 0;           \
+		for (; iFreq <= 8; iFreq++) \
+		{                           \
+			buzzerFreq = iFreq;     \
+			Delay(100);             \
+		}                           \
+		buzzerFreq = 0;             \
+	}
 #else
-  #define BuzzerSet(iFrequency, iPattern)
-  #define BUZZER_MelodyDown()
-  #define BUZZER_MelodyUp()
+#define BuzzerSet(iFrequency, iPattern)
+#define BUZZER_MelodyDown()
+#define BUZZER_MelodyUp()
 #endif
 
-	
-#define DELAY_IN_MAIN_LOOP 	5         // Delay in ms
-#define TIMEOUT_MS          2000      // Time in milliseconds without steering commands before pwm emergency off
+#define DELAY_IN_MAIN_LOOP 5 // Delay in ms
+#define TIMEOUT_MS 2000		 // Time in milliseconds without steering commands before pwm emergency off
 
-#define DEAD_TIME        		60        // PWM deadtime (60 = 1?s, measured by oscilloscope)
-#define PWM_FREQ         		16000     // PWM frequency in Hz
+#define DEAD_TIME 60   // PWM deadtime (60 = 1?s, measured by oscilloscope)
+#define PWM_FREQ 16000 // PWM frequency in Hz
 
 #ifndef FILTER_SHIFT
-	#define FILTER_SHIFT 10 						// 12 Low-pass filter for pwm, rank k=12
+#define FILTER_SHIFT 10 // 12 Low-pass filter for pwm, rank k=12
 						// With PWM_FREQ = 1000, 12 will take over 4s to mostly adapt to a sudden change in input. So only 250 ms for 16 kHz !
 						// 19 and 16 kHz would be 32 seconds for the motor to reach 63% of its new target speed (Gemini 2.5pro)
 #endif
 
-
 #ifndef PIDINIT_a3o
 
-	//PIDInit: uint16_t iDoEvery; float kp; float ki; float kd;	float minmax_pwm; float max_i; int32_t start_i; 
-		// 	iDoEvery:	16 = only every 16th CalculateBLDC() = 1 kHz if PWM_FREQ=16kHz. Set it higher than 1 if PID reacts too fast
-		//	kp: correction term proportional to the error
-		//	ki: integrate over the error to reach target
-		//	kd: positiv feedback if error increases, negative feedback if error decreases	(Robo understanding)
-		//	minmax_pwm: 1.0 = +-maximum pwm value (1125 for 16 kHz) allowed
-		// 	max_i: 	0.4 = only 40% of max pwm for the ki term
-		//	start_i: 30 = only add ki integral term when error is within +-30 (steps for position control). 0= always add ki term
-	#define PIDINIT_a3o {\
-		{16,	0.02f, 0.3f, 0.0001f,	1.0, 1.0, 0},\
-		{16,	0.2f, 1.0f, 0.0005f,	1.0, 1.0, 0},\
-		{1,		4.0f, 2.0f, 0.1f	,		0.5, 0.5, 30}		}
-	// first PIDInit struct		: constant speed in revs*1024		further fine tuned by remoteOptimizePID
-	// second PIDInit struct 	: max torque - NOT TESTED AT ALL
-	// third PIDInit struct		: position = iOdom		FILTER_SHIFT can/should be 9 !
-		
-#endif	// PIDINIT_a3o
+// PIDInit: uint16_t iDoEvery; float kp; float ki; float kd;	float minmax_pwm; float max_i; int32_t start_i;
+//  	iDoEvery:	16 = only every 16th CalculateBLDC() = 1 kHz if PWM_FREQ=16kHz. Set it higher than 1 if PID reacts too fast
+//	kp: correction term proportional to the error
+//	ki: integrate over the error to reach target
+//	kd: positiv feedback if error increases, negative feedback if error decreases	(Robo understanding)
+//	minmax_pwm: 1.0 = +-maximum pwm value (1125 for 16 kHz) allowed
+//  	max_i: 	0.4 = only 40% of max pwm for the ki term
+//	start_i: 30 = only add ki integral term when error is within +-30 (steps for position control). 0= always add ki term
+#define PIDINIT_a3o {                          \
+	{16, 0.02f, 0.3f, 0.0001f, 1.0, 1.0, 200}, \
+	{16, 0.2f, 1.0f, 0.0005f, 1.0, 1.0, 0},    \
+	{1, 4.0f, 2.0f, 0.1f, 0.5, 0.5, 30}}
+// first PIDInit struct		: constant speed in revs*1024		further fine tuned by remoteOptimizePID
+// second PIDInit struct 	: max torque - NOT TESTED AT ALL
+// third PIDInit struct		: position = iOdom		FILTER_SHIFT can/should be 9 !
+
+#endif // PIDINIT_a3o
 
 // Logging defines for fixed-point float output without pulling printf float support.
 #define FPI_SCALED(v, scale) ((int32_t)(((v) < 0.0f) ? ((v) * (float)(scale) - 0.5f) : ((v) * (float)(scale) + 0.5f)))
@@ -289,8 +314,8 @@
 #define CLAMP(x, low, high) (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
-//bug ?!? #define MAX(x, high) (((x) > (high)) ? (high) : (x))
-	
+// bug ?!? #define MAX(x, high) (((x) > (high)) ? (high) : (x))
+
 #define MAP(x, xMin, xMax, yMin, yMax) ((x - xMin) * (yMax - yMin) / (xMax - xMin) + yMin)
 
 // ################################################################################
@@ -298,90 +323,89 @@
 // ADC buffer struct
 typedef struct
 {
-  uint16_t v_batt;
+	uint16_t v_batt;
 	uint16_t current_dc;
-	#ifdef REMOTE_ADC
-		uint16_t speed;
-		uint16_t steer;
-	#endif
-	
+#ifdef REMOTE_ADC
+	uint16_t speed;
+	uint16_t steer;
+#endif
+
 } adc_buf_t;
 
-//#pragma pack(1)
+// #pragma pack(1)
 typedef struct
 {
-  uint8_t wState;
-	float currentDC; 									// global variable for current dc
-	float realSpeed; 									// global variable for real Speed
-	int32_t iOdom;	
+	uint8_t wState;
+	float currentDC; // global variable for current dc
+	float realSpeed; // global variable for real Speed
+	int32_t iOdom;
 } DataSlave;
 
-
-
 #ifdef REMOTE_AUTODETECT
-	#define PINS_DETECT 18
-		
-	#define EEPROM_VERSION 1000
-	#pragma pack(push, 1)
-	typedef struct
-	{
-		uint32_t iVersion;
-		uint16_t wState;
-		int8_t aiPinScan[PINS_DETECT];		// lists NOT the uint32_t PA7 but the index of PA7 in PinAD aoPin[COUNT_PinDigital]
-		uint8_t padding[1];  // Pad to x*4 bytes for word alignment.
-	} ConfigData;
-	#pragma pack(pop)
-#else	
-	#define EEPROM_VERSION 2
+#define PINS_DETECT 18
 
-	#pragma pack(push, 1)
-	typedef struct {
-			uint32_t iVersion;
-			uint16_t wState;
-			uint16_t iSpeedNeutral;		// = 2048 REMOTE_ADC
-			uint16_t iSteerNeutral;		// = 2048 REMOTE_ADC
-			uint16_t iSpeedMax;				// = 4096 REMOTE_ADC
-			uint16_t iSpeedMin;				// = 0		REMOTE_ADC
-			uint16_t iSteerMax;				// = 4096	REMOTE_ADC
-			uint16_t iSteerMin;				// = 0		REMOTE_ADC
-			uint8_t padding[2];  // Pad to 20 bytes for word alignment. added by Deepseek
-	} ConfigData;
-	#pragma pack(pop)
+#define EEPROM_VERSION 1000
+#pragma pack(push, 1)
+typedef struct
+{
+	uint32_t iVersion;
+	uint16_t wState;
+	int8_t aiPinScan[PINS_DETECT]; // lists NOT the uint32_t PA7 but the index of PA7 in PinAD aoPin[COUNT_PinDigital]
+	uint8_t padding[1];			   // Pad to x*4 bytes for word alignment.
+} ConfigData;
+#pragma pack(pop)
+#else
+#define EEPROM_VERSION 2
+
+#pragma pack(push, 1)
+typedef struct
+{
+	uint32_t iVersion;
+	uint16_t wState;
+	uint16_t iSpeedNeutral; // = 2048 REMOTE_ADC
+	uint16_t iSteerNeutral; // = 2048 REMOTE_ADC
+	uint16_t iSpeedMax;		// = 4096 REMOTE_ADC
+	uint16_t iSpeedMin;		// = 0		REMOTE_ADC
+	uint16_t iSteerMax;		// = 4096	REMOTE_ADC
+	uint16_t iSteerMin;		// = 0		REMOTE_ADC
+	uint8_t padding[2];		// Pad to 20 bytes for word alignment. added by Deepseek
+} ConfigData;
+#pragma pack(pop)
 #endif
 
+#if defined(MPU_6050) || defined(MPU_6050old) || defined(MPU_6500) || defined(BMI_160) // RemoteUart and RemoteUartBus need to access mpuData
 
-#if defined(MPU_6050) || defined(MPU_6050old) || defined(MPU_6500) || defined(BMI_160)		// RemoteUart and RemoteUartBus need to access mpuData
+#if (!defined(I2C_PB6PB7) && !defined(I2C_PB8PB9))
+#error "neither I2C_PB6PB7 nor I2C_PB8PB9 defined in your defines_2-t-l.h file"
+#endif
+#if defined(HAS_USART0) && defined(I2C_PB6PB7)
+#warning "I2C_PB6PB7 and USART0 active. If USART0_TX = PB6, Disable USART0 for RemoteXY or MasterSlave"
+#endif
 
-	#if (!defined(I2C_PB6PB7) && !defined(I2C_PB8PB9))
-		#error "neither I2C_PB6PB7 nor I2C_PB8PB9 defined in your defines_2-t-l.h file"
-	#endif
-	#if defined (HAS_USART0) && defined(I2C_PB6PB7)
-		#warning "I2C_PB6PB7 and USART0 active. If USART0_TX = PB6, Disable USART0 for RemoteXY or MasterSlave"
-	#endif
-	
-	
-	#define I2C_ENABLE
-	#define IMU_ENABLE
-	
-	typedef struct{
-		int16_t     x;
-		int16_t     y;
-		int16_t     z; 
-	} Gyro;
+#define I2C_ENABLE
+#define IMU_ENABLE
 
-	typedef struct{
-		int16_t     x;
-		int16_t     y;
-		int16_t     z; 
-	} Accel;
+typedef struct
+{
+	int16_t x;
+	int16_t y;
+	int16_t z;
+} Gyro;
 
-	typedef struct {
-		Gyro        gyro;
-		Accel       accel;
-		int16_t     temperature;
-	} MPU_Data;
+typedef struct
+{
+	int16_t x;
+	int16_t y;
+	int16_t z;
+} Accel;
+
+typedef struct
+{
+	Gyro gyro;
+	Accel accel;
+	int16_t temperature;
+} MPU_Data;
 
 #endif
 
-
-#endif		// DEFINES_H
+#endif // DEFINES_H
