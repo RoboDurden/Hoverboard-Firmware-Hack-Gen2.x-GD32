@@ -39,7 +39,7 @@
 #define BLDC_SINE // silent sine-pwm motor control, added 2025 by Robo Durden.
 // #define BLDC_SINE_BOOSTER		// can boost speed by 15% starting from 87% throttle.
 
-#define DRIVING_MODE 0 //  0=pwm, 1=speed in revs/s*1024, 2=torque in NewtonMeter*1024, 3=iOdometer
+#define DRIVING_MODE 1 //  0=pwm, 1=speed in revs/s*1024, 2=torque in NewtonMeter*1024, 3=iOdometer
 
 // #define SPEED_AsRevsPerSec		// Will overflow at 327 revs/s = 19620 rpm. Hoverboard motor: 14 rpm/V * 50V = 700 rpm
 
@@ -58,12 +58,12 @@
 #if defined(MASTER) || defined(SINGLE)
 
 // choose only one 'remote' to control the motor
-#define REMOTE_DUMMY
-// #define REMOTE_ADC
+// #define REMOTE_DUMMY
+#define REMOTE_ADC
 
 #ifdef REMOTE_ADC
-// #define REMOTE_ADC_PRINT_ONLY			   // motor disabled, only log ADC values via RTT for tuning
-#define REMOTE_ADC_MAX_REVS1024 (3 * 1024) // full pot = 3 revs/s in DRIVING_MODE 1
+#define REMOTE_ADC_PRINT_ONLY			   // motor disabled, only log ADC values via RTT for tuning
+#define REMOTE_ADC_MAX_REVS1024 (5 * 1024) // full pot = 3 revs/s in DRIVING_MODE 1
 #define REMOTE_ADC_MIN 0				   // filtered ADC at stop end, read with REMOTE_ADC_PRINT_ONLY
 #define REMOTE_ADC_MAX 4080				   // measured ~4087 at full; slightly lower so full pot reaches 1000
 #define REMOTE_ADC_DEADBAND 30			   // permille of travel near MIN treated as stop
@@ -138,6 +138,6 @@
 #define CELL_LOW_DEAD 3.0 // Undervoltage lockout, show red battery symbol above this Level.
 #endif
 
-#define DC_CUR_LIMIT 3 // Motor DC current limit in amps. Keep below bench PSU OCP limit.
+#define DC_CUR_LIMIT 30 // Motor DC current limit in amps. Keep below bench PSU OCP limit.
 
 #endif // CONFIG_H

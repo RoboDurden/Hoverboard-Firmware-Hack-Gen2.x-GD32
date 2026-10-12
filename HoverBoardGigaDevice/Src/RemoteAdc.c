@@ -14,6 +14,8 @@ extern uint8_t iDrivingMode;
 extern float batteryVoltage;
 extern float currentDC;
 extern int32_t revs32;
+extern int32_t bldc_outputFilterPwm;
+extern int16_t offsetdc;
 uint32_t iTimeNextLog = 0;
 char sMessage[160];
 #endif
@@ -51,12 +53,13 @@ void RemoteUpdate(void)
 		{
 			iTimeNextLog = msTicks + 200;
 #ifdef REMOTE_ADC_PRINT_ONLY
-			sprintf(sMessage, "adc raw: %4u\tfilt: %4d\tpot: %5ld\n",
-					adc_buffer.speed, iSpeedAdc, (long)iPot);
+			sprintf(sMessage, "adc raw: %4u\tfilt: %4d\tpot: %5ld\tidc: %4u\toff: %4d\n",
+					adc_buffer.speed, iSpeedAdc, (long)iPot, adc_buffer.current_dc, offsetdc);
 #else
-			sprintf(sMessage, F2IF " V\t" F2IF " A\tadc: %4d\ttarget: %6ld\trevs: %6ld\n",
+			sprintf(sMessage, F2IF " V\t" F2IF " A\tadc: %4d\ttarget: %6ld\trevs: %6ld\tpwm: %5ld\tidc: %4u\toff: %4d\n",
 					F2I(batteryVoltage), F2I(currentDC), iSpeedAdc, (long)speed,
-					(long)(revs32 >> (REVS32_SHIFT - 10)));
+					(long)(revs32 >> (REVS32_SHIFT - 10)), (long)bldc_outputFilterPwm,
+					adc_buffer.current_dc, offsetdc);
 #endif
 #ifdef WINDOWS_RN
 			add_cr_before_lf_inplace(sMessage, sizeof(sMessage));

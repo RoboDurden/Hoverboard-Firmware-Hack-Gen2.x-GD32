@@ -5,7 +5,7 @@
 
 // Tuned for STM32F103 based board (64MHz => PWM range: [-1000 - 1000]) with 10inch wheel at low speeds (400-600 revs/s*1024)
 #define PIDINIT_a3o {                                   \
-	{16, 0.015, 0.21, 0.00005, 1.0, 1.0, 200},          \
+	{16, 0.015, 0.21, 0.00005, 1.0, 1.0, 0},            \
 	{16, 0.2, 1.0, 0.0005, 1.0, 1.0, 0}, /* UNTESTED */ \
 	{1, 4.0, 2.0, 0.1, 0.5, 0.5, 30} /* UNTESTED */}
 
