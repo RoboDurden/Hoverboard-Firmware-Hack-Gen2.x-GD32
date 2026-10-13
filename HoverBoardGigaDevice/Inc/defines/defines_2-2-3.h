@@ -49,6 +49,7 @@
 #define BLDC_YH PA8			// yellow
 #define BLDC_YL PB13		
 #define TIMER_BLDC_PULLUP	GPIO_MODE_AF_PP	// robo: not sure if some boards indeed nned GPIO_PUPD_PULLUP like 2.2 or 2.3
+#define BLDC_GATES_ACTIVE_LOW			    // discrete gate drive: high- and low-side MOSFETs turn on with a LOW input
 
 // Timer BLDC short circuit emergency shutoff define
 //#define TIMER_BLDC_EMERGENCY_SHUTDOWN	TODO_PIN
