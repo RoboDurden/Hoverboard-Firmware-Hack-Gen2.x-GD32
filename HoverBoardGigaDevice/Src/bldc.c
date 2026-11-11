@@ -194,6 +194,9 @@ void CalculateBLDC(void)
 		
 #ifdef BUZZER
 	// Create square wave for buzzer
+	#ifdef BUZZER_SILENT
+		buzzerFreq = 0;		// config.h: buzzer pin stays low, no sound at all
+	#endif
   if (buzzerFreq != 0 && (buzzerTimer / PWM_FREQ) % (buzzerPattern + 1) == 0)
 	{
     if (buzzerTimer % (buzzerFreq*(PWM_FREQ/2000)) == 0)
