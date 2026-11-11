@@ -39,10 +39,48 @@ void I2C_Init() {
     i2c_ack_config(I2C_PERIPH, I2C_ACK_ENABLE);
 }
 #else
+
+#if TARGET != 2
+// If the mcu gets reset (flashing, watchdog) while the imu is sending a byte, the imu keeps holding SDA low
+// and the bus stays busy forever, because the imu is still powered. Clock SCL by hand until the imu lets go.
+static void i2c_delay(void)	{	for (volatile int d=0; d<200; d++);	}
+static void i2c_busRecover(void)
+{
+	#ifdef I2C_PB6PB7
+		uint32_t iScl = GPIO_PIN_6, iSda = GPIO_PIN_7;
+	#else
+		uint32_t iScl = GPIO_PIN_8, iSda = GPIO_PIN_9;
+	#endif
+	gpio_mode_set(GPIOB, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, iSda);
+	i2c_delay();
+	if (gpio_input_bit_get(GPIOB, iSda))
+		return;		// bus is free
+
+	gpio_bit_set(GPIOB, iScl | iSda);
+	gpio_output_options_set(GPIOB, GPIO_OTYPE_OD, GPIO_OSPEED_50MHZ, iScl | iSda);
+	gpio_mode_set(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLUP, iScl);
+	for (uint8_t i = 0; (i < 18) && !gpio_input_bit_get(GPIOB, iSda); i++)
+	{
+		gpio_bit_reset(GPIOB, iScl);	i2c_delay();
+		gpio_bit_set(GPIOB, iScl);		i2c_delay();
+	}
+	// stop condition: SDA goes high while SCL is high
+	gpio_bit_reset(GPIOB, iSda);
+	gpio_mode_set(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLUP, iSda);
+	i2c_delay();
+	gpio_bit_set(GPIOB, iSda);
+	i2c_delay();
+}
+#endif
+
 void I2C_Init()
 {
     rcu_periph_clock_enable(RCU_GPIOB);
     rcu_periph_clock_enable(MPU_RCU_I2C);
+
+	#if TARGET != 2
+		i2c_busRecover();
+	#endif
 
 	#ifdef I2C_PB6PB7	
 		// Configure PB6 (SCL) and PB7 (SDA) as AF open-drain

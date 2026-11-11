@@ -103,8 +103,67 @@ void UpdateUSARTMasterSlaveInput(void)
 	}
 }
 
+uint32_t iMasterSlaveFramesOk = 0;		// valid frames received from the other board
+
+#if defined(SLAVE) && defined(ONEWHEEL_BLACKBOX)
+// see config.h: what the slave saw is saved to flash, to be read with the ST-Link later
+#pragma pack(push, 1)
+typedef struct {
+	uint32_t iMagic;			// 0x0B0C5E02
+	uint32_t iUptime;			// ms
+	uint32_t iBytesRx;			// bytes received on the master-slave uart
+	uint32_t iFramesOk;			// valid frames received from the master
+	int16_t iPwmMin, iPwmMax;	// motor command received
+	int16_t iBattery;			// volt * 10
+	uint8_t wStateLast;			// last wState from the master, 64 = disable
+	uint8_t wHallSeen;			// bit n set = hall state n seen. Only bits 1-6 are valid states
+	uint8_t wFlags;				// 1 = motor enabled seen, 2 = timeout now, 4 = timeout seen, 8 = disabled by master seen
+	uint8_t aPad[3];
+	int32_t iOdom;				// hall steps the motor has turned
+} BlackBoxSlave;
+#pragma pack(pop)
+
+static BlackBoxSlave oBox = { .iPwmMin = 32767, .iPwmMax = -32768 };
+static uint8_t iBoxWritten = 0;
+extern volatile uint8_t hall;
+extern FlagStatus bldc_enable, timedOut;
+extern float batteryVoltage;
+extern uint32_t iCounter2Usart0, iCounter2Usart1;
+void flashErase(uint32_t address);
+void flashWriteBuffer(uint32_t address, uint8_t *pbuffer, uint16_t len);
+
+void BlackBoxSlaveUpdate(void)		// called in the main loop
+{
+	uint32_t iNow = millis();
+	if (bldc_enable == SET)			oBox.wFlags |= 1;
+	if (timedOut == SET)			oBox.wFlags |= 4;
+	if (wState & 64)				oBox.wFlags |= 8;
+	oBox.wHallSeen |= 1 << (hall & 7);
+	oBox.iPwmMin = MIN(oBox.iPwmMin, pwmSlave);
+	oBox.iPwmMax = MAX(oBox.iPwmMax, pwmSlave);
+
+	if (	((iBoxWritten == 0) && (iNow > 20000)) || ((iBoxWritten == 1) && (iNow > 60000))	)
+	{
+		iBoxWritten++;
+		if (batteryVoltage < 15)	// powered by the ST-Link only: keep the record of the last battery test
+			return;
+		oBox.iMagic = 0x0B0C5E02;
+		oBox.iUptime = iNow;
+		oBox.iBytesRx = iCounter2Usart0 + iCounter2Usart1;
+		oBox.iFramesOk = iMasterSlaveFramesOk;
+		oBox.iBattery = batteryVoltage * 10;
+		oBox.wStateLast = wState;
+		if (timedOut == SET)	oBox.wFlags |= 2;
+		oBox.iOdom = iOdom;
+		flashErase(ONEWHEEL_BLACKBOX_ADDR);
+		flashWriteBuffer(ONEWHEEL_BLACKBOX_ADDR, (uint8_t*)&oBox, sizeof(oBox));
+	}
+}
+#endif
+
 void ProessReceived(SerialReceive* pData)
 {
+	iMasterSlaveFramesOk++;
 #ifdef MASTER
 	// Result variables
 	//FlagStatus upperLED = RESET;

@@ -236,9 +236,9 @@ int main (void)
 	BUZZER_MelodyDown()
 	iBug = 9;
 	
-	#ifdef BUTTON
+	#if defined(BUTTON) && !defined(SLAVE)	// a slave board has no button: its button input can read 'pushed' forever
 		// Wait until button is released
-		
+
 		//uint32_t iTimePushed = millis();
 		while (BUTTON_PUSHED == digitalRead(BUTTON))
 		{
@@ -278,8 +278,12 @@ int main (void)
 			digitalWrite(MOSFET_OUT,	(steerCounter%200) < 100	);	// onboard led blinking :-)
 		#endif
 		
-		#ifdef SLAVE	
+		#ifdef SLAVE
 			SetBldcInput(pwmSlave);
+			#ifdef ONEWHEEL_BLACKBOX
+				extern void BlackBoxSlaveUpdate(void);
+				BlackBoxSlaveUpdate();
+			#endif
 		#else	//MASTER_OR_SINGLE
 			if ((steerCounter % 2) == 0)	// something like DELAY_IN_MAIN_LOOP = 10 ms
 			{
@@ -360,6 +364,13 @@ int main (void)
 			if (batteryVoltage > BAT_LOW_LVL1)	// Show green battery symbol when battery level BAT_LOW_LVL1 is reached
 			{
 				ShowBatteryState(0);
+				#ifdef PILOT_ONEWHEEL
+				if (bOnewheelBeep)	// duty warning: motors are close to their limit
+					{
+						BuzzerSet(3,0)	// (iFrequency, iPattern)
+					}
+					else
+				#endif
 				#ifdef BEEP_BACKWARDS
 				if (beepsBackwards == SET && speed < -50)
 					{

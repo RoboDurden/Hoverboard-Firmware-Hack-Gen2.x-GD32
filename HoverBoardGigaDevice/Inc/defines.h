@@ -17,7 +17,9 @@
 #include "../Inc/target.h"
 #include "../Inc/configSelect.h"
 
-#ifdef PILOT_HOVERBIKE
+#ifdef PILOT_ONEWHEEL
+	#include "PilotOnewheel.h"		// self-balancing one-wheel, master imu controls both motors
+#elif defined(PILOT_HOVERBIKE)
 	#include "PilotHoverbike.h"		// https://youtu.be/ihCpCtgXIRA
 #elif defined (PILOT_USER)		
 	#include "PilotUser.h"		// for your new onboard user code :-)
