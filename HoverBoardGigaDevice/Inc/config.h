@@ -70,6 +70,10 @@
 				#endif
 		//#define REMOTE_CRSF		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/26
 		//#define REMOTE_ROS2		// https://github.com/RoboDurden/Hoverboard-Firmware-Hack-Gen2.x/issues/122
+		//#define REMOTE_CANSIMPLE	// ODrive CANSimple protocol over UART, like the MM32 controller. Host/ESP32 is master, this board a node
+				#ifdef REMOTE_CANSIMPLE
+					#define SLAVE_ID	0		// this board's CANSimple node id (0..62); 63 = broadcast
+				#endif
 		//#define REMOTE_ADC	// speed is PA2=TX and steer is PA3=RX of the masterslave header. Get 3.3V from the flash header
 												// DO NOT use the 5V/15V pin of the masterslave header for the potentiometers !!!!!!!!!
 												// SLAVE board has to be connected to the additional UART header, but 5V/15V coming from the masters masterslave header
@@ -110,7 +114,7 @@
 																		//	2 is usually PB10/PB11 on stm32f103 boards
 	#endif
 	
-	#if defined(REMOTE_UART) || defined(REMOTE_UARTBUS) || defined(REMOTE_CRSF) || defined(REMOTE_ROS2)
+	#if defined(REMOTE_UART) || defined(REMOTE_UARTBUS) || defined(REMOTE_CRSF) || defined(REMOTE_ROS2) || defined(REMOTE_CANSIMPLE)
 		#define REMOTE_USART				0 	// 	1 is usually PA2/PA3 and the original master-slave 4pin header
 																		//	0 is usually PB6/PB7 and the empty header close to the flash-header
 																		//	2 is usually PB10/PB11 on stm32f103 boards

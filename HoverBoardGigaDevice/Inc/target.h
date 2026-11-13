@@ -3,6 +3,9 @@
 	#define TARGET_nvic_irq_enable(a, b, c){nvic_irq_enable(a, b);}
 	#define TARGET_nvic_priority_group_set(a)	// that function does not exist for this target = not needed ?
 	#define TARGET_adc_vbat_disable()
+	#define TARGET_adc_inserted_channel_config(r,c,s) adc_inserted_channel_config(r,c,s)
+	#define TARGET_adc_inserted_data_read(c) adc_inserted_data_read(c)
+	#define TARGET_ADC_EXTTRIG_INSERTED_SW ADC_EXTTRIG_INSERTED_NONE
 	#define TARGET_ADC_RDATA ADC_RDATA
 	
 	#define TARGET_fwdgt_window_value_config(a) fwdgt_window_value_config(a)
@@ -215,6 +218,9 @@
 	#define TARGET_adc_external_trigger_source_config(a,b)	adc_external_trigger_source_config(ADC0,a,b)
 	#define ADC_EXTTRIG_REGULAR_NONE ADC0_1_2_EXTTRIG_REGULAR_NONE
 	#define TARGET_adc_vbat_disable adc_tempsensor_vrefint_disable
+	#define TARGET_adc_inserted_channel_config(r,c,s) adc_inserted_channel_config(ADC0,r,c,s)
+	#define TARGET_adc_inserted_data_read(c) adc_inserted_data_read(ADC0,c)
+	#define TARGET_ADC_EXTTRIG_INSERTED_SW ADC0_1_2_EXTTRIG_INSERTED_NONE
 	#define TARGET_adc_watchdog_disable() adc_watchdog_disable(ADC0)
 	#define TARGET_adc_enable()	adc_enable(ADC0)
 	#define TARGET_adc_calibration_enable()	adc_calibration_enable(ADC0)
@@ -264,6 +270,9 @@
 	#define TARGET_nvic_irq_enable(a, b, c){nvic_irq_enable(a, b, c);}
 	#define TARGET_nvic_priority_group_set(a){nvic_priority_group_set(a);}
 	#define TARGET_adc_vbat_disable(){adc_vbat_disable();}
+	#define TARGET_adc_inserted_channel_config(r,c,s) adc_inserted_channel_config(r,c,s)
+	#define TARGET_adc_inserted_data_read(c) adc_inserted_data_read(c)
+	#define TARGET_ADC_EXTTRIG_INSERTED_SW ADC_EXTTRIG_INSERTED_NONE
 	#define TARGET_ADC_RDATA ADC_RDATA
 	#define TARGET_adc_dma_mode_enable()	adc_dma_mode_enable()
 	#define TARGET_dma_deinit(a) dma_deinit(a)
